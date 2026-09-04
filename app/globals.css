@@ -1,0 +1,263 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens do tema. O padrão é o ESCURO; [data-theme="light"]
+   troca só os valores — os componentes usam as classes de sempre. */
+:root {
+  color-scheme: dark;
+  /* triplas RGB (consumidas pelo tailwind com <alpha-value>) */
+  --c-base-rgb: 8 11 10;
+  --c-elevated-rgb: 11 16 14;
+  --c-surface-rgb: 15 21 19;
+  --c-surface2-rgb: 20 27 24;
+  --c-surface3-rgb: 26 35 32;
+  --c-ink-rgb: 233 241 236;
+  --c-ink-muted-rgb: 141 154 147;
+  /* Era 92 106 100 (#5C6A64): 2,84:1 sobre surface-3 e 3,25:1 sobre surface —
+     reprovava nos dois, e `text-ink-faint` tem 210 usos, muitos em dado que o
+     consultor precisa ler (telefone no card, cabeçalho de tabela, hora da
+     mensagem). Agora 4,74:1 no pior fundo escuro. */
+  --c-ink-faint-rgb: 127 143 136;
+  /* Aviso e falha. Sobre o fundo escuro o âmbar/coral da marca já lê bem
+     (6,9:1 na base); o par claro em [data-theme] é que precisa escurecer. */
+  --c-warn-rgb: 224 129 43;
+  --c-danger-rgb: 242 114 111;
+  /* cores completas (usadas em styles inline e utilitários próprios) */
+  --c-ink: #e9f1ec;
+  --c-surface2: #141b18;
+  --c-warn: #e0812b;
+  --c-danger: #f2726f;
+  --c-line: rgba(129, 214, 174, 0.09);
+  --c-line-strong: rgba(129, 214, 174, 0.16);
+  --shadow-card: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 24px 48px -32px rgba(0, 0, 0, 0.75);
+  --bg-grad1: rgba(53, 176, 110, 0.1);
+  --bg-grad2: rgba(30, 158, 104, 0.07);
+  --bg-base1: #080b0a;
+  --bg-base2: #070a09;
+  --grain-opacity: 0.035;
+  --c-selection-ink: #eafff4;
+  --c-scroll-thumb: rgba(129, 214, 174, 0.18);
+  --c-scroll-thumb-hover: rgba(129, 214, 174, 0.3);
+  /* Fundo do painel de mensagens do inbox e cor do texto da bolha de saída. */
+  --c-chat-bg: #0a0f0d;
+  --c-chat-out-ink: #eafaf1;
+  /* Grades, crosshair e trilho dos gráficos SVG. */
+  --c-grid: rgba(129, 214, 174, 0.1);
+  --c-grid-strong: rgba(129, 214, 174, 0.28);
+  --c-grid-track: rgba(129, 214, 174, 0.06);
+  --c-chart-dot-stroke: #08130e;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --c-base-rgb: 243 247 244;
+  --c-elevated-rgb: 255 255 255;
+  --c-surface-rgb: 255 255 255;
+  --c-surface2-rgb: 237 243 238;
+  --c-surface3-rgb: 227 236 229;
+  --c-ink-rgb: 23 36 29;
+  --c-ink-muted-rgb: 85 101 92;
+  /* Era 139 151 143 (#8B978F): 3,03:1 sobre branco e 2,81:1 sobre a base clara.
+     Agora 4,99:1 sobre branco e 4,62:1 sobre a base. Sobre surface-3 (#e3ece5,
+     usado em bolha de chat) fica em 4,14:1 — por isso o tom mais fraco deve
+     ficar para decoração, não para dado. */
+  --c-ink-faint-rgb: 100 115 107;
+  /* O âmbar (#E0812B) e o coral (#F2726F) da marca dão ~2,9:1 sobre branco:
+     ilegíveis justamente onde ficam as mensagens de erro. Aqui eles escurecem
+     para 5,8:1 e 5,6:1, mantendo o mesmo matiz. */
+  --c-warn-rgb: 154 84 16;
+  --c-danger-rgb: 192 52 47;
+  --c-ink: #17241d;
+  --c-surface2: #edf3ee;
+  --c-warn: #9a5410;
+  --c-danger: #c0342f;
+  /* No claro, `elevated` e `surface` são os dois brancos: não dá pra criar
+     elevação por COR (não existe nada acima do branco). Quem separa figura de
+     fundo aqui é a borda e a sombra — e as duas estavam fracas demais, então os
+     cartões ficavam soltos na página e os tooltips dos gráficos viravam um
+     retângulo branco em cima de outro branco. */
+  --c-line: rgba(20, 70, 45, 0.22);
+  --c-line-strong: rgba(20, 70, 45, 0.36);
+  --shadow-card:
+    0 1px 0 0 rgba(255, 255, 255, 0.65) inset,
+    0 2px 6px -2px rgba(20, 53, 31, 0.13),
+    0 14px 30px -18px rgba(20, 53, 31, 0.3);
+  --bg-grad1: rgba(53, 176, 110, 0.09);
+  --bg-grad2: rgba(30, 158, 104, 0.06);
+  --bg-base1: #f3f7f4;
+  --bg-base2: #edf3ee;
+  --grain-opacity: 0.02;
+  --c-selection-ink: #17241d;
+  --c-scroll-thumb: rgba(20, 70, 45, 0.28);
+  --c-scroll-thumb-hover: rgba(20, 70, 45, 0.42);
+  /* Papel de parede do chat em tom claro, e texto escuro na bolha de saída. */
+  --c-chat-bg: #e9efea;
+  --c-chat-out-ink: #10301f;
+  /* Verde-menta a 6–10% é invisível sobre branco: os cinco gráficos perdiam as
+     linhas de referência e o donut perdia o anel de base. Aqui a grade vira
+     verde-escuro translúcido. */
+  --c-grid: rgba(20, 70, 45, 0.14);
+  --c-grid-strong: rgba(20, 70, 45, 0.35);
+  --c-grid-track: rgba(20, 70, 45, 0.08);
+  --c-chart-dot-stroke: #ffffff;
+}
+
+@layer base {
+  * {
+    border-color: theme("colors.line.DEFAULT");
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: theme("colors.base");
+    color: theme("colors.ink.DEFAULT");
+    font-family: theme("fontFamily.sans");
+    /* Atmosfera: brilho verde sutil no topo + brilho profundo no rodapé. */
+    background-image:
+      radial-gradient(1100px 620px at 78% -12%, var(--bg-grad1), transparent 62%),
+      radial-gradient(900px 520px at 8% 4%, var(--bg-grad2), transparent 60%),
+      linear-gradient(180deg, var(--bg-base1) 0%, var(--bg-base2) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Grão fino para dar textura ao fundo escuro. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: rgba(53,176,110, 0.28);
+    color: var(--c-selection-ink);
+  }
+
+  /* Números com figuras tabulares por padrão (alinhamento em tabelas/KPIs). */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Scrollbar discreta e no tom da marca. */
+  .scroll-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-scroll-thumb) transparent;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background-color: var(--c-scroll-thumb);
+    border-radius: 999px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb:hover {
+    background-color: var(--c-scroll-thumb-hover);
+  }
+
+  .card-surface {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)) padding-box,
+      theme("colors.surface.DEFAULT");
+  }
+
+  .grain-none {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* ── Modo claro: os "véus" brancos (bg-white/[…], ring-white/…) viram véus
+   escuros — são as únicas classes que não passam pelos tokens. Cobre também
+   as variantes hover usadas no painel. A página pública (/agendar) e o QR
+   usam bg-white SÓLIDO e não são afetados. ─────────────────────────────── */
+[data-theme="light"] .bg-white\/\[0\.01\] { background-color: rgba(18, 42, 30, 0.02); }
+[data-theme="light"] .bg-white\/\[0\.02\] { background-color: rgba(18, 42, 30, 0.03); }
+[data-theme="light"] .bg-white\/\[0\.03\] { background-color: rgba(18, 42, 30, 0.045); }
+[data-theme="light"] .bg-white\/\[0\.04\] { background-color: rgba(18, 42, 30, 0.055); }
+[data-theme="light"] .bg-white\/\[0\.05\] { background-color: rgba(18, 42, 30, 0.07); }
+[data-theme="light"] .bg-white\/\[0\.06\] { background-color: rgba(18, 42, 30, 0.08); }
+[data-theme="light"] .hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(18, 42, 30, 0.03); }
+[data-theme="light"] .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(18, 42, 30, 0.055); }
+[data-theme="light"] .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(18, 42, 30, 0.07); }
+[data-theme="light"] .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(18, 42, 30, 0.08); }
+[data-theme="light"] .ring-white\/10 { --tw-ring-color: rgba(18, 42, 30, 0.16); }
+[data-theme="light"] .ring-white\/15 { --tw-ring-color: rgba(18, 42, 30, 0.22); }
+[data-theme="light"] .ring-white\/60 { --tw-ring-color: rgba(18, 42, 30, 0.55); }
+
+/* ── Modo demonstração (Ajustes → "Gravar demonstração"): borra o que
+   identifica o lead, pra gravar aula sem expor dado de cliente real.
+
+   É SÓ apresentação — nada muda no banco, e a escolha vive no navegador de quem
+   está gravando (localStorage "painel-demo"), nunca no servidor: ligar isto no
+   servidor borraria a tela do time inteiro no meio do expediente.
+
+   `blur` em `em` e não em `px` para o borrão acompanhar o tamanho da fonte —
+   com valor fixo, texto de 10px vira mancha sólida e texto de 16px continua
+   legível. `ident` borra os identificadores e deixa a conversa legível (é o que
+   se quer demonstrar); `tudo` borra também as bolhas, pra quando a própria
+   conversa tiver nome, endereço ou CNPJ escritos dentro. ──────────────────── */
+[data-demo="ident"] .sigilo,
+[data-demo="tudo"] .sigilo,
+[data-demo="tudo"] .sigilo-msg {
+  filter: blur(0.32em);
+  /* Sem isto dá pra selecionar e ler o texto borrado — e, pior, o navegador
+     desenha o realce da seleção por cima, revelando o formato. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Chips/selos coloridos (estágio, categoria, desfecho): a cor viva vem em
+   --tag; no claro o TEXTO escurece pra ler bem sobre branco — o pontinho e o
+   fundo tintado seguem na cor viva. */
+.tag-ink { color: var(--tag); }
+[data-theme="light"] .tag-ink { color: color-mix(in srgb, var(--tag) 55%, #17241d); }
+
+/* ── iOS: campo de formulário com fonte MENOR que 16px faz o Safari aproximar a
+   página a cada toque; o layout passa a estourar na horizontal e a pessoa tem de
+   pinçar de volta depois de cada mensagem. Abaixo de `sm` todo campo vai a 16px;
+   de `sm` pra cima o tamanho declarado no componente volta a valer, então o
+   desktop não muda em nada.
+
+   É regra global com !important de propósito: são ~30 campos espalhados por 8
+   arquivos, e qualquer campo novo nasceria com o mesmo defeito se dependesse de
+   alguém lembrar de escrever a classe. Nenhum campo do painel passa de 16px
+   hoje, então a regra só aumenta — nunca encolhe. ────────────────────────── */
+@media (max-width: 639.98px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Tons pastéis -300 (erros/links) ilegíveis sobre branco → versões escuras. */
+[data-theme="light"] .text-red-300 { color: #b91c1c; }
+[data-theme="light"] .hover\:text-red-300:hover { color: #b91c1c; }
+[data-theme="light"] .text-sky-300 { color: #0369a1; }
+
+/* O verde da marca como TEXTO dá 2,77:1 sobre branco — reprova igual ao âmbar e
+   ao coral que já foram corrigidos. Só o texto escurece: `bg-brand` continua o
+   verde vivo (com texto escuro por cima) e os anéis/acentos seguem iguais, por
+   isso a correção é uma regra em .text-brand e não uma troca do token. */
+[data-theme="light"] .text-brand { color: #1e7a47; }
+[data-theme="light"] .hover\:text-brand:hover { color: #1e7a47; }

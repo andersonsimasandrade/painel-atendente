@@ -1,0 +1,18 @@
+# Dependências e build
+/node_modules
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# Segredos — NUNCA versione. A exceção é o .env.example, que é só modelo.
+.env*
+!.env.example
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+*.pem
+npm-debug.log*
+.vercel

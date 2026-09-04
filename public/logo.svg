@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" width="200" height="48" role="img" aria-label="Atendente 24h">
+  <defs>
+    <linearGradient id="a24-badge" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F2A20"/><stop offset="1" stop-color="#08130E"/>
+    </linearGradient>
+    <linearGradient id="a24-bubble" x1="14" y1="12" x2="34" y2="36" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#52C98A"/><stop offset="1" stop-color="#2F9E5E"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="46" height="46" rx="13" fill="url(#a24-badge)"/>
+  <rect x="1" y="1" width="46" height="46" rx="13" stroke="rgba(129,214,174,0.28)" stroke-width="1" fill="none"/>
+  <path d="M15 11h18a5 5 0 0 1 5 5v12a5 5 0 0 1-5 5H23l-7.2 5.4A0.8 0.8 0 0 1 14.6 38l0.4-5A5 5 0 0 1 10 28V16a5 5 0 0 1 5-5Z" fill="url(#a24-bubble)"/>
+  <circle cx="24" cy="22" r="7.2" stroke="#08130E" stroke-width="1.7" fill="none" opacity="0.85"/>
+  <path d="M24 17.4V22l3.4 2.2" stroke="#08130E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/>
+  <text x="58" y="30" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="18" font-weight="600" fill="#16351f">Atendente 24h</text>
+</svg>
