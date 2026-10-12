@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CONSULTORIOS, CREFITO, HORARIO_TEXTO, PROFISSIONAL } from "@/lib/site";
+import { ASSISTENTE_ATIVO, CONSULTORIOS, CREFITO, HORARIO_TEXTO, PROFISSIONAL } from "@/lib/site";
 
 export const dynamic = "force-static";
 
@@ -26,7 +26,9 @@ const PASSOS = [
   {
     n: "2",
     t: "A conversa abre no WhatsApp",
-    d: "Nosso assistente virtual tira dúvidas, entende o que você sente e organiza as informações para a equipe.",
+    d: ASSISTENTE_ATIVO
+      ? "Nosso assistente virtual tira dúvidas, entende o que você sente e organiza as informações para a equipe."
+      : "Você fala direto com o Anderson, que já recebe o consultório, os dias e o período que você escolheu.",
   },
   {
     n: "3",

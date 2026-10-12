@@ -30,6 +30,7 @@ function Coluna({ m }: { m: MetricasCanal }) {
       rot: m.canal === "google" ? "Cliques" : "Conversas iniciadas (Meta)",
       val: m.canal === "google" ? num(m.cliques) : num(m.conversas_plataforma),
     },
+    { rot: "Pedidos pelo site", val: String(m.pedidos_site) },
     { rot: "Contatos no CRM", val: String(m.capturados) },
     { rot: "Responderam", val: `${m.engajados}${m.capturados ? ` (${Math.round((m.engajados / m.capturados) * 100)}%)` : ""}` },
     { rot: "Agendados", val: String(m.agendados) },

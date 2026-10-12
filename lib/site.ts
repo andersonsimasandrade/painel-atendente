@@ -11,9 +11,15 @@ export const CREFITO = "CREFITO-10 nº 89456-F";
 export const INSTAGRAM = "andersonandrade_fisio";
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM}/`;
 
-/** Número do WhatsApp do robô (o mesmo dos anúncios). Só dígitos, com DDI. */
+/** Quem atende no WhatsApp do site HOJE: o próprio Anderson, direto no número
+ *  dele, sem robô (o número do robô foi banido em 12/10/2026). Quando o robô
+ *  voltar: ASSISTENTE_ATIVO = true e WHATSAPP_PADRAO = número do robô. */
+export const ASSISTENTE_ATIVO = false;
+export const WHATSAPP_PADRAO = "5548984223242";
+
+/** Número do WhatsApp do site. Só dígitos, com DDI. SITE_WHATSAPP (env) sobrepõe. */
 export function whatsappNumero(): string {
-  return (process.env.SITE_WHATSAPP ?? "").replace(/\D/g, "") || "554899730494";
+  return (process.env.SITE_WHATSAPP ?? "").replace(/\D/g, "") || WHATSAPP_PADRAO;
 }
 
 export type ConsultorioId = "capoeiras" | "centro";

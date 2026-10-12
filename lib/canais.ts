@@ -48,6 +48,7 @@ export interface MetricasCanal {
   investimento: number;
   cliques: number | null; // só o Google informa cliques de forma confiável aqui
   conversas_plataforma: number | null; // Meta: conversas iniciadas; Google: conversões que o Google contou
+  pedidos_site: number; // pedidos de agendamento feitos NO SITE (valem mesmo sem robô no WhatsApp)
   capturados: number; // contatos novos no CRM
   engajados: number; // responderam (>= 2 mensagens)
   agendados: number;
@@ -75,6 +76,7 @@ export function montarCanal(
     investimento: number;
     cliques: number | null;
     conversas_plataforma: number | null;
+    pedidos_site: number;
     capturados: number;
     engajados: number;
     agendados: number;
@@ -108,7 +110,7 @@ export async function compararCanais(desde: string, ate: string): Promise<Compar
   const ini = `${desde}T00:00:00-03:00`;
   const fim = `${addDias(ate, 1)}T00:00:00-03:00`;
 
-  const [metaDias, goog, cont, evt] = await Promise.all([
+  const [metaDias, goog, cont, evt, ped] = await Promise.all([
     lerTrafego(desde, ate),
     s
       .from("trafego_google_diario")
@@ -121,7 +123,12 @@ export async function compararCanais(desde: string, ate: string): Promise<Compar
       .gte("primeira_interacao", ini)
       .lt("primeira_interacao", fim),
     s.from("ff_eventos").select("telefone").eq("stage", "agendado").gte("created_at", ini),
+    s.from("site_pedidos").select("canal").gte("criado_em", ini).lt("criado_em", fim),
   ]);
+  const pedidos: Record<Canal, number> = { google: 0, meta: 0, organico: 0 };
+  for (const r of (ped.data ?? []) as { canal: string }[]) {
+    pedidos[r.canal === "google" ? "google" : r.canal === "meta" ? "meta" : "organico"]++;
+  }
 
   const agendou = new Set<string>(((evt.data ?? []) as { telefone: string }[]).map((r) => r.telefone));
 
@@ -171,9 +178,9 @@ export async function compararCanais(desde: string, ate: string): Promise<Compar
 
   return {
     canais: [
-      montarCanal("google", { investimento: googleGasto, cliques: googleCliques, conversas_plataforma: Math.round(googleConv), ...acc.google }),
-      montarCanal("meta", { investimento: metaGasto, cliques: null, conversas_plataforma: metaLeads, ...acc.meta }),
-      montarCanal("organico", { investimento: 0, cliques: null, conversas_plataforma: null, ...acc.organico }),
+      montarCanal("google", { investimento: googleGasto, cliques: googleCliques, conversas_plataforma: Math.round(googleConv), pedidos_site: pedidos.google, ...acc.google }),
+      montarCanal("meta", { investimento: metaGasto, cliques: null, conversas_plataforma: metaLeads, pedidos_site: pedidos.meta, ...acc.meta }),
+      montarCanal("organico", { investimento: 0, cliques: null, conversas_plataforma: null, pedidos_site: pedidos.organico, ...acc.organico }),
     ],
     dias,
     googleSincronizado: gRows.length > 0,

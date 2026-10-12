@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MARCA, PROFISSIONAL, CREFITO } from "@/lib/site";
+import { ASSISTENTE_ATIVO, MARCA, PROFISSIONAL, CREFITO } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Política de privacidade",
@@ -49,10 +49,9 @@ export default function Privacidade() {
         <div>
           <h2 className="text-[18px] font-semibold text-[#16351f]">Atendimento por WhatsApp</h2>
           <p className="mt-2">
-            Ao enviar a mensagem, você conversa primeiro com um assistente virtual da equipe. Ele ajuda a
-            organizar as informações (nome, queixa principal, disponibilidade) e repassa ao fisioterapeuta, que
-            confirma o agendamento. As conversas ficam armazenadas em sistemas de atendimento usados pela
-            clínica, com acesso restrito. O assistente não faz diagnóstico e não substitui a avaliação.
+            {ASSISTENTE_ATIVO
+              ? "Ao enviar a mensagem, você conversa primeiro com um assistente virtual da equipe. Ele ajuda a organizar as informações (nome, queixa principal, disponibilidade) e repassa ao fisioterapeuta, que confirma o agendamento. As conversas ficam armazenadas em sistemas de atendimento usados pela clínica, com acesso restrito. O assistente não faz diagnóstico e não substitui a avaliação."
+              : "Ao enviar a mensagem, você conversa diretamente com o fisioterapeuta, que confirma o agendamento. A conversa fica no aplicativo WhatsApp do profissional, com acesso restrito a ele, e é usada apenas para o seu atendimento."}
           </p>
         </div>
 
