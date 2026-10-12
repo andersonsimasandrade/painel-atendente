@@ -156,6 +156,16 @@ function parseResumo(raw: string): ResumoIA | null {
   };
 }
 
+
+/** Modelos da Groq a tentar, em ordem. A conta pode não ter acesso a um deles
+ *  (404 model_not_found), então tentamos o seguinte em vez de desistir.
+ *  GROQ_MODEL (opcional) vai na frente. */
+function modelosGroq(): string[] {
+  const extra = (process.env.GROQ_MODEL ?? "").trim();
+  const base = ["llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"];
+  return extra ? [extra, ...base.filter((m) => m !== extra)] : base;
+}
+
 /**
  * Gera o resumo/score da conversa. Tenta Groq; se falhar (sem chave, erro,
  * resposta inválida), cai no OpenAI. Retorna null se ambos falharem.
@@ -171,13 +181,15 @@ export async function gerarResumoLead(
 
   const groqKey = process.env.GROQ_API_KEY;
   if (groqKey) {
-    const raw = await chamarLLM(
-      { url: "https://api.groq.com/openai/v1/chat/completions", key: groqKey, model: "llama-3.3-70b-versatile" },
-      messages,
-      { json: true },
-    );
-    const parsed = raw ? parseResumo(raw) : null;
-    if (parsed) return { ...parsed, provider: "groq" };
+    for (const model of modelosGroq()) {
+      const raw = await chamarLLM(
+        { url: "https://api.groq.com/openai/v1/chat/completions", key: groqKey, model },
+        messages,
+        { json: true },
+      );
+      const parsed = raw ? parseResumo(raw) : null;
+      if (parsed) return { ...parsed, provider: "groq" };
+    }
   }
 
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -226,12 +238,14 @@ export async function gerarPlanoAcao(
 
   const groqKey = process.env.GROQ_API_KEY;
   if (groqKey) {
-    const raw = await chamarLLM(
-      { url: "https://api.groq.com/openai/v1/chat/completions", key: groqKey, model: "llama-3.3-70b-versatile" },
-      messages,
-      { maxTokens: 700 },
-    );
-    if (raw && raw.trim()) return raw.trim().slice(0, 4000);
+    for (const model of modelosGroq()) {
+      const raw = await chamarLLM(
+        { url: "https://api.groq.com/openai/v1/chat/completions", key: groqKey, model },
+        messages,
+        { maxTokens: 700 },
+      );
+      if (raw && raw.trim()) return raw.trim().slice(0, 4000);
+    }
   }
   const openaiKey = process.env.OPENAI_API_KEY;
   if (openaiKey) {

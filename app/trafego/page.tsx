@@ -78,6 +78,12 @@ export default async function TrafegoPage({ searchParams }: { searchParams: { ra
               {r.label}
             </Link>
           ))}
+          <Link
+            href="/trafego/comparativo"
+            className="ml-auto rounded-full px-3 py-1.5 text-[12.5px] font-medium text-brand ring-1 ring-inset ring-brand/25 hover:bg-brand/10"
+          >
+            Comparativo Google × Meta →
+          </Link>
         </div>
 
         {!temDados ? (

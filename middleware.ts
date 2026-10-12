@@ -14,7 +14,7 @@ import { SITE_HOST } from "./lib/site";
 // Cada item termina em (?:/|$) para não casar por prefixo: sem a âncora, uma
 // rota futura chamada /loginhack nasceria pública.
 const PUBLICAS_DO_PAINEL =
-  /^\/(?:login|entrar|api\/login|api\/logout|api\/auth|api\/cron|agendar|api\/agendar|_next\/static|_next\/image|favicon\.ico|logo\.svg)(?:\/|$)/;
+  /^\/(?:login|entrar|api\/login|api\/logout|api\/auth|api\/cron|api\/ingest|agendar|api\/agendar|_next\/static|_next\/image|favicon\.ico|logo\.svg)(?:\/|$)/;
 
 function hostDe(req: NextRequest): string {
   return (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")
