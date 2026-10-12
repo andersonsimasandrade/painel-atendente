@@ -44,11 +44,43 @@ const PUBLICOS = [
   "Crianças (com a presença de um responsável durante toda a sessão)",
 ];
 
+const TECNICAS = [
+  {
+    nome: "Osteopatia",
+    img: "/img/osteopatia.png",
+    alt: "Ilustração de osteopatia: fisioterapeuta com as mãos nas costas de uma pessoa deitada",
+    texto:
+      "Técnica manual que olha o corpo como um todo e trabalha articulações, músculos e tecidos para favorecer a mobilidade e o equilíbrio do movimento. É considerada em dores musculoesqueléticas e restrições de movimento, após avaliação.",
+  },
+  {
+    nome: "Quiropraxia",
+    img: "/img/quiropraxia.png",
+    alt: "Ilustração de quiropraxia: mãos do fisioterapeuta sobre a coluna",
+    texto:
+      "Técnica manual com foco no alinhamento e na mobilidade das articulações, especialmente da coluna. É aplicada de forma individualizada, depois de avaliar cada caso.",
+  },
+  {
+    nome: "Terapia craniossacral",
+    img: "/img/craniossacral.png",
+    alt: "Ilustração de terapia craniossacral: toque suave na cabeça de uma pessoa deitada",
+    texto:
+      "Abordagem manual suave, feita na cabeça, na coluna e no sacro. Usada como complemento no cuidado de tensões musculares e do relaxamento, conforme a avaliação.",
+  },
+  {
+    nome: "Método Maitland",
+    img: "/img/maitland.png",
+    alt: "Ilustração do método Maitland: mobilização manual da região lombar",
+    texto:
+      "Conceito de avaliação e mobilização articular manual, com técnicas graduadas de acordo com a resposta de cada pessoa. Aplicado em dores e limitações de movimento da coluna e das articulações.",
+  },
+];
+
 export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="mx-auto max-w-5xl px-4 pb-14 pt-12 sm:px-6 sm:pt-20">
+      <section className="mx-auto grid max-w-5xl items-center gap-10 px-4 pb-14 pt-12 sm:px-6 sm:pt-20 lg:grid-cols-[1.15fr_1fr]">
+        <div>
         <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#2f9e5e]">
           Fisioterapia em Florianópolis
         </p>
@@ -68,6 +100,43 @@ export default function Home() {
           <li>Recibo de cada sessão</li>
           <li>{HORARIO_TEXTO}</li>
         </ul>
+        </div>
+        <figure className="m-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/img/coluna.webp"
+            alt="Ilustração de atendimento de fisioterapia: fisioterapeuta com as mãos sobre a coluna de uma pessoa sentada na maca"
+            width={1536}
+            height={1024}
+            fetchPriority="high"
+            className="h-auto w-full rounded-3xl object-cover shadow-[0_20px_50px_-24px_rgba(22,53,31,0.45)]"
+          />
+          <figcaption className="mt-2 text-[12px] text-[#6b7a71]">Imagem ilustrativa.</figcaption>
+        </figure>
+      </section>
+
+      {/* TÉCNICAS */}
+      <section className="mx-auto max-w-5xl px-4 pb-14 sm:px-6">
+        <h2 className="font-display text-[26px] font-semibold tracking-tight text-[#16351f] sm:text-[32px]">
+          Técnicas manuais
+        </h2>
+        <p className="mt-3 max-w-2xl text-[15.5px] leading-relaxed text-[#4b5b51]">
+          Combinadas de forma individual, conforme a avaliação de cada pessoa. Nenhuma técnica é indicada sem
+          avaliação, e não há garantia de resultado.
+        </p>
+        <div className="mt-7 grid gap-5 sm:grid-cols-2">
+          {TECNICAS.map((t) => (
+            <article key={t.nome} className="overflow-hidden rounded-2xl border border-[#e8e2d8] bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={t.img} alt={t.alt} width={303} height={300} loading="lazy" className="h-52 w-full object-cover" />
+              <div className="p-5">
+                <h3 className="font-display text-[19px] font-semibold text-[#16351f]">{t.nome}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#4b5b51]">{t.texto}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="mt-3 text-[12px] text-[#6b7a71]">Imagens ilustrativas.</p>
       </section>
 
       {/* COMO FUNCIONA */}

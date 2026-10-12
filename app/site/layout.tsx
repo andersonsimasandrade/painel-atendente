@@ -30,6 +30,7 @@ export const metadata: Metadata = {
     title: "Fisioterapia em Florianópolis | Anderson Andrade Fisio",
     description:
       "Atendimento individual em Capoeiras e no Centro. Avaliação e tratamento na mesma sessão. Agende pelo WhatsApp.",
+    images: [{ url: "/img/coluna.webp", width: 1536, height: 1024, alt: "Fisioterapia em Florianópolis" }],
   },
   alternates: { canonical: "/" },
 };
