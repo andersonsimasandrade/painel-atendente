@@ -21,7 +21,7 @@ function IconeFacebook({ className = "h-5 w-5" }: { className?: string }) {
 /** Ícones das redes sociais. O Facebook só aparece quando FACEBOOK_URL estiver preenchido em lib/site.ts. */
 export function RedesSociais({ comTexto = false, className = "" }: { comTexto?: boolean; className?: string }) {
   const base =
-    "inline-flex items-center gap-2 rounded-xl border border-[#ddd6c9] bg-white px-3 py-2 text-[14px] text-[#3a4a41] transition hover:border-[#2f9e5e] hover:text-[#14603d]";
+    "inline-flex items-center gap-2 rounded-xl border border-[#CFE0DC] bg-white px-3 py-2 text-[14px] text-[#3F5452] transition hover:border-[#1EB49F] hover:text-[#0F7F70]";
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label={`Instagram @${INSTAGRAM}`} className={base}>

@@ -51,6 +51,9 @@ const config: Config = {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+        // Site público (manual da marca): Nunito para texto/títulos, Comfortaa Bold para destaques.
+        corpo: ["var(--font-nunito)", "ui-sans-serif", "system-ui", "sans-serif"],
+        destaque: ["var(--font-comfortaa)", "var(--font-nunito)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
         "2xl": "1.1rem",

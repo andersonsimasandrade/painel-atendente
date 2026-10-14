@@ -5,13 +5,14 @@
 export const SITE_HOST = "andersonandradefisio.com.br";
 export const SITE_URL = `https://${SITE_HOST}`;
 
-export const MARCA = "Anderson Andrade Fisio";
+export const MARCA = "Anderson Andrade | Fisioterapia e Terapia Manual";
+export const SLOGAN = "Movimento com cuidado. Saúde com atenção.";
 export const PROFISSIONAL = "Anderson Simas Andrade";
 export const CREFITO = "CREFITO-10 nº 89456-F";
 export const INSTAGRAM = "andersonandrade_fisio";
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM}/`;
 /** Página do Facebook. Preencha com o endereço completo (https://www.facebook.com/...) e o ícone aparece no site. */
-export const FACEBOOK_URL = "";
+export const FACEBOOK_URL = "https://www.facebook.com/andersonandradefisio";
 
 /** Quem atende no WhatsApp do site: o robô (assistente virtual) e, depois, o Anderson.
  *  Em 12/10/2026 o número do robô foi banido e o site passou a usar o WhatsApp

@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 export default function AgendarPage() {
   return (
     <section className="mx-auto max-w-2xl px-4 pb-6 pt-10 sm:px-6 sm:pt-16">
-      <h1 className="font-display text-[30px] font-semibold leading-tight tracking-tight text-[#16351f] sm:text-[40px]">
+      <h1 className="font-destaque font-bold text-[30px] font-semibold leading-tight tracking-tight text-[#354746] sm:text-[40px]">
         Agende a sua avaliação
       </h1>
-      <p className="mt-3 text-[16px] leading-relaxed text-[#4b5b51]">
+      <p className="mt-3 text-[16px] leading-relaxed text-[#4A5F5D]">
         Diga o consultório e os dias que ficam melhores. A conversa continua no WhatsApp e o Anderson confirma
         o horário com você. {HORARIO_TEXTO}.
       </p>

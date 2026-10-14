@@ -30,12 +30,12 @@ function Chip({
       onClick={onClick}
       className={`rounded-xl border px-4 py-3 text-left text-[15px] transition ${
         ativo
-          ? "border-[#2f9e5e] bg-[#e7f4ec] font-semibold text-[#14603d]"
-          : "border-[#ddd6c9] bg-white text-[#3a4a41] hover:border-[#2f9e5e]/60"
+          ? "border-[#1EB49F] bg-[#E3F6F3] font-semibold text-[#0F7F70]"
+          : "border-[#CFE0DC] bg-white text-[#3F5452] hover:border-[#1EB49F]/60"
       }`}
     >
       <span className="block">{children}</span>
-      {detalhe ? <span className="block text-[12.5px] font-normal text-[#6b7a71]">{detalhe}</span> : null}
+      {detalhe ? <span className="block text-[12.5px] font-normal text-[#5E7371]">{detalhe}</span> : null}
     </button>
   );
 }
@@ -83,14 +83,14 @@ export function FormAgendar() {
 
   if (link) {
     return (
-      <div className="rounded-2xl border border-[#cfe6d6] bg-[#eef8f1] p-6 text-center">
-        <p className="font-display text-[20px] font-semibold text-[#14603d]">Tudo certo!</p>
-        <p className="mt-2 text-[15px] text-[#3a4a41]">
+      <div className="rounded-2xl border border-[#BFE8E1] bg-[#EAF8F6] p-6 text-center">
+        <p className="font-destaque font-bold text-[20px] font-semibold text-[#0F7F70]">Tudo certo!</p>
+        <p className="mt-2 text-[15px] text-[#3F5452]">
           Se o WhatsApp não abriu sozinho, toque no botão abaixo e envie a mensagem que já está pronta.
         </p>
         <a
           href={link}
-          className="mt-5 inline-flex rounded-2xl bg-[#2f9e5e] px-7 py-4 text-[16px] font-semibold text-white hover:bg-[#278a50]"
+          className="mt-5 inline-flex rounded-2xl bg-[#0F7F70] px-7 py-4 text-[16px] font-semibold text-white hover:bg-[#0B6B5E]"
         >
           Abrir o WhatsApp
         </a>
@@ -107,7 +107,7 @@ export function FormAgendar() {
       className="space-y-8"
     >
       <fieldset>
-        <legend className="text-[17px] font-semibold text-[#16351f]">Qual consultório fica melhor?</legend>
+        <legend className="text-[17px] font-semibold text-[#354746]">Qual consultório fica melhor?</legend>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {OPCOES_CONS.map((o) => (
             <Chip key={o.id} ativo={cons === o.id} onClick={() => setCons(o.id)} detalhe={o.linha}>
@@ -118,8 +118,8 @@ export function FormAgendar() {
       </fieldset>
 
       <fieldset>
-        <legend className="text-[17px] font-semibold text-[#16351f]">Quais dias você pode?</legend>
-        <p className="mt-1 text-[13.5px] text-[#6b7a71]">Pode marcar mais de um. Atendemos de segunda a sexta.</p>
+        <legend className="text-[17px] font-semibold text-[#354746]">Quais dias você pode?</legend>
+        <p className="mt-1 text-[13.5px] text-[#5E7371]">Pode marcar mais de um. Atendemos de segunda a sexta.</p>
         <div className="mt-3 flex flex-wrap gap-3">
           {DIAS.map((d) => (
             <Chip key={d.id} ativo={dias.includes(d.id)} onClick={() => alterna(dias, setDias, d.id)}>
@@ -130,7 +130,7 @@ export function FormAgendar() {
       </fieldset>
 
       <fieldset>
-        <legend className="text-[17px] font-semibold text-[#16351f]">Em que período?</legend>
+        <legend className="text-[17px] font-semibold text-[#354746]">Em que período?</legend>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {PERIODOS.map((p) => (
             <Chip
@@ -163,7 +163,7 @@ export function FormAgendar() {
         <button
           type="submit"
           disabled={enviando}
-          className="inline-flex items-center justify-center rounded-2xl bg-[#2f9e5e] px-7 py-4 text-[17px] font-semibold text-white shadow-md transition hover:bg-[#278a50] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-2xl bg-[#0F7F70] px-7 py-4 text-[17px] font-semibold text-white shadow-md transition hover:bg-[#0B6B5E] disabled:opacity-60"
         >
           {enviando ? "Abrindo o WhatsApp…" : "Continuar no WhatsApp"}
         </button>
@@ -171,13 +171,13 @@ export function FormAgendar() {
           type="button"
           disabled={enviando}
           onClick={() => void enviar(true)}
-          className="text-[14px] text-[#4b5b51] underline underline-offset-2 hover:text-[#16351f]"
+          className="text-[14px] text-[#4A5F5D] underline underline-offset-2 hover:text-[#354746]"
         >
           Prefiro só abrir a conversa
         </button>
       </div>
 
-      <p className="text-[12.5px] leading-relaxed text-[#6b7a71]">
+      <p className="text-[12.5px] leading-relaxed text-[#5E7371]">
         Ao continuar, você abre uma conversa no WhatsApp com a nossa equipe. Não pedimos nenhum dado de saúde
         neste site. Veja como tratamos os seus dados na página de{" "}
         <a href="/privacidade" className="underline">

@@ -23,15 +23,19 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Quais técnicas são usadas?",
-    a: "Terapia manual, osteopatia, quiropraxia e mobilização articular, conforme o que a avaliação indicar.",
+    a: "Terapia manual com osteopatia, quiropraxia, conceito Maitland, conceito Mulligan, Kabat/FNP e terapia craniossacral, conforme o que a avaliação indicar.",
   },
   {
     q: "Quem pode ser atendido?",
     a: "Adultos, idosos e gestantes. Crianças também, desde que um responsável esteja presente durante toda a sessão.",
   },
   {
-    q: "Quais as formas de pagamento? Vocês atendem por convênio?",
-    a: "O atendimento é particular, sem convênio. O pagamento é por Pix ou em dinheiro. O valor é informado no atendimento pelo WhatsApp.",
+    q: "Qual o valor da consulta? Quais as formas de pagamento?",
+    a: "A consulta particular custa R$ 250,00. O atendimento é particular, sem convênio, e o pagamento é por Pix ou em dinheiro.",
+  },
+  {
+    q: "Vocês fazem atendimento domiciliar?",
+    a: "Sim, mediante consulta. O atendimento domiciliar custa R$ 350,00, mais o deslocamento, que varia conforme a distância. Combine pelo WhatsApp.",
   },
   {
     q: "Vocês dão recibo?",
@@ -60,23 +64,23 @@ export default function Duvidas() {
   return (
     <section className="mx-auto max-w-3xl px-4 pb-6 pt-10 sm:px-6 sm:pt-16">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <h1 className="font-display text-[30px] font-semibold leading-tight tracking-tight text-[#16351f] sm:text-[40px]">
+      <h1 className="font-destaque font-bold text-[30px] font-semibold leading-tight tracking-tight text-[#354746] sm:text-[40px]">
         Dúvidas frequentes
       </h1>
       <div className="mt-8 space-y-3">
         {FAQ.map((f) => (
-          <details key={f.q} className="group rounded-2xl border border-[#e8e2d8] bg-white p-5 open:shadow-sm">
-            <summary className="cursor-pointer list-none text-[16.5px] font-semibold text-[#16351f] marker:hidden">
+          <details key={f.q} className="group rounded-2xl border border-[#DCE8E5] bg-white p-5 open:shadow-sm">
+            <summary className="cursor-pointer list-none text-[16.5px] font-semibold text-[#354746] marker:hidden">
               {f.q}
             </summary>
-            <p className="mt-3 text-[15.5px] leading-relaxed text-[#4b5b51]">{f.a}</p>
+            <p className="mt-3 text-[15.5px] leading-relaxed text-[#4A5F5D]">{f.a}</p>
           </details>
         ))}
       </div>
       <div className="mt-10">
         <Link
           href="/agendar"
-          className="inline-flex items-center justify-center rounded-2xl bg-[#2f9e5e] px-7 py-4 text-[16px] font-semibold text-white shadow-md transition hover:bg-[#278a50]"
+          className="inline-flex items-center justify-center rounded-2xl bg-[#0F7F70] px-7 py-4 text-[16px] font-semibold text-white shadow-md transition hover:bg-[#0B6B5E]"
         >
           Agendar pelo WhatsApp
         </Link>
