@@ -53,6 +53,21 @@ function dentroDoExpediente(hb: HorarioBot | null, agora: Date): boolean {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Diário da rotina (tabela cron_log): uma linha por execução, para saber o que ela decidiu.
+async function diario(resumo: Record<string, unknown>) {
+  try {
+    const supabase = getClient();
+    await supabase.from("cron_log").insert({ rota: "lembrete-qualificando", resumo });
+    await supabase
+      .from("cron_log")
+      .delete()
+      .eq("rota", "lembrete-qualificando")
+      .lt("criado_em", new Date(Date.now() - 7 * 86400000).toISOString());
+  } catch (e) {
+    console.error("[cron/lembrete-qualificando] cron_log:", e);
+  }
+}
+
 type Msg = { type: string | null; sent_by: string | null; created_at: string };
 
 async function handler(req: Request) {
@@ -66,6 +81,7 @@ async function handler(req: Request) {
   const agora = new Date();
   const config = await getPainelConfig();
   if (!dentroDoExpediente(config.horario_bot, agora)) {
+    await diario({ enviados: 0, motivo: "fora do expediente" });
     return NextResponse.json({ ok: true, enviados: 0, motivo: "fora do expediente" });
   }
 
@@ -82,7 +98,10 @@ async function handler(req: Request) {
     .lte("ultima_interacao", ate)
     .order("ultima_interacao", { ascending: true })
     .limit(15);
-  if (cRes.error) return NextResponse.json({ ok: false, error: cRes.error.message }, { status: 500 });
+  if (cRes.error) {
+    await diario({ erro: cRes.error.message });
+    return NextResponse.json({ ok: false, error: cRes.error.message }, { status: 500 });
+  }
   const candidatos = (cRes.data ?? []) as {
     telefone: string;
     nome: string | null;
@@ -134,7 +153,7 @@ async function handler(req: Request) {
     if (!env.ok) {
       // Não conseguiu enviar: devolve a vez (tenta no próximo tique).
       await supabase.from("ff_contatos").update({ followup_count: 0, last_followup: null }).eq("telefone", c.telefone);
-      pula("falha no envio");
+      pula(`falha no envio: ${(env.error ?? "sem detalhe").slice(0, 120)}`);
       continue;
     }
     enviados++;
@@ -156,6 +175,7 @@ async function handler(req: Request) {
     if (enviados < 3) await sleep(1500);
   }
 
+  await diario({ enviados, candidatos: candidatos.length, motivos });
   return NextResponse.json({ ok: true, enviados, candidatos: candidatos.length, motivos });
 }
 
