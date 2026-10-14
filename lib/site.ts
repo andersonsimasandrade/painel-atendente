@@ -11,11 +11,13 @@ export const CREFITO = "CREFITO-10 nº 89456-F";
 export const INSTAGRAM = "andersonandrade_fisio";
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM}/`;
 
-/** Quem atende no WhatsApp do site HOJE: o próprio Anderson, direto no número
- *  dele, sem robô (o número do robô foi banido em 12/10/2026). Quando o robô
- *  voltar: ASSISTENTE_ATIVO = true e WHATSAPP_PADRAO = número do robô. */
-export const ASSISTENTE_ATIVO = false;
-export const WHATSAPP_PADRAO = "5548984223242";
+/** Quem atende no WhatsApp do site: o robô (assistente virtual) e, depois, o Anderson.
+ *  Em 12/10/2026 o número do robô foi banido e o site passou a usar o WhatsApp
+ *  pessoal do Anderson (ASSISTENTE_ATIVO = false, WHATSAPP_PADRAO = 5548984223242).
+ *  Em 14/10/2026 o número do robô foi recuperado: voltou ao robô. Para repetir o
+ *  plano B, inverta os dois valores. */
+export const ASSISTENTE_ATIVO = true;
+export const WHATSAPP_PADRAO = "554899730494";
 
 /** Número do WhatsApp do site. Só dígitos, com DDI. SITE_WHATSAPP (env) sobrepõe. */
 export function whatsappNumero(): string {
