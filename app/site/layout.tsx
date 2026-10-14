@@ -4,6 +4,7 @@ import {
   CONSULTORIOS,
   CREFITO,
   HORARIO_TEXTO,
+  FACEBOOK_URL,
   INSTAGRAM,
   INSTAGRAM_URL,
   MARCA,
@@ -11,6 +12,7 @@ import {
   SITE_URL,
 } from "@/lib/site";
 import { CapturaOrigem } from "@/components/site/CapturaOrigem";
+import { RedesSociais } from "@/components/site/RedesSociais";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -43,7 +45,7 @@ function jsonLd() {
     url: SITE_URL,
     description:
       "Fisioterapia individual com terapia manual, osteopatia e quiropraxia, em Florianópolis.",
-    sameAs: [INSTAGRAM_URL],
+    sameAs: [INSTAGRAM_URL, ...(FACEBOOK_URL ? [FACEBOOK_URL] : [])],
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
@@ -128,6 +130,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <p className="mt-2">{PROFISSIONAL}</p>
             <p>Fisioterapeuta · {CREFITO}</p>
             <p className="mt-2">{HORARIO_TEXTO}</p>
+            <p className="mt-4 font-semibold text-[#16351f]">Redes sociais</p>
+            <RedesSociais comTexto className="mt-2" />
           </div>
           <div>
             <p className="font-semibold text-[#16351f]">Consultórios</p>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RedesSociais } from "@/components/site/RedesSociais";
 import { ASSISTENTE_ATIVO, CONSULTORIOS, CREFITO, HORARIO_TEXTO, PROFISSIONAL } from "@/lib/site";
 
 export const dynamic = "force-static";
@@ -231,6 +232,12 @@ export default function Home() {
           <strong className="text-[#16351f]">{PROFISSIONAL}</strong>, fisioterapeuta, atendendo em
           Florianópolis. Registro profissional: {CREFITO}.
         </p>
+      </section>
+
+      {/* REDES */}
+      <section className="mx-auto max-w-5xl px-4 pb-10 sm:px-6">
+        <p className="text-[15px] font-semibold text-[#16351f]">Acompanhe também nas redes</p>
+        <RedesSociais comTexto className="mt-3" />
       </section>
 
       {/* CTA FINAL */}

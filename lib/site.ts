@@ -10,6 +10,8 @@ export const PROFISSIONAL = "Anderson Simas Andrade";
 export const CREFITO = "CREFITO-10 nº 89456-F";
 export const INSTAGRAM = "andersonandrade_fisio";
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM}/`;
+/** Página do Facebook. Preencha com o endereço completo (https://www.facebook.com/...) e o ícone aparece no site. */
+export const FACEBOOK_URL = "";
 
 /** Quem atende no WhatsApp do site: o robô (assistente virtual) e, depois, o Anderson.
  *  Em 12/10/2026 o número do robô foi banido e o site passou a usar o WhatsApp
