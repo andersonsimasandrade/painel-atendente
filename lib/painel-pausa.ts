@@ -47,6 +47,10 @@ export async function lerPausaWebhook(
     // A chave é um CONTADOR com validade de 24h: existir já significa pausado.
     // Some sozinha quando a pausa expira, então não há estado velho pra limpar.
     const bruto = j.pausado;
+    // O webhook devolve booleano (true/false) ou o valor cru da chave. "false"/0 significam NÃO pausado.
+    if (bruto === false || bruto === 0 || String(bruto).toLowerCase() === "false" || String(bruto) === "0") {
+      return { pausado: false };
+    }
     return { pausado: bruto !== null && bruto !== undefined && String(bruto) !== "" };
   } catch (e) {
     return {
