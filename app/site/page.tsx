@@ -168,8 +168,8 @@ export default function Home() {
       <section className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
         <h2 className="text-[26px] font-semibold tracking-tight text-[#354746] sm:text-[32px]">Sobre o profissional</h2>
         <p className="mt-4 max-w-3xl text-[16.5px] leading-relaxed text-[#4A5F5D]">
-          <strong className="text-[#354746]">{PROFISSIONAL}</strong> é fisioterapeuta e atende em Florianópolis de
-          forma individualizada. Integra recursos de fisioterapia e terapia manual, selecionados conforme a avaliação
+          <strong className="text-[#354746]">{PROFISSIONAL}</strong> é fisioterapeuta, com atuação em fisioterapia desde
+          2005, e atende em Florianópolis de forma individualizada. Integra recursos de fisioterapia e terapia manual, selecionados conforme a avaliação
           e as necessidades de cada paciente, com escuta, atenção e um plano pensado para a sua rotina. Registro
           profissional: {CREFITO}.
         </p>
