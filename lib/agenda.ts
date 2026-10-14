@@ -102,6 +102,7 @@ export type AgendamentoLembrete = {
   data_hora: string;
   instancia: string;
   vendedor_nome: string;
+  local: string | null;
 };
 
 type VendRow = { id: string; nome: string; slug: string; instancia_whatsapp: string };
@@ -114,6 +115,7 @@ type AgRow = {
   origem: string | null;
   lembrete_enviado_em: string | null;
   vendedor_id: string;
+  local?: string | null;
 };
 
 /** Consultores ativos (p/ o filtro do admin). Vazio em erro — fail-safe. */
@@ -215,7 +217,7 @@ export async function getAgendamentosParaLembrete(): Promise<AgendamentoLembrete
     const [res, vmap] = await Promise.all([
       s
         .from("agendamentos")
-        .select("id, telefone_lead, nome_lead, data_hora, vendedor_id")
+        .select("id, telefone_lead, nome_lead, data_hora, vendedor_id, local")
         .in("status", ["agendado", "confirmado"])
         .is("lembrete_enviado_em", null)
         .gte("data_hora", agoraISO)
@@ -233,6 +235,7 @@ export async function getAgendamentosParaLembrete(): Promise<AgendamentoLembrete
           data_hora: r.data_hora,
           instancia: v?.instancia_whatsapp ?? "",
           vendedor_nome: v?.nome ?? "",
+          local: r.local ?? null,
         };
       })
       .filter((r) => r.instancia); // sem instância não dá p/ enviar
@@ -260,6 +263,7 @@ export async function criarAgendamento(a: {
   nome: string | null;
   dataHora: string;
   origem: string;
+  local?: string | null;
 }): Promise<{ ok: true; id: string } | { ok: false; conflito?: boolean; error: string }> {
   try {
     const s = getClient();
@@ -272,6 +276,7 @@ export async function criarAgendamento(a: {
         data_hora: a.dataHora,
         status: "agendado",
         origem: a.origem,
+        local: a.local ?? null,
       })
       .select("id");
     if (res.error) {
@@ -281,5 +286,55 @@ export async function criarAgendamento(a: {
     return { ok: true, id: (res.data?.[0] as { id: string })?.id ?? "" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao gravar." };
+  }
+}
+
+export type AgendamentoSync = {
+  id: string;
+  telefone: string;
+  nome: string | null;
+  data_hora: string;
+  duracao_min: number;
+  local: string | null;
+  status: string;
+  origem: string | null;
+};
+
+/** Agendamentos para o Google Agenda: de 8 dias atrás a 120 dias à frente, INCLUSIVE
+ *  os cancelados (o script do Google usa isso para apagar o evento). */
+export async function listarParaSync(): Promise<AgendamentoSync[]> {
+  try {
+    const desde = new Date(Date.now() - 8 * 86400000).toISOString();
+    const ate = new Date(Date.now() + 120 * 86400000).toISOString();
+    const res = await getClient()
+      .from("agendamentos")
+      .select("id, telefone_lead, nome_lead, data_hora, duracao_min, local, status, origem")
+      .gte("data_hora", desde)
+      .lte("data_hora", ate)
+      .order("data_hora", { ascending: true })
+      .limit(1000);
+    if (res.error || !res.data) return [];
+    return (res.data as unknown as {
+      id: string;
+      telefone_lead: string;
+      nome_lead: string | null;
+      data_hora: string;
+      duracao_min: number | null;
+      local: string | null;
+      status: string;
+      origem: string | null;
+    }[]).map((r) => ({
+      id: r.id,
+      telefone: r.telefone_lead,
+      nome: r.nome_lead,
+      data_hora: r.data_hora,
+      duracao_min: r.duracao_min ?? 60,
+      local: r.local,
+      status: r.status,
+      origem: r.origem,
+    }));
+  } catch (e) {
+    console.error("[listarParaSync]", e);
+    return [];
   }
 }

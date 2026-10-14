@@ -28,7 +28,7 @@ async function handler(req: Request) {
   let enviados = 0;
   for (let i = 0; i < due.length; i++) {
     const a = due[i];
-    const texto = mensagemLembrete(a.vendedor_nome, a.nome_lead, a.data_hora);
+    const texto = mensagemLembrete(a.vendedor_nome, a.nome_lead, a.data_hora, a.local);
     const env = await enviarTextoInstancia(a.instancia, a.telefone_lead, texto);
     if (env.ok) {
       enviados++;
@@ -41,7 +41,7 @@ async function handler(req: Request) {
             session_id: a.telefone_lead,
             message: {
               type: "ai",
-              content: `⏰ Lembrete da reunião das ${horaSP(a.data_hora)} enviado.`,
+              content: `⏰ Lembrete da avaliação das ${horaSP(a.data_hora)} enviado.`,
               tool_calls: [],
               additional_kwargs: { via: "sistema" },
               response_metadata: {},

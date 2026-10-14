@@ -27,16 +27,23 @@ export function selecionarLembretes<T extends { data_hora: string }>(
   });
 }
 
-// Mensagem "como se fosse o vendedor", pra aumentar a taxa de presença.
+const LUGAR: Record<string, string> = {
+  capoeiras: " no consultório de Capoeiras (Rua Joaquim Carneiro, 207, dentro da Estética Arlete)",
+  centro: " no consultório do Centro (R. Altamiro Guimarães, 190, Sala 06, Espaço Beira Mar)",
+};
+
+// Lembrete da avaliação de fisioterapia (~3h antes). Tom da marca: acolhedor e claro.
 export function mensagemLembrete(
-  vendedorNome: string,
+  _vendedorNome: string,
   nomeLead: string | null,
   iso: string,
+  local?: string | null,
 ): string {
   const primeiro = nomeLead ? nomeLead.trim().split(/\s+/)[0] : "";
   const hora = horaSP(iso);
+  const lugar = (local && LUGAR[local]) || "";
   return (
-    `*${vendedorNome}:*\nOi${primeiro ? " " + primeiro : ""}! Passando pra confirmar nossa reunião de hoje às *${hora}* 😊 ` +
-    `Tá tudo certo por aí? Qualquer coisa é só me chamar. Até já! 👊`
+    `Olá${primeiro ? ", " + primeiro : ""}! Passando para lembrar da sua avaliação de hoje, às *${hora}*${lugar}. 😊\n\n` +
+    `Se tiver exames, leve para o atendimento. Qualquer imprevisto, é só avisar por aqui. Até logo!`
   );
 }
