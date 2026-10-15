@@ -27,7 +27,7 @@ const HORAS_MAX = 36;
 
 const TEXTO =
   "Oi{nome}! Passando para ver se ficou alguma dúvida 🙂\n\n" +
-  "Se quiser agendar a sua avaliação, é só me dizer quais dias e horários ficam melhores para você " +
+  "Se quiser agendar a sua sessão, é só me dizer quais dias e horários ficam melhores para você " +
   "(e, se puder, uma segunda opção). Aí eu passo para o Anderson confirmar com você.";
 
 const NOME_LIXO = new Set([

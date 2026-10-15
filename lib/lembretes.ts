@@ -32,7 +32,7 @@ const LUGAR: Record<string, string> = {
   centro: " no consultório do Centro (R. Altamiro Guimarães, 190, Sala 06, Espaço Beira Mar)",
 };
 
-// Lembrete da avaliação de fisioterapia (~3h antes). Tom da marca: acolhedor e claro.
+// Lembrete da sessão de fisioterapia (~3h antes). Tom da marca: acolhedor e claro.
 export function mensagemLembrete(
   _vendedorNome: string,
   nomeLead: string | null,
@@ -43,7 +43,7 @@ export function mensagemLembrete(
   const hora = horaSP(iso);
   const lugar = (local && LUGAR[local]) || "";
   return (
-    `Olá${primeiro ? ", " + primeiro : ""}! Passando para lembrar da sua avaliação de hoje, às *${hora}*${lugar}. 😊\n\n` +
+    `Olá${primeiro ? ", " + primeiro : ""}! Passando para lembrar da sua sessão de hoje, às *${hora}*${lugar}. 😊\n\n` +
     `Se tiver exames, leve para o atendimento. Qualquer imprevisto, é só avisar por aqui. Até logo!`
   );
 }

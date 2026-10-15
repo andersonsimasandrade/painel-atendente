@@ -113,7 +113,7 @@ export async function POST(req: Request) {
   }
 
   // Mensagem que o paciente vai enviar. O código fica no fim, entre parênteses.
-  const partes: string[] = ["Olá! Vim pelo site e quero agendar uma avaliação de fisioterapia."];
+  const partes: string[] = ["Olá! Vim pelo site e quero agendar uma sessão de fisioterapia."];
   partes.push(
     consultorio === "qualquer"
       ? "Consultório: tanto faz (Capoeiras ou Centro)."

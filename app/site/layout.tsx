@@ -21,7 +21,7 @@ const comfortaa = Comfortaa({ subsets: ["latin"], weight: ["700"], variable: "--
 
 const TITULO = "Fisioterapia e Terapia Manual em Florianópolis | Anderson Andrade";
 const DESCRICAO =
-  "Fisioterapia para dores na coluna, cervical e lombar em Florianópolis. Atendimento individualizado com terapia manual e avaliação fisioterapêutica, em Capoeiras e no Centro. Agende sua avaliação.";
+  "Fisioterapia para dores na coluna, cervical e lombar em Florianópolis. Atendimento individualizado com terapia manual: avaliação e tratamento na mesma sessão, em Capoeiras e no Centro. Agende sua sessão.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -175,7 +175,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <ul className="mt-2 space-y-1.5">
               <li>
                 <Link href="/agendar" className="underline-offset-2 hover:underline">
-                  Agende sua avaliação
+                  Agende sua sessão
                 </Link>
               </li>
               <li>

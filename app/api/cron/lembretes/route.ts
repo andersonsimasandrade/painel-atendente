@@ -41,7 +41,7 @@ async function handler(req: Request) {
             session_id: a.telefone_lead,
             message: {
               type: "ai",
-              content: `⏰ Lembrete da avaliação das ${horaSP(a.data_hora)} enviado.`,
+              content: `⏰ Lembrete da sessão das ${horaSP(a.data_hora)} enviado.`,
               tool_calls: [],
               additional_kwargs: { via: "sistema" },
               response_metadata: {},

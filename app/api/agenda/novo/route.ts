@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // POST /api/agenda/novo { telefone, nome, data (YYYY-MM-DD), hora (HH:MM), local, confirmar }
-// O Anderson marca a avaliação depois de combinar o horário com o paciente.
+// O Anderson marca a sessão depois de combinar o horário com o paciente.
 // Só quem está logado no painel chama (o middleware exige sessão).
 export async function POST(req: Request) {
   const sess = await getSessao();
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   });
   if (!criado.ok) {
     return NextResponse.json(
-      { ok: false, error: criado.conflito ? "Já existe uma avaliação nesse horário." : "Não consegui gravar." },
+      { ok: false, error: criado.conflito ? "Já existe uma sessão nesse horário." : "Não consegui gravar." },
       { status: criado.conflito ? 409 : 500 },
     );
   }
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
   if (confirmar) {
     const primeiro = nome ? nome.split(" ")[0] : "";
     const texto =
-      `Olá${primeiro ? ", " + primeiro : ""}! Sua avaliação está agendada para *${quando}*, no ${cons.nome}.\n` +
+      `Olá${primeiro ? ", " + primeiro : ""}! Sua sessão está agendada para *${quando}*, no ${cons.nome}.\n` +
       `📍 ${cons.linhaEndereco}\n\n` +
       `Se tiver exames, leve para o atendimento, e use roupa confortável e folgada. ` +
       `Para remarcar, avise com 48 horas de antecedência. Até lá! 😊`;
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         session_id: telefone,
         message: {
           type: "ai",
-          content: `📅 Avaliação agendada: ${quando} (${cons.bairro}).`,
+          content: `📅 Sessão agendada: ${quando} (${cons.bairro}).`,
           tool_calls: [],
           additional_kwargs: { via: "sistema" },
           response_metadata: {},

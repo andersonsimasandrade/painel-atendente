@@ -6,7 +6,7 @@ import { CONSULTORIOS } from "@/lib/site";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/agenda/sync — lista as avaliações para o Google Agenda.
+// GET /api/agenda/sync — lista as sessões para o Google Agenda.
 // Quem chama é um Apps Script na conta Google do Anderson, a cada poucos minutos.
 // Autenticação: Authorization: Bearer <AGENDA_SYNC_TOKEN> (sem a variável, recusa tudo).
 function ok(req: Request): boolean {

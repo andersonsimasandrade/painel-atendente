@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const FAQ: { q: string; a: string }[] = [
   {
     q: "Como funciona a primeira sessão?",
-    a: "Dura 60 minutos e é individual. A avaliação e o tratamento acontecem no mesmo encontro, a partir do que o exame indicar. O tratamento depende de cada pessoa e não há promessa de resultado.",
+    a: "Dura 60 minutos e é individual. Em cada sessão o fisioterapeuta avalia o seu quadro e aplica as técnicas indicadas, a partir do que o exame indicar. O tratamento depende de cada pessoa e não há promessa de resultado.",
   },
   {
     q: "Preciso de pedido médico?",

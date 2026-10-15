@@ -98,7 +98,7 @@ export default function Home() {
     {
       n: "3",
       t: "O Anderson confirma o horário",
-      d: "Ele confere a agenda e a sala e confirma com você o dia e a hora da sua avaliação.",
+      d: "Ele confere a agenda e a sala e confirma com você o dia e a hora da sua sessão.",
     },
   ];
 
@@ -112,12 +112,12 @@ export default function Home() {
             Fisioterapia para dores na coluna, cervical e lombar em Florianópolis.
           </h1>
           <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-[#4A5F5D] sm:text-[19px]">
-            Atendimento individualizado com terapia manual e avaliação fisioterapêutica. A avaliação e o tratamento
-            acontecem na mesma sessão, em Capoeiras e no Centro, com hora marcada.
+            Atendimento individualizado com terapia manual. Cada sessão reúne a avaliação do seu quadro e a aplicação
+            das técnicas, em Capoeiras e no Centro, com hora marcada.
           </p>
           <div className="mt-8 flex flex-col items-start gap-2">
             <Link href="/agendar" className={BTN}>
-              Agende sua avaliação
+              Agende sua sessão
             </Link>
             <span className="text-[13px] text-[#5E7371]">Sem formulário de saúde. A conversa acontece no WhatsApp.</span>
           </div>
@@ -206,17 +206,17 @@ export default function Home() {
         <p className="mt-3 text-[12px] text-[#5E7371]">Imagens ilustrativas.</p>
       </section>
 
-      {/* 5. COMO FUNCIONA A AVALIAÇÃO */}
+      {/* 5. COMO FUNCIONA A SESSÃO */}
       <section className="border-y border-[#DCE8E5] bg-white/70">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
           <h2 className="text-[26px] font-semibold tracking-tight text-[#354746] sm:text-[32px]">
-            Como funciona a avaliação
+            Como funciona a sessão
           </h2>
           <div className="mt-8 grid gap-10 sm:grid-cols-2">
             <div>
               <p className="text-[16px] leading-relaxed text-[#4A5F5D]">
                 Cada sessão dura 60 minutos e é individual: você é atendido do começo ao fim pelo próprio
-                fisioterapeuta. Na primeira vez, a avaliação e o tratamento acontecem no mesmo encontro, a partir do
+                fisioterapeuta. Em cada sessão o fisioterapeuta avalia o seu quadro e aplica as técnicas indicadas, a partir do
                 que o exame mostrar. O tratamento indicado depende de cada pessoa e não há promessa de resultado.
               </p>
               <p className="mt-4 text-[16px] leading-relaxed text-[#4A5F5D]">
@@ -291,7 +291,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-5xl px-4 pb-4 pt-6 sm:px-6">
         <div className="rounded-3xl bg-[#354746] px-6 py-10 text-white sm:px-10">
-          <h2 className="text-[26px] font-semibold tracking-tight sm:text-[32px]">Pronto para agendar a sua avaliação?</h2>
+          <h2 className="text-[26px] font-semibold tracking-tight sm:text-[32px]">Pronto para agendar a sua sessão?</h2>
           <p className="mt-3 max-w-xl text-[16px] text-white/85">
             Escolha o consultório e os dias que ficam melhores. O Anderson confirma o horário com você pelo WhatsApp.
           </p>
@@ -299,7 +299,7 @@ export default function Home() {
             href="/agendar"
             className="mt-6 inline-flex rounded-2xl bg-white px-7 py-4 text-[16px] font-bold text-[#0F7F70] transition hover:bg-[#E3F6F3]"
           >
-            Agende sua avaliação
+            Agende sua sessão
           </Link>
         </div>
       </section>

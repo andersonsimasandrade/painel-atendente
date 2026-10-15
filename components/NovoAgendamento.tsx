@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PhoneField } from "./PhoneField";
 
-// O Anderson marca a avaliação aqui depois de combinar o horário com o paciente.
+// O Anderson marca a sessão aqui depois de combinar o horário com o paciente.
 // Grava na agenda do painel, atualiza o funil e (opcional) confirma pelo WhatsApp.
 // A agenda do Google é sincronizada por um script, em poucos minutos.
 export function NovoAgendamento() {
@@ -38,7 +38,7 @@ export function NovoAgendamento() {
         return;
       }
       setOk(
-        `Avaliação marcada: ${d.quando}.` +
+        `Sessão marcada: ${d.quando}.` +
           (confirmar ? (d.confirmado ? " Confirmação enviada ao paciente." : " (A confirmação por WhatsApp não saiu.)") : ""),
       );
       setTelefone("");
@@ -61,7 +61,7 @@ export function NovoAgendamento() {
     <div className="rounded-2xl border border-line bg-white/[0.02] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-[14px] font-semibold text-ink">Marcar avaliação</h3>
+          <h3 className="text-[14px] font-semibold text-ink">Marcar sessão</h3>
           <p className="text-[12px] text-ink-muted">
             Depois de combinar dia e horário com o paciente. Vai para a agenda e para o Google Agenda.
           </p>
@@ -72,7 +72,7 @@ export function NovoAgendamento() {
             onClick={() => setAberto(true)}
             className="rounded-lg bg-brand px-3.5 py-2 text-[12.5px] font-semibold text-[#04140d] transition hover:bg-brand-bright"
           >
-            Nova avaliação
+            Nova sessão
           </button>
         )}
       </div>
@@ -117,7 +117,7 @@ export function NovoAgendamento() {
               disabled={!pronto || enviando}
               className="rounded-xl bg-brand px-4 py-2.5 text-[13px] font-semibold text-[#04140d] transition hover:bg-brand-bright disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {enviando ? "Marcando…" : "Marcar avaliação"}
+              {enviando ? "Marcando…" : "Marcar sessão"}
             </button>
             <button
               type="button"
