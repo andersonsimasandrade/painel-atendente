@@ -60,15 +60,15 @@ const TECNICAS = [
   },
   {
     nome: "Conceito Mulligan",
-    img: null,
-    alt: "",
+    img: "/img/mulligan.webp",
+    alt: "Ilustração do conceito Mulligan: fisioterapeuta mobiliza o ombro enquanto a pessoa eleva o braço",
     texto:
       "Mobilização com movimento: o fisioterapeuta mobiliza a articulação enquanto a pessoa realiza um movimento ativo. Usado em limitações e dores de movimento, conforme a avaliação.",
   },
   {
     nome: "Kabat / FNP",
-    img: null,
-    alt: "",
+    img: "/img/kabat.webp",
+    alt: "Ilustração de Kabat/FNP: fisioterapeuta aplica resistência manual ao movimento do braço",
     texto:
       "Facilitação neuromuscular proprioceptiva: padrões de movimento com resistência manual para trabalhar força, coordenação e mobilidade, conforme a avaliação.",
   },
