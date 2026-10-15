@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Comfortaa, Nunito } from "next/font/google";
+import localFont from "next/font/local";
 import {
   CONSULTORIOS,
   CREFITO,
@@ -16,8 +16,16 @@ import { CapturaOrigem } from "@/components/site/CapturaOrigem";
 import { RedesSociais } from "@/components/site/RedesSociais";
 
 // Tipografia do manual da marca: Nunito (títulos e texto) e Comfortaa Bold (destaques).
-const nunito = Nunito({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--font-nunito", display: "swap" });
-const comfortaa = Comfortaa({ subsets: ["latin"], weight: ["700"], variable: "--font-comfortaa", display: "swap" });
+const nunito = localFont({
+  src: [{ path: "../fonts/Nunito.woff2", weight: "400 700", style: "normal" }],
+  variable: "--font-nunito",
+  display: "swap",
+});
+const comfortaa = localFont({
+  src: [{ path: "../fonts/Comfortaa.woff2", weight: "700", style: "normal" }],
+  variable: "--font-comfortaa",
+  display: "swap",
+});
 
 const TITULO = "Fisioterapia e Terapia Manual em Florianópolis | Anderson Andrade";
 const DESCRICAO =

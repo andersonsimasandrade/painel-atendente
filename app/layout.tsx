@@ -1,24 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Fontes servidas pelo próprio projeto (variáveis, subconjunto latino): o build não depende do Google Fonts.
+const display = localFont({
+  src: [{ path: "./fonts/BricolageGrotesque.woff2", weight: "400 700", style: "normal" }],
   variable: "--font-display",
   display: "swap",
 });
 
-const sans = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const sans = localFont({
+  src: [{ path: "./fonts/InstrumentSans.woff2", weight: "400 600", style: "normal" }],
   variable: "--font-sans",
   display: "swap",
 });
 
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const mono = localFont({
+  src: [{ path: "./fonts/JetBrainsMono.woff2", weight: "400 600", style: "normal" }],
   variable: "--font-mono",
   display: "swap",
 });
