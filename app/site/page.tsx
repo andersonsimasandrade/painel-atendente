@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AvaliacoesGoogle } from "@/components/site/AvaliacoesGoogle";
 import { RedesSociais } from "@/components/site/RedesSociais";
 import {
   ASSISTENTE_ATIVO,
@@ -275,6 +276,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* 6b. PROVA SOCIAL (Google) */}
+      <AvaliacoesGoogle />
 
       {/* 7/8. REDES, DÚVIDAS, CONTATO E AGENDAMENTO */}
       <section className="mx-auto max-w-5xl px-4 pb-6 sm:px-6">
