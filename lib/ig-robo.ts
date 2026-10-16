@@ -38,7 +38,7 @@ function emFila(id: string, fn: () => Promise<void>): Promise<void> {
 }
 
 // Dentro do expediente do robô? (SP = UTC-3 fixo.) Igual ao lembrete de 4h.
-function dentroDoExpediente(hb: HorarioBot | null, agora: Date): boolean {
+export function dentroDoExpediente(hb: HorarioBot | null, agora: Date): boolean {
   if (!hb?.ativo || !hb.dias.length) return true;
   const sp = new Date(agora.getTime() - 3 * 3600 * 1000);
   const [hi, mi] = hb.inicio.split(":").map((x) => Number(x) || 0);
@@ -213,7 +213,7 @@ async function tratarMensagem(e: EventoIG) {
       const r = await enviarDM(id, FORA_DO_HORARIO);
       if (r.ok) {
         await sb.from("ig_contatos").update({ aviso_fora_em: new Date().toISOString() }).eq("ig_id", id);
-        await sb.from("ig_mensagens").insert({ ig_id: id, papel: "assistant", texto: FORA_DO_HORARIO, mid: r.id ?? null });
+        await sb.from("ig_mensagens").insert({ ig_id: id, papel: "assistant", texto: FORA_DO_HORARIO, mid: r.id ?? null, tipo: "aviso_fora" });
       }
       await marcarEvento(e, r.ok ? "fora_do_horario" : "erro_envio", r.erro);
     } else await marcarEvento(e, "fora_do_horario");
@@ -303,7 +303,7 @@ async function tratarComentario(e: EventoIG) {
   // primeiro a mensagem privada (é ela que abre o direct); só então a resposta pública prometendo "te chamei no direct"
   const priv = await respostaPrivada(e.comentario_id, BOAS_VINDAS_COMENTARIO);
   if (!priv.ok) return void (await marcarEvento(e, "erro_envio", priv.erro));
-  await sb.from("ig_mensagens").insert({ ig_id: e.remetente_id, papel: "assistant", texto: BOAS_VINDAS_COMENTARIO, mid: priv.id ?? null });
+  await sb.from("ig_mensagens").insert({ ig_id: e.remetente_id, papel: "assistant", texto: BOAS_VINDAS_COMENTARIO, mid: priv.id ?? null, tipo: "boas_vindas" });
   const n = [...e.comentario_id].reduce((a, c) => a + c.charCodeAt(0), 0) % RESPOSTAS_PUBLICAS.length;
   const pub = await responderComentario(e.comentario_id, RESPOSTAS_PUBLICAS[n]);
   await sb.from("ig_contatos").update({ comentario_publico_em: new Date().toISOString() }).eq("ig_id", e.remetente_id);
