@@ -32,9 +32,40 @@ export async function GET(req: Request) {
   return new NextResponse("Forbidden", { status: 403 });
 }
 
+// Diário de tentativas (sem conteúdo nem segredos): ajuda a saber se a Meta entregou e se a assinatura bateu.
+async function diario(corpo: string, assinaturaOk: boolean, temAssinatura: boolean) {
+  try {
+    let objeto = "";
+    let campos = "";
+    try {
+      const j = JSON.parse(corpo) as { object?: string; entry?: { messaging?: unknown; changes?: { field?: string }[] }[] };
+      objeto = String(j.object ?? "");
+      campos = (j.entry ?? [])
+        .flatMap((e) => [e.messaging ? "messaging" : "", ...(e.changes ?? []).map((c) => String(c.field ?? ""))])
+        .filter(Boolean)
+        .join(",");
+    } catch {
+      /* corpo que não é JSON */
+    }
+    await getClient().from("ig_tentativas").insert({
+      metodo: "POST",
+      tem_assinatura: temAssinatura,
+      assinatura_ok: assinaturaOk,
+      tamanho: corpo.length,
+      objeto: objeto.slice(0, 40),
+      campos: campos.slice(0, 200),
+    });
+  } catch (e) {
+    console.error("[instagram/webhook] diario:", e instanceof Error ? e.message : e);
+  }
+}
+
 export async function POST(req: Request) {
   const corpo = await req.text();
-  if (corpo.length > 200_000 || !assinaturaValida(corpo, req.headers.get("x-hub-signature-256"))) {
+  const cab = req.headers.get("x-hub-signature-256");
+  const ok = corpo.length <= 200_000 && assinaturaValida(corpo, cab);
+  await diario(corpo, ok, Boolean(cab));
+  if (!ok) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   let json: unknown;
