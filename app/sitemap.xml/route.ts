@@ -2,7 +2,7 @@ import { SITE_HOST, SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-const PAGINAS = ["/", "/agendar", "/capoeiras", "/centro", "/duvidas", "/privacidade"];
+const PAGINAS = ["/", "/agendar", "/capoeiras", "/centro", "/duvidas", "/privacidade", "/exclusao-de-dados"];
 
 export function GET(req: Request) {
   const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")

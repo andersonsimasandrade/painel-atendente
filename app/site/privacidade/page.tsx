@@ -56,6 +56,16 @@ export default function Privacidade() {
         </div>
 
         <div>
+          <h2 className="text-[18px] font-semibold text-[#354746]">Atendimento pelo Instagram</h2>
+          <p className="mt-2">
+            Se você escrever no direct ou comentar em uma publicação do perfil @andersonandrade_fisio, o conteúdo da sua
+            mensagem, o seu nome de usuário e o código que o Instagram atribui à sua conta são recebidos pelo nosso sistema
+            de atendimento, usados apenas para responder a você e mantidos com acesso restrito. Não pedimos sintomas,
+            diagnósticos nem exames nesse canal: para isso, o atendimento segue pelo WhatsApp ou na sessão.
+          </p>
+        </div>
+
+        <div>
           <h2 className="text-[18px] font-semibold text-[#354746]">Para que usamos os dados</h2>
           <p className="mt-2">
             Para responder a você, organizar a agenda, prestar o atendimento, emitir recibos e melhorar o
@@ -67,7 +77,12 @@ export default function Privacidade() {
           <h2 className="text-[18px] font-semibold text-[#354746]">Os seus direitos</h2>
           <p className="mt-2">
             Você pode pedir acesso, correção ou exclusão dos seus dados a qualquer momento, e retirar o
-            consentimento. Basta mandar uma mensagem pelo WhatsApp da clínica dizendo o que deseja. Dados de
+            consentimento. Basta mandar uma mensagem pelo WhatsApp da clínica ou pelo direct do Instagram dizendo o que
+            deseja, ou seguir as instruções em{" "}
+            <a href="/exclusao-de-dados" className="font-bold text-[#0F7F70] underline-offset-2 hover:underline">
+              exclusão de dados
+            </a>
+            . Dados de
             prontuário podem ter prazo mínimo de guarda definido pelo conselho profissional.
           </p>
         </div>
