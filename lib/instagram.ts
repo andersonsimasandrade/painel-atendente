@@ -103,7 +103,15 @@ export function extrairEventos(corpo: unknown): EventoIG[] {
   return out;
 }
 
-async function chamar(caminho: string, corpo: unknown): Promise<{ ok: boolean; status: number; erro?: string }> {
+export interface ResultadoIG {
+  ok: boolean;
+  status: number;
+  erro?: string;
+  /** id da mensagem enviada (message_id) ou do comentário criado (id). */
+  id?: string;
+}
+
+async function chamar(caminho: string, corpo: unknown): Promise<ResultadoIG> {
   const token = (process.env.INSTAGRAM_ACCESS_TOKEN ?? "").trim();
   if (!token) return { ok: false, status: 0, erro: "INSTAGRAM_ACCESS_TOKEN ausente" };
   try {
@@ -113,7 +121,16 @@ async function chamar(caminho: string, corpo: unknown): Promise<{ ok: boolean; s
       body: JSON.stringify(corpo),
       signal: AbortSignal.timeout(15000),
     });
-    if (r.ok) return { ok: true, status: r.status };
+    if (r.ok) {
+      let id: string | undefined;
+      try {
+        const j = (await r.json()) as { message_id?: string; id?: string };
+        id = j.message_id ?? j.id;
+      } catch {
+        /* sem corpo */
+      }
+      return { ok: true, status: r.status, id };
+    }
     return { ok: false, status: r.status, erro: (await r.text()).slice(0, 300) };
   } catch (e) {
     return { ok: false, status: 0, erro: e instanceof Error ? e.message : "falha de rede" };
@@ -135,4 +152,21 @@ export function respostaPrivada(comentarioId: string, texto: string) {
 /** Resposta pública a um comentário. */
 export function responderComentario(comentarioId: string, texto: string) {
   return chamar(`/${comentarioId}/replies`, { message: texto.slice(0, 2000) });
+}
+
+/** Nome e @ de quem escreveu (só funciona depois que a pessoa mandou mensagem). */
+export async function perfilDe(igId: string): Promise<{ nome: string | null; username: string | null }> {
+  const token = (process.env.INSTAGRAM_ACCESS_TOKEN ?? "").trim();
+  if (!token) return { nome: null, username: null };
+  try {
+    const r = await fetch(`${GRAPH}/${encodeURIComponent(igId)}?fields=name,username`, {
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return { nome: null, username: null };
+    const j = (await r.json()) as { name?: string; username?: string };
+    return { nome: j.name ?? null, username: j.username ?? null };
+  } catch {
+    return { nome: null, username: null };
+  }
 }

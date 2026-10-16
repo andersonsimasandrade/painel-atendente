@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getClient } from "@/lib/db";
 import { assinaturaValida, extrairEventos } from "@/lib/instagram";
+import { processarEventos } from "@/lib/ig-robo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -102,6 +103,9 @@ export async function POST(req: Request) {
     }
     if (r.data?.length) novos.push(e); // só o que é realmente novo segue para o robô
   }
+
+  // O robô responde em segundo plano: a Meta recebe o "200" na hora e não reenvia o evento.
+  if (novos.length) void processarEventos(novos);
 
   const url = (process.env.INSTAGRAM_FORWARD_URL ?? "").trim();
   if (url && novos.length) {
