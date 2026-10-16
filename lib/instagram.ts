@@ -7,7 +7,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 //   INSTAGRAM_ACCESS_TOKEN token da conta @andersonandrade_fisio (usado para responder)
 //   INSTAGRAM_CONTA_ID     id da conta profissional (ex.: 17841477869753397)
 
-const GRAPH = "https://graph.instagram.com/v23.0";
+const GRAPH = "https://graph.instagram.com/v26.0";
 
 export type TipoEvento = "mensagem" | "comentario" | "eco";
 
