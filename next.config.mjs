@@ -4,6 +4,8 @@ const nextConfig = {
   // .next/standalone com um server.js que não precisa do node_modules inteiro.
   output: "standalone",
   reactStrictMode: true,
+  // Permite o arquivo instrumentation.ts (relógio interno do lembrete do Instagram).
+  experimental: { instrumentationHook: true },
   poweredByHeader: false,
   eslint: {
     // Linting is decoupled from the production build so a missing lint config

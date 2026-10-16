@@ -1,0 +1,20 @@
+import { rodarLembreteInstagram } from "@/lib/ig-lembrete";
+
+// Relógio interno: roda o lembrete do Instagram a cada 15 minutos enquanto o painel estiver no ar.
+// Se houver mais de uma cópia do painel rodando, o lembrete nunca sai em dobro (cada contato é "reivindicado" no banco antes do envio).
+const g = globalThis as unknown as { __igRelogio?: boolean };
+
+export function iniciarRelogioInstagram() {
+  if (g.__igRelogio) return;
+  g.__igRelogio = true;
+  const volta = async () => {
+    try {
+      const r = await rodarLembreteInstagram();
+      if (r.enviados) console.log(`[ig-relogio] lembretes enviados: ${r.enviados}`);
+    } catch (e) {
+      console.error("[ig-relogio]", e instanceof Error ? e.message : e);
+    }
+  };
+  setTimeout(volta, 2 * 60 * 1000); // primeira volta 2 min depois de subir
+  setInterval(volta, 15 * 60 * 1000);
+}
