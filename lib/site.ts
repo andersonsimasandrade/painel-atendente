@@ -12,8 +12,8 @@ export const CREFITO = "CREFITO-10 nº 89456-F";
 
 // Nota do Perfil da Empresa no Google. Atualize os 3 valores abaixo quando mudarem (conferido em Maps).
 export const GOOGLE_NOTA = "5,0";
-export const GOOGLE_TOTAL = 53;
-export const GOOGLE_ATUALIZADO = "15/10/2026";
+export const GOOGLE_TOTAL = 67;
+export const GOOGLE_ATUALIZADO = "16/10/2026";
 export const GOOGLE_AVALIACOES_URL =
   "https://www.google.com/maps/place/Anderson+Andrade+Fisioterapia/@-27.5982277,-48.5926413,17z/data=!4m6!3m5!1s0x952737c64529695f:0xc071dd6abc5cfbb4!8m2!3d-27.5982277!4d-48.5926413!16s%2Fg%2F11ylmz5h8m?hl=pt-BR";
 export const INSTAGRAM = "andersonandrade_fisio";
