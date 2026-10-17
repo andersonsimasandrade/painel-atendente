@@ -34,6 +34,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { DbErrorState } from "@/components/DbErrorState";
 import { Sigilo } from "@/components/Sigilo";
 import { empresaNome } from "@/lib/config";
+import { instagramDoLead } from "@/lib/ig-dados";
+import { formatDateTime as fmtDataHora } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -90,12 +92,13 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel] = await Promise.all([
+  const [result, conversa, notas, etapas, cfgPainel, instagram] = await Promise.all([
     getLead(telefone),
     getConversa(telefone),
     getNotas(telefone),
     getEtapas(),
     getPainelConfig(),
+    instagramDoLead(telefone).catch(() => null),
   ]);
 
   if (!result.ok) {
@@ -356,6 +359,35 @@ export default async function LeadDetailPage({
             }}
           />
         </Panel>
+
+        {/* Instagram (quando a pessoa também conversou por lá) */}
+        {instagram && (
+          <Panel
+            title="Também conversou no Instagram"
+            subtitle={`${instagram.contato.nome ?? ""} ${instagram.contato.username ? "@" + instagram.contato.username : ""}`.trim() || "Conversa ligada pelo WhatsApp"}
+            action={
+              <Link
+                href={`/instagram?id=${instagram.contato.ig_id}`}
+                className="inline-flex h-8 items-center rounded-lg border border-line px-3 text-[12.5px] font-semibold text-ink hover:bg-surface-2/50"
+              >
+                Abrir no Instagram
+              </Link>
+            }
+            className="mt-4"
+            delay={120}
+          >
+            <ul className="flex flex-col gap-1.5">
+              {instagram.mensagens.slice(-8).map((m) => (
+                <li key={m.id} className="rounded-lg border border-line bg-surface-2/30 px-3 py-1.5 text-[12.5px] text-ink-muted">
+                  <span className="mr-2 text-[10.5px] font-semibold uppercase tracking-wider text-ink-faint">
+                    {m.papel === "user" ? "Paciente" : m.papel === "humano" ? "Você" : "Robô"} · {fmtDataHora(m.criado_em)}
+                  </span>
+                  {m.texto}
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        )}
 
         {/* Anotações + Timeline + Conversa */}
         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">

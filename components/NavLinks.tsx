@@ -25,6 +25,7 @@ const LINKS: {
   // ajustes. Pro consultor (sem os itens `admin`), Conversas é o 1º.
   { href: "/", label: "Dashboard", match: (p) => p === "/", admin: true },
   { href: "/conversas", label: "Conversas", match: (p) => p.startsWith("/conversas") },
+  { href: "/instagram", label: "Instagram", match: (p) => p.startsWith("/instagram"), admin: true },
   { href: "/prioridades", label: "Prioridades", match: (p) => p.startsWith("/prioridades") },
   {
     href: "/leads",

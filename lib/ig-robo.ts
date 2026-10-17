@@ -2,6 +2,7 @@ import { getClient, getPainelConfig } from "@/lib/db";
 import { destinatariosAlerta } from "@/lib/config";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { PROMPT_IG } from "@/lib/ig-prompt";
+import { ligarInstagramAoWhatsApp } from "@/lib/ig-ligacao";
 import { enviarDM, perfilDe, respostaPrivada, responderComentario, type EventoIG } from "@/lib/instagram";
 import type { HorarioBot } from "@/lib/types";
 
@@ -264,6 +265,11 @@ async function tratarMensagem(e: EventoIG) {
     upd.humano_ate = agoraMais(HUMANO_HORAS);
   }
   if (Object.keys(upd).length) await sb.from("ig_contatos").update(upd).eq("ig_id", id);
+  // A pessoa passou o WhatsApp: liga as duas conversas (o cadastro do WhatsApp passa a mostrar o Instagram).
+  if (tags.whatsapp) {
+    const lig = await ligarInstagramAoWhatsApp(id, tags.whatsapp).catch(() => null);
+    if (lig && !lig.ok) console.error("[ig-robo] ligação com o WhatsApp:", lig.erro);
+  }
 
   if (tags.transferir) {
     const quem = contato.username ? `@${contato.username}` : `código ${id}`;
