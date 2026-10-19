@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { barrarSemSessao } from "@/lib/ig-dados";
-import { checarContexto, executarTarefa, marcar, salvarChecagem, tarefaPorId } from "@/lib/tarefas";
+import { checarContexto, executarTarefa, marcar, mensagemPersonalizada, salvarChecagem, tarefaPorId } from "@/lib/tarefas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,6 +67,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       if (!nova) return NextResponse.json({ ok: false, error: "Informe os dias ou a nova data." }, { status: 400 });
       await marcar(id, { devida_em: nova, resultado: null });
       break;
+    }
+    case "refazer_texto": {
+      if (!t.telefone) return NextResponse.json({ ok: false, error: "Só funciona para pacientes com WhatsApp." }, { status: 400 });
+      const novo = await mensagemPersonalizada(t.telefone, t.nome, t.tipo, t.motivo);
+      if (!novo) return NextResponse.json({ ok: false, error: "Não consegui escrever um texto novo agora (sem conversa suficiente ou IA indisponível)." }, { status: 502 });
+      await marcar(id, { mensagem: novo });
+      return NextResponse.json({ ok: true });
     }
     case "checar": {
       const ch = await checarContexto(t);

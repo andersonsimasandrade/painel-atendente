@@ -68,12 +68,54 @@ export interface NovaTarefa {
   mensagem?: string | null;
   devida_em: Date;
   status?: StatusTarefa;
+  /** Escreve a mensagem a partir da conversa (só quando `mensagem` não vier pronta). */
+  personalizar?: boolean;
+}
+
+/** Escreve a mensagem da tarefa a partir da conversa real (continuação da negociação, sem promessa e sem pressão). Null se não der. */
+export async function mensagemPersonalizada(
+  telefone: string,
+  nome: string | null | undefined,
+  tipo: TipoTarefa,
+  motivo?: string | null,
+): Promise<string | null> {
+  const h = await getClient()
+    .from("n8n_chat_histories")
+    .select("type:message->>type, content:message->>content")
+    .in("session_id", variantesTelefone(telefone))
+    .order("id", { ascending: false })
+    .limit(14);
+  const msgs = ((h.data ?? []) as { type: string | null; content: string | null }[]).reverse();
+  if (!msgs.some((m) => m.type === "human")) return null;
+  const conversa = msgs
+    .map((m) => `${m.type === "human" ? "PACIENTE" : "CLÍNICA"}: ${(m.content ?? "").replace(/^CANAL:\s*\w+\s*/i, "").slice(0, 300)}`)
+    .join("\n");
+  const r = await perguntarJSON<{ mensagem?: string }>(
+    "Você escreve UMA mensagem de WhatsApp, em português do Brasil, para uma clínica de fisioterapia (Anderson Andrade) retomar o contato com uma pessoa que conversou e não fechou. " +
+      "Regras: tom acolhedor, humano e respeitoso; no máximo 3 frases curtas (até 350 caracteres); use o primeiro nome só se for conhecido; retome o ponto em que a conversa parou; termine com UMA pergunta fácil de responder. " +
+      "Se a pessoa disse que o valor está alto: reconheça sem repetir o valor, pergunte com gentileza qual valor ela tinha em mente ou o que pesa, e lembre em uma frase o que a sessão inclui (60 min individuais com o próprio Anderson, avaliação e técnicas manuais na mesma sessão). " +
+      "PROIBIDO: prometer resultado ou melhora, falar em número de sessões, redução de remédio ou economia, oferecer desconto ou condição especial, dar orientação clínica, pressionar, dizer que é robô, citar avaliações de pacientes. " +
+      'Responda só JSON: {"mensagem": "texto"}.',
+    `Tipo de tarefa: ${TIPOS[tipo].label}. Motivo: ${motivo ?? "—"}. Nome conhecido: ${primeiroNome(nome) || "não"}.\n\nCONVERSA RECENTE:\n${conversa}`,
+    350,
+  );
+  const m = (r?.mensagem ?? "").trim();
+  return m.length >= 20 && m.length <= 700 ? m : null;
 }
 
 export async function criarTarefa(t: NovaTarefa): Promise<number | null> {
   const sb = getClient();
   const canal: CanalTarefa = t.canal ?? (t.telefone ? "whatsapp" : t.ig_id ? "instagram" : "ligacao");
   const nomeTxt = primeiroNome(t.nome);
+  if (t.chave) {
+    // Já existe? Não gasta uma chamada ao modelo à toa.
+    const ja = await sb.from("tarefas").select("id").eq("chave", t.chave).limit(1);
+    if (ja.data?.length) return null;
+  }
+  let texto = t.mensagem ?? null;
+  if (!texto && t.personalizar && t.telefone) {
+    texto = await mensagemPersonalizada(t.telefone, t.nome, t.tipo, t.motivo).catch(() => null);
+  }
   const linha = {
     chave: t.chave ?? null,
     telefone: t.telefone ?? null,
@@ -84,7 +126,7 @@ export async function criarTarefa(t: NovaTarefa): Promise<number | null> {
     titulo: t.titulo?.trim() || `${TIPOS[t.tipo].label}${nomeTxt ? `: ${nomeTxt}` : ""}`,
     motivo: t.motivo ?? null,
     canal,
-    mensagem: t.mensagem ?? mensagemPadrao(t.tipo, t.nome, t.motivo),
+    mensagem: texto ?? mensagemPadrao(t.tipo, t.nome, t.motivo),
     devida_em: t.devida_em.toISOString(),
     status: t.status ?? "sugerida",
   };
@@ -338,6 +380,7 @@ export async function gerarSugestoes(): Promise<{ posSessao: number; negociacao:
       motivo: `Sem resposta há ${dias} dias`,
       mensagem: marco === 10 ? `${c.nome ? `Oi, ${primeiroNome(c.nome)}!` : "Oi!"} Não quero te incomodar: se ainda fizer sentido cuidar disso, é só me chamar por aqui que eu vejo um horário com o Anderson. Fico à disposição 🙂` : undefined,
       devida_em: spParaUTC(hoje, "10:30"),
+      personalizar: marco !== 10,
     });
     if (id) out.negociacao++;
   }
@@ -375,6 +418,7 @@ export async function gerarSugestoes(): Promise<{ posSessao: number; negociacao:
       origem: "conversa",
       motivo: (r.motivo ?? "").slice(0, 160) || null,
       devida_em: spParaUTC(r.data, "09:30"),
+      personalizar: true,
     });
     if (id) out.retornos++;
   }

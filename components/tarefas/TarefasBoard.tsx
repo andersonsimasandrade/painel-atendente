@@ -194,6 +194,10 @@ function Cartao({ t, ocupado, agir }: { t: Tarefa; ocupado: boolean; agir: (id: 
   const [msg, setMsg] = useState(t.mensagem ?? "");
   const [quando, setQuando] = useState(isoParaLocal(t.devida_em));
   const [dica, setDica] = useState(false);
+  // Quando o texto muda no servidor (ex.: "refazer texto"), a caixa acompanha.
+  useEffect(() => {
+    setMsg(t.mensagem ?? "");
+  }, [t.mensagem]);
   const meta = TIPOS[t.tipo];
   const automatica = t.canal === "whatsapp" || t.canal === "instagram";
   const aprovada = t.status === "aprovada";
@@ -271,6 +275,16 @@ function Cartao({ t, ocupado, agir }: { t: Tarefa; ocupado: boolean; agir: (id: 
         <button type="button" onClick={() => setDica((v) => !v)} className="underline">
           {dica ? "esconder" : "como abordar"}
         </button>
+        {automatica && t.telefone && t.tipo !== "avaliacao_google" && t.tipo !== "indicacao" && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => void agir(t.id, { acao: "refazer_texto" }, "Texto refeito a partir da conversa.")}
+            className="underline disabled:opacity-50"
+          >
+            refazer texto pela conversa (IA)
+          </button>
+        )}
       </div>
       {dica && <p className="mt-2 rounded-lg bg-surface-2/40 px-3 py-2 text-[12.5px] leading-relaxed text-ink-muted">{meta.dica}</p>}
 
