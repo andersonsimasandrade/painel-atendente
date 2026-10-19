@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { listarParaSync } from "@/lib/agenda";
+import { TIPOS } from "@/lib/tarefas-tipos";
+import { tarefasParaAgenda } from "@/lib/tarefas";
 import { CONSULTORIOS } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -37,5 +39,29 @@ export async function GET(req: Request) {
       descricao: `Paciente: ${a.nome ?? "—"}\nWhatsApp: https://wa.me/${a.telefone}\nOrigem: ${a.origem ?? "—"}\nStatus: ${a.status}`,
     };
   });
-  return NextResponse.json({ ok: true, eventos });
+  // Tarefas de relacionamento (aprovar/fazer) também entram na agenda, no horário planejado.
+  const tarefas = await tarefasParaAgenda().catch(() => []);
+  const eventosTarefas = tarefas.map((t) => {
+    const ini = new Date(t.devida_em);
+    const prefixo = t.status === "executada" ? "✔ " : t.status === "sugerida" ? "(aprovar) " : "";
+    return {
+      id: `t${t.id}`,
+      cancelado: t.status === "descartada",
+      status: t.status,
+      titulo: `${prefixo}${TIPOS[t.tipo].emoji} ${TIPOS[t.tipo].label}: ${t.nome ?? "Paciente"}`,
+      inicio: ini.toISOString(),
+      fim: new Date(ini.getTime() + 20 * 60000).toISOString(),
+      local: "",
+      descricao: [
+        t.motivo ? `Motivo: ${t.motivo}` : "",
+        t.mensagem ? "Mensagem planejada: " + t.mensagem : "",
+        `Canal: ${t.canal}`,
+        t.telefone ? `Paciente: https://wa.me/${t.telefone}` : "",
+        "Aprovar ou editar: https://painel.andersonandradefisio.com.br/tarefas",
+      ]
+        .filter(Boolean)
+        .join(" | "),
+    };
+  });
+  return NextResponse.json({ ok: true, eventos: [...eventos, ...eventosTarefas] });
 }

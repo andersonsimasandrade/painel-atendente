@@ -26,6 +26,7 @@ const LINKS: {
   { href: "/", label: "Dashboard", match: (p) => p === "/", admin: true },
   { href: "/conversas", label: "Conversas", match: (p) => p.startsWith("/conversas") },
   { href: "/instagram", label: "Instagram", match: (p) => p.startsWith("/instagram"), admin: true },
+  { href: "/tarefas", label: "Tarefas", match: (p) => p.startsWith("/tarefas"), admin: true },
   { href: "/prioridades", label: "Prioridades", match: (p) => p.startsWith("/prioridades") },
   {
     href: "/leads",
