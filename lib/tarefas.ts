@@ -4,7 +4,7 @@ import { enviarTextoInstancia } from "@/lib/evolution";
 import { enviarDM } from "@/lib/instagram";
 import { perguntarJSON } from "@/lib/llm";
 import { variantesTelefone } from "@/lib/telefone";
-import { GOOGLE_AVALIACOES_URL, SITE_URL } from "@/lib/site";
+import { GOOGLE_PEDIR_AVALIACAO_URL, SITE_URL } from "@/lib/site";
 
 // TAREFAS DE RELACIONAMENTO: acompanhamento de quem está negociando e de quem já se tratou.
 // Fluxo: o sistema SUGERE (a partir da conversa e do playbook) → Anderson APROVA no painel →
@@ -18,7 +18,7 @@ export type { CanalTarefa, Checagem, StatusTarefa, Tarefa, TipoTarefa };
 const primeiroNome = (n: string | null | undefined) => (n ?? "").trim().split(/\s+/)[0] ?? "";
 
 export function linkAvaliacao(): string {
-  return (process.env.GOOGLE_REVIEW_LINK ?? "").trim() || GOOGLE_AVALIACOES_URL;
+  return (process.env.GOOGLE_REVIEW_LINK ?? "").trim() || GOOGLE_PEDIR_AVALIACAO_URL;
 }
 
 /** Texto padrão de cada tipo (o Anderson pode editar antes de aprovar). Sem promessa de resultado, sem recompensa, sem dado de saúde. */
