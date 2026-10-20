@@ -47,6 +47,11 @@ export default function Privacidade() {
             </li>
           </ul>
           <p className="mt-2">
+            O site usa o Google Tag Manager para medir o desempenho dos anúncios. Ele começa com os cookies
+            desligados e só os ativa se você clicar em &ldquo;Aceitar&rdquo; no aviso do site. Se recusar, nenhum cookie de
+            medição ou de anúncio é gravado. A sua escolha fica salva no seu navegador.
+          </p>
+          <p className="mt-2">
             Não usamos pixels de remarketing nem vendemos dados. Para apagar a informação guardada no navegador,
             limpe os dados do site nas configurações dele.
           </p>

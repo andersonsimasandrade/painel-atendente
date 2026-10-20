@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { lerOrigem } from "@/components/site/CapturaOrigem";
+import "@/components/site/gtm-tipos";
 
 // Medição PRÓPRIA do site: manda ao nosso servidor (nunca a terceiros) o que o
 // visitante fez — visita, rolagem, tempo e cliques em WhatsApp/telefone/mapa/
@@ -56,6 +57,16 @@ function enviar(tipo: string, extra: Record<string, unknown> = {}) {
       origem: o ?? {},
       ...extra,
     });
+    // Evento genérico para o Tag Manager (só dispara tag se a pessoa aceitou os cookies). Nada de saúde aqui.
+    if (tipo === "clique" || tipo === "form_inicio" || tipo === "visita") {
+      const d = (extra.detalhe ?? {}) as { destino?: string };
+      window.dataLayer = window.dataLayer ?? [];
+      window.dataLayer.push({
+        event: tipo === "clique" ? "clique_contato" : tipo === "form_inicio" ? "form_inicio" : "visita_pagina",
+        destino: d.destino,
+        caminho: window.location.pathname,
+      });
+    }
     const blob = new Blob([corpo], { type: "application/json" });
     if (!(navigator.sendBeacon && navigator.sendBeacon("/api/site/evento", blob))) {
       void fetch("/api/site/evento", { method: "POST", headers: { "content-type": "application/json" }, body: corpo, keepalive: true });
