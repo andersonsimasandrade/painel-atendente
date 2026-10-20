@@ -37,6 +37,7 @@ const LINKS: {
   { href: "/agenda", label: "Agenda", match: (p) => p === "/agenda" || p.startsWith("/agenda/") },
   { href: "/atendimento", label: "Atendimento", match: (p) => p.startsWith("/atendimento") },
   { href: "/trafego", label: "Tráfego", match: (p) => p.startsWith("/trafego"), admin: true },
+  { href: "/indicadores", label: "Indicadores", match: (p) => p.startsWith("/indicadores"), admin: true },
   { href: "/conexao", label: "Conexão", match: (p) => p.startsWith("/conexao"), dot: true },
   { href: "/config", label: "Ajustes", match: (p) => p.startsWith("/config"), admin: true },
 ];

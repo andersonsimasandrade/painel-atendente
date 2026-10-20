@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DIAS, PERIODOS } from "@/lib/site";
 import { lerOrigem } from "@/components/site/CapturaOrigem";
+import { idVisitante } from "@/components/site/Rastreio";
 
 type Cons = "capoeiras" | "centro" | "qualquer";
 
@@ -64,6 +65,7 @@ export function FormAgendar() {
           dias: vazio ? [] : dias,
           periodos: vazio ? [] : periodos,
           origem: lerOrigem() ?? {},
+          visitante: idVisitante(),
           site_url: hp,
         }),
       });

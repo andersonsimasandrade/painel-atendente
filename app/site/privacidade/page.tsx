@@ -36,8 +36,14 @@ export default function Privacidade() {
             </li>
             <li>
               De onde você chegou (por exemplo, um anúncio do Google, do Instagram ou uma busca). Essa
-              informação fica guardada no seu navegador por até 30 dias e só é enviada quando você pede o
-              agendamento. Serve para sabermos quais anúncios funcionam.
+              informação fica guardada no seu navegador por até 30 dias. Serve para sabermos quais anúncios
+              funcionam.
+            </li>
+            <li>
+              Medição de uso do site, feita pelo nosso próprio sistema: quais páginas foram abertas, até onde a
+              página foi rolada e se houve clique em WhatsApp, telefone, mapa ou agendamento. Isso é ligado a um
+              código aleatório do seu navegador, sem nome, sem telefone e sem endereço IP. Não é enviado a
+              terceiros. Se o seu navegador estiver com &ldquo;Não rastrear&rdquo; ativado, não medimos.
             </li>
           </ul>
           <p className="mt-2">

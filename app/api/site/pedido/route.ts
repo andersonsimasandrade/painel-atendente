@@ -82,6 +82,9 @@ export async function POST(req: Request) {
     landing: limpa(o.landing, 100),
   };
   const canal = derivarCanal(origem);
+  // Código aleatório do navegador (mesma pessoa nas visitas, sem dado pessoal).
+  const vis = limpa(b.visitante, 64);
+  const visitante = vis && /^[A-Za-z0-9_-]{8,64}$/.test(vis) ? vis : null;
 
   const supabase = getClient();
   let codigo = "";
@@ -93,6 +96,7 @@ export async function POST(req: Request) {
       dias,
       periodos,
       canal,
+      visitante,
       ...origem,
     });
     if (!error) {
@@ -110,6 +114,19 @@ export async function POST(req: Request) {
   }
   if (!codigo) {
     return NextResponse.json({ ok: false, error: "Tente de novo." }, { status: 500 });
+  }
+
+  // Registro do evento na jornada do visitante (não bloqueia a resposta).
+  if (visitante) {
+    const { error: eEvento } = await supabase.from("site_eventos").insert({
+      visitante,
+      tipo: "pedido",
+      caminho: "/agendar",
+      canal,
+      ...origem,
+      detalhe: { codigo },
+    });
+    if (eEvento) console.error("[site/pedido] evento:", eEvento.message);
   }
 
   // Mensagem que o paciente vai enviar. O código fica no fim, entre parênteses.

@@ -13,6 +13,7 @@ import {
   SLOGAN,
 } from "@/lib/site";
 import { CapturaOrigem } from "@/components/site/CapturaOrigem";
+import { Rastreio } from "@/components/site/Rastreio";
 import { RedesSociais } from "@/components/site/RedesSociais";
 
 // Tipografia do manual da marca: Nunito (títulos e texto) e Comfortaa Bold (destaques).
@@ -105,6 +106,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd() }} />
       <CapturaOrigem />
+      <Rastreio />
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2"
