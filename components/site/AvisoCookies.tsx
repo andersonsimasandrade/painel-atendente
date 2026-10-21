@@ -32,6 +32,9 @@ export function AvisoCookies() {
         ad_user_data: "granted",
         analytics_storage: "granted",
       });
+      // Avisa o Tag Manager para disparar, agora, as tags que estavam esperando o consentimento.
+      window.dataLayer = window.dataLayer ?? [];
+      window.dataLayer.push({ event: "consentimento_aceito" });
     }
     setVisivel(false);
   }
