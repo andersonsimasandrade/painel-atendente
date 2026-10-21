@@ -3,6 +3,15 @@ import { destinatariosAlerta } from "@/lib/config";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { PROMPT_IG } from "@/lib/ig-prompt";
 import { ligarInstagramAoWhatsApp } from "@/lib/ig-ligacao";
+import {
+  classificarMensagem,
+  comentarioSoGesto,
+  descreverGesto,
+  foiCompartilhamento,
+  respostaGratidao,
+  respostaPublicaGratidao,
+  temInteresse,
+} from "@/lib/ig-gratidao";
 import { enviarDM, perfilDe, respostaPrivada, responderComentario, type EventoIG } from "@/lib/instagram";
 import type { HorarioBot } from "@/lib/types";
 
@@ -21,7 +30,7 @@ const RESPOSTAS_PUBLICAS = [
   "Obrigado! Enviei os detalhes no direct 🙂",
 ];
 const BOAS_VINDAS_COMENTARIO =
-  "Olá! Aqui é o assistente virtual do consultório do Anderson Andrade (fisioterapia e terapia manual, em Florianópolis). Vi o seu comentário e posso ajudar com informações e agendamento. Como posso ajudar você?";
+  "Olá! Aqui é o assistente virtual do consultório do Anderson Andrade (fisioterapia e terapia manual, em Florianópolis). Vi o seu comentário e fico à disposição para tirar dúvidas ou ajudar a agendar uma consulta. Como posso ajudar?";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const agoraMais = (h: number) => new Date(Date.now() + h * 3600 * 1000).toISOString();
@@ -175,12 +184,38 @@ async function tratarEco(e: EventoIG) {
   await marcarEvento(e, "eco");
 }
 
+// ── gratidão: curtida, elogio, compartilhamento, mídia sem pergunta ──
+async function agradecer(e: EventoIG, contato: Contato) {
+  const sb = getClient();
+  const id = e.remetente_id;
+  const ult = await sb.from("ig_mensagens").select("tipo, texto, criado_em").eq("ig_id", id).eq("papel", "assistant").order("id", { ascending: false }).limit(5);
+  const ultimas = (ult.data ?? []) as { tipo: string | null; texto: string; criado_em: string }[];
+  // um agradecimento por 6 h: quem manda vários corações seguidos não recebe vários "obrigado"
+  if (ultimas.some((m) => m.tipo === "gratidao" && Date.now() - new Date(m.criado_em).getTime() < 6 * 3600 * 1000)) {
+    return void (await marcarEvento(e, "agradecido_recentemente"));
+  }
+  const semente = Math.floor(Math.random() * 1000);
+  const jaTevePorta = ultimas.some((m) => m.tipo === "gratidao" && /consulta/i.test(m.texto));
+  const texto = respostaGratidao({
+    nome: contato.nome,
+    compartilhou: foiCompartilhamento(e.anexos ?? [], e.resposta_story ?? false),
+    semente,
+    anterior: ultimas.find((m) => m.tipo === "gratidao")?.texto ?? null,
+    comPorta: semente % 3 === 0 && !jaTevePorta,
+  });
+  await sleep(1200 + Math.floor(Math.random() * 1500)); // um respiro, como uma pessoa faria
+  const env = await enviarDM(id, texto);
+  if (!env.ok) return void (await marcarEvento(e, "erro_envio", env.erro));
+  await sb.from("ig_mensagens").insert({ ig_id: id, papel: "assistant", texto, mid: env.id ?? null, tipo: "gratidao" });
+  await marcarEvento(e, "respondido_gratidao");
+}
+
 // ── mensagem no direct ──
 async function tratarMensagem(e: EventoIG) {
   const sb = getClient();
   const id = e.remetente_id;
   const contato = await garantirContato(id, "direct", null);
-  const texto = (e.texto ?? "").trim() || "(a pessoa enviou uma mídia sem texto: foto, vídeo, áudio ou figurinha)";
+  const texto = (e.texto ?? "").trim() || descreverGesto(e.anexos ?? [], e.resposta_story ?? false);
 
   const ins = await sb
     .from("ig_mensagens")
@@ -204,6 +239,12 @@ async function tratarMensagem(e: EventoIG) {
   if (contato.estado === "humano") {
     if (contato.humano_ate && new Date(contato.humano_ate).getTime() > Date.now()) return void (await marcarEvento(e, "humano"));
     await sb.from("ig_contatos").update({ estado: "robo", humano_ate: null }).eq("ig_id", id);
+  }
+
+  // Curtida, elogio, compartilhamento, story, figurinha ou mídia sem pergunta: só gratidão (a qualquer hora do dia).
+  // Nada de agendamento, preço ou "não consigo ver a mídia": a pessoa só reagiu com carinho.
+  if (classificarMensagem(e.texto, e.anexos ?? [], e.resposta_story ?? false) === "gratidao") {
+    return void (await agradecer(e, contato));
   }
 
   // fora do expediente: um aviso por 12 h e mais nada
@@ -297,13 +338,22 @@ function comentarioMerece(texto: string | null): boolean {
 async function tratarComentario(e: EventoIG) {
   const sb = getClient();
   if ((process.env.INSTAGRAM_ROBO ?? "").trim().toLowerCase() === "desligado") return void (await marcarEvento(e, "robo_desligado"));
-  if (!e.comentario_id || !comentarioMerece(e.texto)) return void (await marcarEvento(e, "ignorado"));
+  const gesto = comentarioSoGesto(e.texto);
+  if (!e.comentario_id || (!gesto && !comentarioMerece(e.texto))) return void (await marcarEvento(e, "ignorado"));
 
   const contato = await garantirContato(e.remetente_id, "comentario", e.remetente_user);
   const ultimo = contato.comentario_publico_em ? new Date(contato.comentario_publico_em).getTime() : 0;
   if (Date.now() - ultimo < 24 * 3600 * 1000) return void (await marcarEvento(e, "ignorado"));
   if (contato.estado === "humano" && contato.humano_ate && new Date(contato.humano_ate).getTime() > Date.now()) {
     return void (await marcarEvento(e, "humano"));
+  }
+
+  // Elogio, emoji ou marcação de amigo, sem pergunta nem interesse: só gratidão pública, sem puxar para o direct.
+  // (Quem demonstra interesse de verdade segue o fluxo abaixo, com mensagem privada.)
+  if (gesto || !temInteresse(e.texto)) {
+    const pub = await responderComentario(e.comentario_id, respostaPublicaGratidao(Math.floor(Math.random() * 1000), gesto === "marcacao" || /@\w/.test(e.texto ?? "")));
+    await sb.from("ig_contatos").update({ comentario_publico_em: new Date().toISOString() }).eq("ig_id", e.remetente_id);
+    return void (await marcarEvento(e, pub.ok ? "respondido_gratidao" : "erro_envio", pub.erro));
   }
 
   // primeiro a mensagem privada (é ela que abre o direct); só então a resposta pública prometendo "te chamei no direct"

@@ -123,7 +123,7 @@ export interface ResultadoMeta {
 export const RESULTADO_ORDER: ResultadoMeta[] = [
   { key: "ganho", label: "Convertido em cliente", color: "#2FE58F", terminal: true },
   { key: "em_negociacao", label: "Em negociação", color: "#39B7C4", terminal: false },
-  { key: "reuniao_agendada", label: "Reunião agendada", color: "#4EA8DE", terminal: false },
+  { key: "reuniao_agendada", label: "Consulta agendada", color: "#4EA8DE", terminal: false },
   { key: "sem_retorno", label: "Sem retorno", color: "#8D9A93", terminal: true },
   { key: "sem_interesse", label: "Sem interesse", color: "#A78BFA", terminal: true },
   { key: "sem_fit", label: "Não tem perfil", color: "#D98E5F", terminal: true },

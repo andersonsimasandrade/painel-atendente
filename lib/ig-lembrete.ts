@@ -15,7 +15,7 @@ const HORAS_MIN = 4;
 const HORAS_MAX = 22;
 const TEXTO =
   "Oi{nome}! Passando para ver se ficou alguma dúvida 🙂\n\n" +
-  "Se quiser agendar a sua sessão, é só me dizer quais dias e horários ficam melhores para você " +
+  "Se quiser agendar a sua consulta, é só me dizer quais dias e horários ficam melhores para você " +
   "(e, se puder, uma segunda opção). Aí eu passo para o Anderson confirmar com você.";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -144,7 +144,7 @@ export async function POST(req: Request) {
   const quando = formatarBR(iso);
   const primeiroNome = nome ? nome.split(" ")[0] : "";
   const texto =
-    `*${vend.nome}:*\nShow${primeiroNome ? ", " + primeiroNome : ""}! Sua reunião está marcada para *${quando}*.\n` +
+    `*${vend.nome}:*\nShow${primeiroNome ? ", " + primeiroNome : ""}! Sua consulta está marcada para *${quando}*.\n` +
     `Vou te mandar o link do encontro um pouco antes. Qualquer coisa é só me chamar aqui 👊`;
   const env = await enviarTextoInstancia(vend.instancia_whatsapp, tel, texto);
   if (!env.ok) console.error("[agendar] confirmação falhou:", env.error);
@@ -157,7 +157,7 @@ export async function POST(req: Request) {
         session_id: tel,
         message: {
           type: "ai",
-          content: `📅 Reunião agendada: ${quando}.`,
+          content: `📅 Consulta agendada: ${quando}.`,
           tool_calls: [],
           additional_kwargs: { via: "sistema" },
           response_metadata: {},

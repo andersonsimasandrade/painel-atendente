@@ -22,7 +22,7 @@ export function LeadsOrigem({
   if (!totalFiltrado) return null;
   const topUf = porUf.slice(0, 6);
   const maxUf = Math.max(...topUf.map((u) => u.count), 1);
-  // "Concluído" = desfecho TERMINAL (em negociação / reunião agendada seguem vivos).
+  // "Concluído" = desfecho TERMINAL (em negociação / consulta agendada seguem vivos).
   const concluidos = RESULTADO_ORDER.filter((r) => r.terminal).reduce(
     (soma, r) => soma + (desfechos[r.key] ?? 0),
     0,

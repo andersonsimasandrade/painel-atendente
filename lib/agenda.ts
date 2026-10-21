@@ -189,7 +189,7 @@ export async function listarAgendamentos(slug?: string): Promise<AgendamentoView
 
 const PRESENCAS = new Set(["compareceu", "faltou", "agendado"]); // 'agendado' = desfazer
 // vendedorId (opcional) restringe o UPDATE ao dono — evita IDOR (vendedor marcar
-// presença de reunião de outro). Admin não passa e mexe em qualquer uma.
+// presença de consulta de outro). Admin não passa e mexe em qualquer uma.
 export async function marcarPresenca(
   id: string,
   status: string,

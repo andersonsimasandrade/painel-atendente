@@ -100,7 +100,7 @@ export function KpiRow({ kpis }: { kpis: Kpis }) {
       <KpiCard
         label="Agendados"
         value={formatNumber(kpis.agendados)}
-        sub="reuniões marcadas"
+        sub="consultas marcadas"
         tone="brand"
         delay={50}
         href="/leads?filtro=agendados"

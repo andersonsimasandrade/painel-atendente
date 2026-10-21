@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Corpo inválido." }, { status: 400 });
   }
 
-  // Escopo do vendedor: resolve o vendedor_id p/ o UPDATE só casar as reuniões dele.
+  // Escopo do vendedor: resolve o vendedor_id p/ o UPDATE só casar as consultas dele.
   let vendedorId: string | undefined;
   if (sess.papel === "vendedor") {
     if (!sess.vslug) {

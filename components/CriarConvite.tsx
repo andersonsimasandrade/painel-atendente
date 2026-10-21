@@ -63,7 +63,7 @@ export function CriarConvite() {
         <div>
           <h3 className="text-[14px] font-semibold text-ink">Convidar alguém de fora</h3>
           <p className="text-[12px] text-ink-muted">
-            Gere um link de agendamento pra uma pessoa que não é lead (reunião ou compromisso).
+            Gere um link de agendamento pra uma pessoa que não é lead (consulta ou compromisso).
           </p>
         </div>
         {!aberto && (

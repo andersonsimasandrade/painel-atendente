@@ -1,6 +1,6 @@
-// Lógica PURA do lembrete pré-reunião (sem I/O) — testável isoladamente.
+// Lógica PURA do lembrete pré-consulta (sem I/O) — testável isoladamente.
 // O lembrete dispara ~3h antes: a rota roda de hora em hora e pega tudo que
-// está a ≤ 3h30 da reunião e ainda não foi lembrado (idempotência na coluna
+// está a ≤ 3h30 da consulta e ainda não foi lembrado (idempotência na coluna
 // lembrete_enviado_em garante 1 envio). Nunca dispara depois da hora.
 
 const JANELA_MS = 3.5 * 3600 * 1000; // 3h30 — cobre o gap do cron horário sem atrasar

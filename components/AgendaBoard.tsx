@@ -119,9 +119,9 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
         </p>
       )}
 
-      {/* A marcar (reuniões já passadas ainda sem presença) */}
+      {/* A marcar (consultas já passadas ainda sem presença) */}
       {aMarcar.length > 0 && (
-        <Panel title="A marcar" subtitle="Reuniões que já passaram — registre a presença" delay={40}>
+        <Panel title="A marcar" subtitle="Consultas que já passaram — registre a presença" delay={40}>
           <ul className="flex flex-col divide-y divide-line">
             {aMarcar.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
@@ -151,8 +151,8 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
         </Panel>
       )}
 
-      {/* Próximas reuniões */}
-      <Panel title="Próximas reuniões" subtitle="Agendadas daqui pra frente" delay={80}>
+      {/* Próximas consultas */}
+      <Panel title="Próximas consultas" subtitle="Agendadas daqui pra frente" delay={80}>
         {proximas.length ? (
           <ul className="flex flex-col divide-y divide-line">
             {proximas.map((a) => (
@@ -172,8 +172,8 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
           </ul>
         ) : (
           <EmptyState
-            title="Nenhuma reunião marcada"
-            hint="Assim que um lead agendar pelo link da agenda, a reunião aparece aqui."
+            title="Nenhuma consulta marcada"
+            hint="Assim que um lead agendar pelo link da agenda, a consulta aparece aqui."
           />
         )}
       </Panel>

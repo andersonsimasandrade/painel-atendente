@@ -8,7 +8,7 @@ import { empresaNome } from "./config";
 import { horaSP } from "./lembretes";
 import { formatBRL, maskPhone } from "./format";
 
-// Acima deste valor, o resumo sugere que um gerente sênior acompanhe a reunião.
+// Acima deste valor, o resumo sugere que um gerente sênior acompanhe a consulta.
 // Zero = desligado (só a temperatura "quente" dispara a sugestão).
 // >>> ADAPTE ao ticket médio do seu negócio <<<
 const VALOR_SENIOR = 0;
@@ -140,10 +140,10 @@ const linhaResumo = (r: ReuniaoDigest) => (r.resumo ? ` — ${r.resumo.trim().sl
 export function diretoriaWhatsApp(reunioes: ReuniaoDigest[], hoje: string): string {
   const linhas = [`*${empresaNome()} · Agenda de hoje — ${dataBR(hoje)}*`, ``];
   if (!reunioes.length) {
-    linhas.push("Nenhuma reunião marcada para hoje.");
+    linhas.push("Nenhuma consulta marcada para hoje.");
     return linhas.join("\n");
   }
-  linhas.push(`${reunioes.length} reunião(ões) hoje:`, ``);
+  linhas.push(`${reunioes.length} consulta(s) hoje:`, ``);
   for (const r of reunioes) {
     linhas.push(
       `⏰ *${r.hora}* · ${r.lead} (${r.vendedorNome})${linhaResumo(r)}`,
@@ -161,11 +161,11 @@ export function diretoriaEmail(reunioes: ReuniaoDigest[], hoje: string): string 
             `<tr><td style="padding:8px 10px;font-size:13px;white-space:nowrap"><b>${r.hora}</b></td><td style="padding:8px 10px;font-size:13px">${esc(r.lead)} <span style="color:#6b7280">· ${esc(r.vendedorNome)}</span>${r.temperatura ? ` · ${esc(r.temperatura)}` : ""}${r.resumo ? `<br><span style="color:#4b5563;font-size:12px">${esc(r.resumo)}</span>` : ""}<br><span style="color:#b45309;font-size:12px">${esc(sugestaoComparecimento(r))}</span>${r.valor ? `<br><span style="color:#6b7280;font-size:11px">Investimento citado: ${formatBRL(r.valor)}</span>` : ""}</td></tr>`,
         )
         .join("")
-    : `<tr><td colspan="2" style="padding:10px;color:#9ca3af;font-size:13px">Nenhuma reunião marcada para hoje.</td></tr>`;
+    : `<tr><td colspan="2" style="padding:10px;color:#9ca3af;font-size:13px">Nenhuma consulta marcada para hoje.</td></tr>`;
   return `
   <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:640px;margin:0 auto;padding:20px;color:#0f1b14">
     <h2 style="margin:0 0 4px;font-size:18px">${empresaNome()} · Agenda de hoje</h2>
-    <p style="margin:0 0 16px;font-size:13px;color:#6b7280">${dataBR(hoje)} · ${reunioes.length} reunião(ões)</p>
+    <p style="margin:0 0 16px;font-size:13px;color:#6b7280">${dataBR(hoje)} · ${reunioes.length} consulta(s)</p>
     <table style="width:100%;border-collapse:collapse;background:#f6faf7;border-radius:10px;overflow:hidden">${rows}</table>
     <p style="margin:16px 0 0;font-size:11px;color:#9ca3af">Sugestão de comparecimento: leads quentes ou de alto valor merecem um gerente sênior. Resumos gerados por IA — confira antes.</p>
   </div>`;
@@ -175,7 +175,7 @@ export function diretoriaEmail(reunioes: ReuniaoDigest[], hoje: string): string 
 export function consultorWhatsApp(nome: string, reunioes: ReuniaoDigest[], hoje: string): string {
   const linhas = [`*Bom dia, ${nome}! Sua agenda de hoje — ${dataBR(hoje)}*`, ``];
   if (!reunioes.length) {
-    linhas.push("Nenhuma reunião marcada para hoje. 👊");
+    linhas.push("Nenhuma consulta marcada para hoje. 👊");
     return linhas.join("\n");
   }
   for (const r of reunioes) {
@@ -193,7 +193,7 @@ export function consultorEmail(nome: string, reunioes: ReuniaoDigest[], hoje: st
             `<tr><td style="padding:8px 10px;font-size:13px;white-space:nowrap"><b>${r.hora}</b></td><td style="padding:8px 10px;font-size:13px">${esc(r.lead)}${r.temperatura ? ` <span style="color:#6b7280">· ${esc(r.temperatura)}</span>` : ""}${r.resumo ? `<br><span style="color:#4b5563;font-size:12px">${esc(r.resumo)}</span>` : ""}${r.proximaAcao ? `<br><span style="color:#166534;font-size:12px">➜ ${esc(r.proximaAcao)}</span>` : ""}</td></tr>`,
         )
         .join("")
-    : `<tr><td colspan="2" style="padding:10px;color:#9ca3af;font-size:13px">Nenhuma reunião marcada para hoje.</td></tr>`;
+    : `<tr><td colspan="2" style="padding:10px;color:#9ca3af;font-size:13px">Nenhuma consulta marcada para hoje.</td></tr>`;
   return `
   <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:640px;margin:0 auto;padding:20px;color:#0f1b14">
     <h2 style="margin:0 0 4px;font-size:18px">Bom dia, ${esc(nome)}!</h2>

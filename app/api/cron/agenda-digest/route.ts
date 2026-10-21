@@ -63,7 +63,7 @@ async function handler(req: Request) {
 
     for (let i = 0; i < ativos.length; i++) {
       const v = ativos[i];
-      // Agenda DELE — inclusive quando está vazia: "hoje você não tem reunião"
+      // Agenda DELE — inclusive quando está vazia: "hoje você não tem consulta"
       // é informação útil, e o silêncio seria confundido com falha do sistema.
       const dele = reunioes.filter((r) => r.vendedorSlug === v.slug);
       const texto = consultorWhatsApp(v.nome, dele, hoje);

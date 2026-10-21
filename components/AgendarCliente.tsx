@@ -62,9 +62,9 @@ export function AgendarCliente({
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#2f9e5e]/12 text-2xl">
           ✅
         </div>
-        <h2 className="text-lg font-semibold text-[#16351f]">Reunião marcada!</h2>
+        <h2 className="text-lg font-semibold text-[#16351f]">Consulta marcada!</h2>
         <p className="mt-1.5 text-[14px] text-[#4b463f]">
-          {sucesso ? `Sua reunião está confirmada para ${sucesso}.` : "Agendamento confirmado."}
+          {sucesso ? `Sua consulta está confirmada para ${sucesso}.` : "Agendamento confirmado."}
         </p>
         <p className="mt-2 text-[12.5px] text-[#8a837a]">
           {consultorNome ? ` ${consultorNome}` : " O consultor"} te manda o link do encontro um pouco antes. Já

@@ -69,7 +69,7 @@ export function KanbanBoard({
     const q = busca.trim().toLowerCase();
     const qDigits = q.replace(/\D/g, "");
     return leads.filter((l) => {
-      // Só desfecho TERMINAL esconde ("em negociação"/"reunião agendada" seguem vivos).
+      // Só desfecho TERMINAL esconde ("em negociação"/"consulta agendada" seguem vivos).
       if (!mostrarConcluidos && resultadoTerminal(l.resultado)) return false;
       if (!q) return true;
       const nome = (l.nome ?? "").toLowerCase();

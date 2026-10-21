@@ -21,6 +21,10 @@ export interface EventoIG {
   midia_id: string | null;
   texto: string | null;
   quando: number | null;
+  /** Tipos de anexo da mensagem (image, video, audio, share, story_mention, like_heart...). Vazio se for só texto. */
+  anexos: string[];
+  /** A mensagem é resposta a um story (ou menção em story). */
+  resposta_story: boolean;
 }
 
 /** Confere a assinatura "sha256=..." que a Meta manda no cabeçalho X-Hub-Signature-256. */
@@ -59,6 +63,10 @@ export function extrairEventos(corpo: unknown): EventoIG[] {
         const msg = obj(ev.message);
         if (!msg.mid) continue; // leituras, reações etc. não interessam por enquanto
         const eco = msg.is_echo === true;
+        const anexos = (Array.isArray(msg.attachments) ? msg.attachments : [])
+          .map((a) => String(obj(a).type ?? "").toLowerCase())
+          .filter(Boolean);
+        const story = !!obj(msg.reply_to).story || anexos.includes("story_mention");
         const de = String(obj(ev.sender).id ?? "");
         const para = String(obj(ev.recipient).id ?? "");
         out.push({
@@ -72,6 +80,8 @@ export function extrairEventos(corpo: unknown): EventoIG[] {
           midia_id: null,
           texto: txt(msg.text),
           quando: typeof ev.timestamp === "number" ? ev.timestamp : null,
+          anexos,
+          resposta_story: story,
         });
       }
     }
@@ -96,6 +106,8 @@ export function extrairEventos(corpo: unknown): EventoIG[] {
           midia_id: txt(obj(v.media).id),
           texto: txt(v.text),
           quando: null,
+          anexos: [],
+          resposta_story: false,
         });
       }
     }
