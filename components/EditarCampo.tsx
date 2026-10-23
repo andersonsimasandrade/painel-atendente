@@ -18,7 +18,7 @@ export function EditarCampo({
   children,
 }: {
   telefone: string;
-  campo: "investimento" | "marca" | "origem";
+  campo: "investimento" | "marca" | "origem" | "email" | "cnpj" | "etapa" | "canal";
   valorInicial: string;
   placeholder: string;
   children: ReactNode;
@@ -89,7 +89,7 @@ export function EditarCampo({
               }
             }}
             autoFocus
-            maxLength={campo === "origem" ? 120 : 80}
+            maxLength={campo === "origem" || campo === "email" ? 120 : 80}
             inputMode={campo === "investimento" ? "decimal" : undefined}
             placeholder={placeholder}
             className={`w-[170px] rounded-lg border border-line bg-base/70 py-1 pr-2.5 text-[13px] text-ink outline-none focus:border-brand/60 ${

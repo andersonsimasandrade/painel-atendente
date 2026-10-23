@@ -6,6 +6,8 @@ import { montarIndicadores, type Linha } from "@/lib/indicadores";
 import { hojeSP, addDias } from "@/lib/trafego";
 import { inicioProjeto } from "@/lib/periodo";
 import { formatBRL } from "@/lib/format";
+import { contatarAgora, metricasNegocios } from "@/lib/negocios";
+import { formatPhone } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -107,7 +109,7 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
   const range = searchParams?.range && RANGES[searchParams.range] ? searchParams.range : "30d";
   const hoje = hojeSP();
   const desde = RANGES[range].desde(hoje);
-  const r = await montarIndicadores(desde, hoje);
+  const [r, neg, pendentes] = await Promise.all([montarIndicadores(desde, hoje), metricasNegocios(desde, hoje), contatarAgora(12)]);
   const t = r.total;
   const custoTotal = r.custo.google + r.custo.meta;
 
@@ -150,6 +152,52 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
             registrado. Pedidos, conversas e consultas já vêm do CRM.
           </p>
         )}
+
+        <Panel
+          title="Negócios"
+          subtitle="Cada tentativa de atendimento é um negócio: em andamento, concretizado, perdido ou reativado"
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <Cartao titulo="Em andamento agora" valor={String(neg.abertos)} />
+            <Cartao titulo="Concretizados" valor={String(neg.concretizados)} dica={neg.receita > 0 ? `${brl(neg.receita)} fechados` : undefined} />
+            <Cartao titulo="Perdidos" valor={String(neg.perdidos)} />
+            <Cartao titulo="Reativados / recompras" valor={String(neg.reativados)} />
+            <Cartao titulo="Novos no período" valor={String(neg.criadosNoPeriodo)} />
+            <Cartao titulo="Conversão" valor={neg.conversao == null ? "—" : `${Math.round(neg.conversao * 100)}%`} dica="concretizados ÷ (concretizados + perdidos)" />
+          </div>
+          {neg.motivosPerda.length > 0 && (
+            <p className="mt-3 text-[12.5px] text-ink-muted">
+              <b className="text-ink">Por que perdemos:</b> {neg.motivosPerda.map((m) => `${m.motivo} (${m.qtd})`).join(" · ")}
+            </p>
+          )}
+        </Panel>
+
+        <Panel
+          title="Contatar para novas vendas e acompanhamento"
+          subtitle="Quem voltou a falar, pacientes sem nova consulta há 30+ dias e negociações perdidas que vale retomar"
+        >
+          {pendentes.length === 0 ? (
+            <p className="text-[12.5px] text-ink-muted">Ninguém pendente por enquanto.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {pendentes.map((p) => (
+                <li key={p.telefone} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-[12.5px]">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                      p.tipo === "voltou" ? "bg-amber/15 text-amber" : p.tipo === "recompra" ? "bg-brand/15 text-brand" : "bg-white/[0.06] text-ink-muted"
+                    }`}
+                  >
+                    {p.tipo === "voltou" ? "Voltou a falar" : p.tipo === "recompra" ? "Acompanhar" : "Reativar"}
+                  </span>
+                  <Link href={`/leads/${encodeURIComponent(p.telefone)}`} className="font-semibold text-ink underline-offset-2 hover:underline">
+                    {p.nome || formatPhone(p.telefone)}
+                  </Link>
+                  <span className="text-ink-muted">{p.motivo}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
 
         <Panel title="Por canal" subtitle="De onde vem quem chega e quanto custa cada degrau">
           <Tabela linhas={r.porCanal} nivel="canal" />

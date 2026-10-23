@@ -35,9 +35,14 @@ export const STAGE_MAP: Record<string, StageMeta> = Object.fromEntries(
   STAGE_ORDER.map((s) => [s.key, s]),
 );
 
+// Marcos que aparecem na linha do tempo mas NÃO são colunas do funil.
+const STAGE_EXTRA: Record<string, StageMeta> = {
+  perdido: { key: "perdido", label: "Negociação perdida", rank: 0, color: "#E05C5C" },
+};
+
 export function stageMeta(key: string): StageMeta {
   return (
-    STAGE_MAP[key] ?? {
+    STAGE_MAP[key] ?? STAGE_EXTRA[key] ?? {
       key,
       label: key ? key.replace(/_/g, " ") : "—",
       rank: 0,
@@ -86,6 +91,9 @@ export const PERFIL_ORDER: PerfilMeta[] = [
   { key: "profissional", label: "Profissional do setor", color: "#39B7C4" },
   { key: "representante", label: "Representante", color: "#E0A63C" },
   { key: "consumidor", label: "Consumidor final", color: "#8D9A93" },
+  // Marcações MANUAIS do consultório:
+  { key: "prospect", label: "Prospect", color: "#4EA8DE" },
+  { key: "sem_perfil", label: "Sem perfil", color: "#D98E5F" },
 ];
 
 export const PERFIL_MAP: Record<string, PerfilMeta> = Object.fromEntries(

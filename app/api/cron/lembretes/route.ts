@@ -3,6 +3,7 @@ import { getAgendamentosParaLembrete, marcarLembreteEnviado } from "@/lib/agenda
 import { selecionarLembretes, mensagemLembrete, horaSP } from "@/lib/lembretes";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { getClient } from "@/lib/db";
+import { dentroDaJanelaDeEnvio } from "@/lib/janela-envio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,9 @@ async function handler(req: Request) {
   if ((req.headers.get("authorization") || "") !== `Bearer ${secret}`) {
     return NextResponse.json({ ok: false, error: "Não autorizado." }, { status: 401 });
   }
+
+  // Sem lembrete de madrugada: só entre 08:00 e 20:00 (a próxima execução, dentro da janela, pega o que ficou).
+  if (!dentroDaJanelaDeEnvio(new Date())) return NextResponse.json({ ok: true, enviados: 0, total: 0, motivo: "fora da janela 08:00–20:00" });
 
   const ativos = await getAgendamentosParaLembrete();
   const due = selecionarLembretes(ativos, new Date());

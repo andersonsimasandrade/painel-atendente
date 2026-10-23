@@ -3,6 +3,7 @@ import { barrarSeNaoPode } from "@/lib/escopo";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, verifyToken } from "@/lib/auth";
 import { setLeadFechado } from "@/lib/db";
+import { desfazerGanho, ganharNegocio } from "@/lib/negocios";
 import { parseValorBR } from "@/lib/format";
 
 export const runtime = "nodejs";
@@ -55,5 +56,8 @@ export async function POST(req: Request) {
   if (!result.ok) {
     return NextResponse.json(result, { status: 500 });
   }
+  // histórico de negócios: concretizado (ou volta a "em andamento" ao desfazer)
+  if (desfazer) await desfazerGanho(telefone);
+  else await ganharNegocio(telefone, valor);
   return NextResponse.json({ ok: true });
 }

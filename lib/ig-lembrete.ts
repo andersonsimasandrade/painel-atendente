@@ -1,6 +1,7 @@
 import { getClient, getPainelConfig } from "@/lib/db";
 import { enviarDM } from "@/lib/instagram";
 import { dentroDoExpediente } from "@/lib/ig-robo";
+import { dentroDaJanelaDeEnvio } from "@/lib/janela-envio";
 
 // LEMBRETE ÚNICO de 4h no Instagram para quem começou a conversa e parou no meio (igual ao do WhatsApp).
 // Chamado a cada 15 min pelo relógio interno do painel (lib/ig-relogio.ts) ou pela rota /api/cron/lembrete-instagram. O lembrete só sai se TUDO for verdadeiro:
@@ -45,7 +46,7 @@ export async function rodarLembreteInstagram(): Promise<ResultadoLembreteIG> {
   }
   const agora = new Date();
   const cfg = await getPainelConfig();
-  if (!dentroDoExpediente(cfg.horario_bot, agora)) {
+  if (!dentroDaJanelaDeEnvio(agora) || !dentroDoExpediente(cfg.horario_bot, agora)) {
     await diario({ enviados: 0, motivo: "fora do expediente" });
     return { ok: true, enviados: 0, motivo: "fora do expediente" };
   }

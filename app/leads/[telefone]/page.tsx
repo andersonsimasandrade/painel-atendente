@@ -36,6 +36,10 @@ import { Sigilo } from "@/components/Sigilo";
 import { empresaNome } from "@/lib/config";
 import { instagramDoLead } from "@/lib/ig-dados";
 import { formatDateTime as fmtDataHora } from "@/lib/format";
+import { listarNegocios } from "@/lib/negocios";
+import { getExtraLead, voltouAFalar } from "@/lib/lead-extra";
+import { NegociosLead } from "@/components/lead/NegociosLead";
+import { EditarEndereco } from "@/components/lead/EditarEndereco";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -92,13 +96,15 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel, instagram] = await Promise.all([
+  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra] = await Promise.all([
     getLead(telefone),
     getConversa(telefone),
     getNotas(telefone),
     getEtapas(),
     getPainelConfig(),
     instagramDoLead(telefone).catch(() => null),
+    listarNegocios(telefone).catch(() => []),
+    getExtraLead(telefone),
   ]);
 
   if (!result.ok) {
@@ -132,6 +138,8 @@ export default async function LeadDetailPage({
   const lead = result.lead;
   const eventos = result.eventos;
   const meta = stageMeta(lead.funnel_stage);
+  const ultimoEncerrado = negocios.find((n) => n.status !== "aberto")?.fechado_em ?? null;
+  const voltou = negocios.some((n) => n.status === "aberto") ? false : await voltouAFalar(lead.telefone, ultimoEncerrado);
 
   return (
     <div className="relative z-[1] min-h-screen">
@@ -211,24 +219,24 @@ export default async function LeadDetailPage({
                   uf={lead.uf}
                 />
               </Field>
-              <Field label="CNPJ">
-                {lead.cnpj === true ? (
-                  <span className="text-brand">
-                    Sim
-                    {lead.cnpj_numero && (
-                      <Sigilo className="ml-1.5 font-mono text-[12.5px] text-ink">
-                        {lead.cnpj_numero.replace(
-                          /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
-                          "$1.$2.$3/$4-$5",
-                        )}
-                      </Sigilo>
-                    )}
-                  </span>
-                ) : lead.cnpj === false ? (
-                  <span className="text-ink-muted">Não</span>
-                ) : (
-                  <Dash />
-                )}
+              <Field label="CPF / CNPJ">
+                <EditarCampo
+                  key={`cnpj:${lead.cnpj_numero ?? ""}`}
+                  telefone={lead.telefone}
+                  campo="cnpj"
+                  valorInicial={lead.cnpj_numero ?? ""}
+                  placeholder="CPF ou CNPJ (só números)"
+                >
+                  {lead.cnpj_numero ? (
+                    <Sigilo className="font-mono text-[12.5px] text-ink">
+                      {lead.cnpj_numero.length === 14
+                        ? lead.cnpj_numero.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")
+                        : lead.cnpj_numero.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")}
+                    </Sigilo>
+                  ) : (
+                    <Dash />
+                  )}
+                </EditarCampo>
               </Field>
               <Field label="Marca atual">
                 <EditarCampo
@@ -243,13 +251,21 @@ export default async function LeadDetailPage({
               </Field>
 
               <Field label="Etapa da conversa (bot)">
-                {lead.estagio_conversa ? (
-                  <span className="inline-flex items-center rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[11px] text-ink-muted ring-1 ring-inset ring-white/10">
-                    {lead.estagio_conversa}
-                  </span>
-                ) : (
-                  <Dash />
-                )}
+                <EditarCampo
+                  key={`etapa:${lead.estagio_conversa ?? ""}`}
+                  telefone={lead.telefone}
+                  campo="etapa"
+                  valorInicial={lead.estagio_conversa ?? ""}
+                  placeholder="Etapa da conversa"
+                >
+                  {lead.estagio_conversa ? (
+                    <span className="inline-flex items-center rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[11px] text-ink-muted ring-1 ring-inset ring-white/10">
+                      {lead.estagio_conversa}
+                    </span>
+                  ) : (
+                    <Dash />
+                  )}
+                </EditarCampo>
               </Field>
 
               <Field label="Investimento previsto">
@@ -283,11 +299,43 @@ export default async function LeadDetailPage({
                 </EditarCampo>
               </Field>
               <Field label="Canal preferido">
-                {lead.preferencia_canal
-                  ? lead.preferencia_canal === "audio"
-                    ? "Áudio"
-                    : "Texto"
-                  : <Dash />}
+                <EditarCampo
+                  key={`canal:${lead.preferencia_canal ?? ""}`}
+                  telefone={lead.telefone}
+                  campo="canal"
+                  valorInicial={lead.preferencia_canal === "audio" ? "áudio" : lead.preferencia_canal ?? ""}
+                  placeholder="Canal (texto ou áudio)"
+                >
+                  {lead.preferencia_canal ? (lead.preferencia_canal === "audio" ? "Áudio" : "Texto") : <Dash />}
+                </EditarCampo>
+              </Field>
+              <Field label="E-mail">
+                <EditarCampo
+                  key={`email:${extra.email ?? ""}`}
+                  telefone={lead.telefone}
+                  campo="email"
+                  valorInicial={extra.email ?? ""}
+                  placeholder="E-mail"
+                >
+                  {extra.email ? <Sigilo>{extra.email}</Sigilo> : <Dash />}
+                </EditarCampo>
+              </Field>
+              <Field label="Endereço (busca pelo CEP)" className="col-span-2 sm:col-span-3 lg:col-span-4">
+                <Sigilo>
+                  <EditarEndereco
+                    key={`end:${extra.cep ?? ""}:${extra.logradouro ?? ""}:${extra.numero ?? ""}:${extra.cidade ?? ""}`}
+                    telefone={lead.telefone}
+                    inicial={{
+                      cep: extra.cep,
+                      logradouro: extra.logradouro,
+                      numero: extra.numero,
+                      complemento: extra.complemento,
+                      bairro: extra.bairro,
+                      cidade: extra.cidade ?? lead.cidade,
+                      uf: extra.uf ?? lead.uf,
+                    }}
+                  />
+                </Sigilo>
               </Field>
 
               <Field label="Primeira interação">
@@ -340,6 +388,16 @@ export default async function LeadDetailPage({
               dataFechamento={lead.data_fechamento}
             />
           </div>
+        </Panel>
+
+        {/* Negociações: histórico de cada tentativa de venda/atendimento */}
+        <Panel
+          title="Negociações"
+          subtitle="Cada tentativa de atendimento fica registrada: em andamento, concretizada ou perdida"
+          className="mt-4"
+          delay={100}
+        >
+          <NegociosLead telefone={lead.telefone} negocios={negocios} voltouAFalar={voltou} />
         </Panel>
 
         {/* Resumo & score IA */}

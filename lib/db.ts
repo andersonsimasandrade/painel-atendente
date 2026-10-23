@@ -1781,10 +1781,69 @@ function unirCamposManuais(
  */
 export async function setDadosLead(
   telefone: string,
-  patch: { investimento?: number | null; marca?: string | null; origem?: string | null },
+  patch: {
+    investimento?: number | null;
+    marca?: string | null;
+    origem?: string | null;
+    email?: string | null;
+    cep?: string | null;
+    logradouro?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    uf?: string | null;
+    cnpj?: string | null;
+    etapa?: string | null;
+    canal?: string | null;
+  },
 ): Promise<{ ok: boolean; error?: string }> {
   const upd: Record<string, unknown> = {};
   const tocados: string[] = [];
+  // Campos de texto livre editáveis na ficha (string vazia limpa o campo).
+  const textos: [keyof typeof patch, string, number][] = [
+    ["email", "email", 120],
+    ["logradouro", "logradouro", 120],
+    ["numero", "numero", 20],
+    ["complemento", "complemento", 80],
+    ["bairro", "bairro", 80],
+    ["cidade", "cidade", 80],
+    ["etapa", "estagio_conversa", 80],
+  ];
+  for (const [k, coluna, max] of textos) {
+    if (k in patch) {
+      upd[coluna] = String(patch[k] ?? "").trim().slice(0, max) || null;
+      tocados.push(coluna);
+    }
+  }
+  if ("email" in patch && upd.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(upd.email))) {
+    return { ok: false, error: "E-mail inválido." };
+  }
+  if ("cep" in patch) {
+    const d = String(patch.cep ?? "").replace(/\D/g, "");
+    if (d && d.length !== 8) return { ok: false, error: "CEP inválido (8 números)." };
+    upd.cep = d || null;
+    tocados.push("cep");
+  }
+  if ("uf" in patch) {
+    const u = String(patch.uf ?? "").trim().toUpperCase();
+    if (u && !/^[A-Z]{2}$/.test(u)) return { ok: false, error: "UF deve ter 2 letras (ex.: SC)." };
+    upd.uf = u || null;
+    tocados.push("uf");
+  }
+  if ("cnpj" in patch) {
+    const d = String(patch.cnpj ?? "").replace(/\D/g, "");
+    if (d && d.length !== 14 && d.length !== 11) return { ok: false, error: "CPF/CNPJ inválido." };
+    upd.cnpj_numero = d || null;
+    upd.cnpj = d ? true : null;
+    tocados.push("cnpj", "cnpj_numero");
+  }
+  if ("canal" in patch) {
+    const c = String(patch.canal ?? "").trim().toLowerCase();
+    if (c && !["texto", "audio", "áudio"].includes(c)) return { ok: false, error: "Canal: use texto ou áudio." };
+    upd.preferencia_canal = c ? (c === "texto" ? "texto" : "audio") : null;
+    tocados.push("preferencia_canal");
+  }
   if ("investimento" in patch) {
     const v = patch.investimento;
     if (v != null && (!Number.isFinite(v) || v < 0 || v > 100_000_000)) {

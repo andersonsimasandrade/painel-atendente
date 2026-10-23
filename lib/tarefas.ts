@@ -4,6 +4,7 @@ import { enviarTextoInstancia } from "@/lib/evolution";
 import { enviarDM } from "@/lib/instagram";
 import { perguntarJSON } from "@/lib/llm";
 import { variantesTelefone } from "@/lib/telefone";
+import { contatarAgora } from "@/lib/negocios";
 import { GOOGLE_PEDIR_AVALIACAO_URL, SITE_URL } from "@/lib/site";
 
 // TAREFAS DE RELACIONAMENTO: acompanhamento de quem está negociando e de quem já se tratou.
@@ -312,11 +313,11 @@ export async function executarVencidas(maxEnvios = 5): Promise<{ enviadas: numbe
 // ── sugestões automáticas ───────────────────────────────────────────────────
 const ETAPAS_NEGOCIANDO = ["qualificando", "materiais_enviados", "roteado", "politica_enviada", "transferido"];
 
-export async function gerarSugestoes(): Promise<{ posSessao: number; negociacao: number; retornos: number }> {
+export async function gerarSugestoes(): Promise<{ posSessao: number; negociacao: number; retornos: number; reativacoes: number }> {
   const sb = getClient();
   const agora = new Date();
   const hoje = diaSP(agora);
-  const out = { posSessao: 0, negociacao: 0, retornos: 0 };
+  const out = { posSessao: 0, negociacao: 0, retornos: 0, reativacoes: 0 };
 
   // (a) depois da sessão: D+1 cuidado, D+7 reavaliação, D+14 avaliação no Google, D+30 indicação
   const quarenta = new Date(agora.getTime() - 40 * 86400000).toISOString();
@@ -421,6 +422,25 @@ export async function gerarSugestoes(): Promise<{ posSessao: number; negociacao:
       personalizar: true,
     });
     if (id) out.retornos++;
+  }
+
+  // (d) quem precisa ser contactado para nova venda ou acompanhamento: voltou a falar depois de perdida,
+  // paciente há 30+ dias sem nova negociação, negociação perdida que vale retomar (até 3 por dia, uma vez por mês cada).
+  const pend = await contatarAgora(8).catch(() => []);
+  const mes = hoje.slice(0, 7);
+  for (const p of pend) {
+    if (out.reativacoes >= 3) break;
+    const id = await criarTarefa({
+      chave: `reat:${p.telefone}:${mes}`,
+      telefone: p.telefone,
+      nome: p.nome,
+      tipo: "reativacao",
+      origem: "playbook",
+      motivo: p.motivo.slice(0, 160),
+      devida_em: spParaUTC(hoje, "10:00"),
+      personalizar: true,
+    });
+    if (id) out.reativacoes++;
   }
   return out;
 }

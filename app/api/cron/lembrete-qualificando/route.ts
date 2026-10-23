@@ -4,6 +4,7 @@ import { enviarTextoInstancia } from "@/lib/evolution";
 import { lerPausaWebhook } from "@/lib/painel-pausa";
 import { variantesTelefone } from "@/lib/telefone";
 import type { HorarioBot } from "@/lib/types";
+import { dentroDaJanelaDeEnvio } from "@/lib/janela-envio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,7 +44,9 @@ function primeiroNome(nome: string | null): string {
 
 // Dentro do expediente do robô? (SP = UTC-3 fixo.)
 function dentroDoExpediente(hb: HorarioBot | null, agora: Date): boolean {
-  if (!hb?.ativo || !hb.dias.length) return true; // sem config: não bloqueia (igual ao robô)
+  // Janela FIXA 08:00–20:00: vale mesmo com o horário do robô desligado (foi assim que saiu um lembrete às 3h da manhã).
+  if (!dentroDaJanelaDeEnvio(agora)) return false;
+  if (!hb?.ativo || !hb.dias.length) return true; // sem config do robô: só vale a janela fixa
   const sp = new Date(agora.getTime() - 3 * 3600 * 1000);
   const [hi, mi] = hb.inicio.split(":").map((x) => Number(x) || 0);
   const [hf, mf] = hb.fim.split(":").map((x) => Number(x) || 0);

@@ -1,5 +1,6 @@
 import { getClient, getPainelConfig } from "@/lib/db";
 import { dentroDoExpediente } from "@/lib/ig-robo";
+import { dentroDaJanelaDeEnvio } from "@/lib/janela-envio";
 import { diaSP, enviarAoDono, executarVencidas, gerarSugestoes, montarResumoDoDia, spParaUTC } from "@/lib/tarefas";
 
 // Rotinas das tarefas, chamadas pelo relógio interno do painel (lib/tarefas-relogio.ts) ou pela rota /api/cron/tarefas.
@@ -31,7 +32,7 @@ export async function rodarTarefasDoDia(opts: { forcar?: boolean } = {}): Promis
 /** Envia as tarefas aprovadas que venceram (só no expediente), conferindo o contexto antes de cada uma. */
 export async function rodarExecutorDeTarefas(): Promise<Record<string, unknown>> {
   const cfg = await getPainelConfig();
-  if (!dentroDoExpediente(cfg.horario_bot, new Date())) return { ok: true, motivo: "fora do expediente" };
+  if (!dentroDaJanelaDeEnvio(new Date()) || !dentroDoExpediente(cfg.horario_bot, new Date())) return { ok: true, motivo: "fora do expediente" };
   const r = await executarVencidas();
   if (r.enviadas || r.devolvidas || r.falhas) await diario("tarefas-executar", r as unknown as Record<string, unknown>);
   return { ok: true, ...r };

@@ -5,6 +5,7 @@ import { canalDaConversa } from "@/lib/consultores";
 import { chamarPausaWebhook, lerPausaWebhook } from "@/lib/painel-pausa";
 import { variantesTelefone } from "@/lib/telefone";
 import type { HorarioBot } from "@/lib/types";
+import { dentroDaJanelaDeEnvio, proximaAberturaDaJanela } from "@/lib/janela-envio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +50,16 @@ function render(template: string, nome: string | null): string {
 // a PRÓXIMA abertura (as sequências respeitam o mesmo expediente do robô).
 // Brasil não tem horário de verão desde 2019 — SP é UTC-3 fixo.
 function proximaAbertura(hb: HorarioBot | null, agora: Date): Date | null {
+  // Janela FIXA 08:00–20:00 (vale mesmo com o horário do robô desligado): fora dela, adia para as 08:00.
+  if (!dentroDaJanelaDeEnvio(agora)) {
+    const fixa = proximaAberturaDaJanela(agora);
+    const doRobo = proximaAberturaRobo(hb, fixa);
+    return doRobo && doRobo.getTime() > fixa.getTime() ? doRobo : fixa;
+  }
+  return proximaAberturaRobo(hb, agora);
+}
+
+function proximaAberturaRobo(hb: HorarioBot | null, agora: Date): Date | null {
   if (!hb?.ativo || !hb.dias.length) return null;
   const SP_OFF = 3 * 60 * 60 * 1000;
   const sp = new Date(agora.getTime() - SP_OFF);

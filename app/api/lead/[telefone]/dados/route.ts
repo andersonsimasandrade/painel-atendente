@@ -17,7 +17,7 @@ export async function POST(req: Request, { params }: { params: { telefone: strin
     return NextResponse.json({ ok: false, error: "Telefone obrigatório." }, { status: 400 });
   }
 
-  let patch: { investimento?: number | null; marca?: string | null; origem?: string | null } = {};
+  const patch: Parameters<typeof setDadosLead>[1] = {};
   try {
     const b = (await req.json()) as Record<string, unknown>;
     if ("investimento" in b) {
@@ -31,6 +31,9 @@ export async function POST(req: Request, { params }: { params: { telefone: strin
     }
     if ("marca" in b) patch.marca = String(b.marca ?? "");
     if ("origem" in b) patch.origem = String(b.origem ?? "");
+    for (const k of ["email", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "cnpj", "etapa", "canal"] as const) {
+      if (k in b) patch[k] = String(b[k] ?? "");
+    }
   } catch {
     return NextResponse.json({ ok: false, error: "Corpo inválido." }, { status: 400 });
   }
