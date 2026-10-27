@@ -1,6 +1,5 @@
 // HORÁRIOS EM QUE O ANDERSON ATENDE (usados nas sugestões de horário do painel e na página pública de agendamento).
-//   • quarta: das 08:00 às 17:00 (pausa 12:00–13:30)
-//   • quinta e sexta: manhã (08:00–12:00) e 13:30–17:00
+//   • quarta, quinta e sexta: das 08:00 às 17:00, sem pausa para almoço
 //   • segunda e sábado: só de manhã (08:00–12:00), em semanas ALTERNADAS (semana sim, semana não)
 //   • terça e domingo: não atende
 // Cada atendimento dura 60 minutos. Funções puras, sem acesso a banco.
@@ -16,10 +15,8 @@ interface Regra {
   janelas: Janela[];
 }
 
-const MANHA_E_TARDE: Janela[] = [
-  ["08:00", "12:00"],
-  ["13:30", "17:00"],
-];
+// Sem pausa para almoço: agenda cheia das 08:00 às 17:00 (9 horários por dia).
+const MANHA_E_TARDE: Janela[] = [["08:00", "17:00"]];
 
 export const REGRAS: Record<number, Regra> = {
   1: { alterna: true, janelas: [["08:00", "12:00"]] }, // segunda

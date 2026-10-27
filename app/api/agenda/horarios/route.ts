@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET /api/agenda/horarios?dias=21 — horários livres dos próximos dias, pelas regras reais de atendimento
-// (quarta até 17h; quinta e sexta manhã e 13:30–17:00; segunda e sábado de manhã em semanas alternadas).
+// (quarta a sexta das 08:00 às 17:00, sem pausa; segunda e sábado de manhã em semanas alternadas).
 export async function GET(req: Request) {
   const sess = await getSessao();
   if (!sess) return NextResponse.json({ ok: false, error: "Não autorizado." }, { status: 401 });
