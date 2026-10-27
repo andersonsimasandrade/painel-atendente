@@ -11,6 +11,7 @@ import {
   PROFISSIONAL,
   SITE_URL,
   SLOGAN,
+  whatsappNumero,
 } from "@/lib/site";
 import { CapturaOrigem } from "@/components/site/CapturaOrigem";
 import { Rastreio } from "@/components/site/Rastreio";
@@ -54,11 +55,32 @@ export const metadata: Metadata = {
 };
 
 function jsonLd() {
+  // Endereços dos dois consultórios, também no nível da empresa (o Google lê "address" aqui; priceRange fica de fora de propósito: não divulgamos valores).
+  const enderecos = [
+    {
+      "@type": "PostalAddress",
+      streetAddress: "Rua Joaquim Carneiro, 207",
+      addressLocality: "Florianópolis",
+      addressRegion: "SC",
+      postalCode: CONSULTORIOS.capoeiras.cep,
+      addressCountry: "BR",
+    },
+    {
+      "@type": "PostalAddress",
+      streetAddress: "R. Altamiro Guimarães, 190, Sala 06",
+      addressLocality: "Florianópolis",
+      addressRegion: "SC",
+      addressCountry: "BR",
+    },
+  ];
   const base = {
     "@context": "https://schema.org",
     "@type": "Physiotherapy",
     name: MARCA,
     url: SITE_URL,
+    image: `${SITE_URL}/img/coluna.webp`,
+    telephone: `+${whatsappNumero()}`,
+    address: enderecos,
     description:
       "Atendimento fisioterapêutico individualizado em Florianópolis, com foco em dores na coluna, cervical e lombar, e terapia manual.",
     slogan: SLOGAN,

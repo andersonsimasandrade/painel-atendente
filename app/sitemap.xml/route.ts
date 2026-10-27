@@ -3,7 +3,7 @@ import { postsParaSitemap } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
 
-const PAGINAS = ["/", "/agendar", "/capoeiras", "/centro", "/duvidas", "/blog", "/privacidade", "/exclusao-de-dados"];
+const PAGINAS = ["/", "/agendar", "/capoeiras", "/centro", "/duvidas", "/blog", "/privacidade", "/termos", "/exclusao-de-dados"];
 
 export async function GET(req: Request) {
   const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")
