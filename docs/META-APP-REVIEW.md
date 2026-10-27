@@ -24,20 +24,14 @@ Todas estão em "Pronto para teste" = **acesso padrão**. Funciona só para quem
 
 `ads_management`, `ads_read` e as demais **não são usadas** pelo robô: não peça.
 
-## O que isso significa na prática
-Com acesso padrão, o direct e os comentários **de pessoas sem função no app** não chegam ao robô.
-Para atender pacientes de verdade, é preciso **acesso avançado** em, no mínimo:
-`instagram_business_manage_messages` e `instagram_business_manage_comments`
-(e `instagram_business_basic`, que acompanha). `content_publish` e `manage_insights` funcionam na própria
-conta com acesso padrão, não precisam de análise.
+## O que isso significa na prática (CORRIGIDO em 27/10, tarde)
+O banco mostra que o direct **já chega de pessoas sem função no app** (várias contas diferentes, desde 16/10) e o robô responde.
+Em modo Publicado, um app que usa só a **conta do próprio consultório** funciona com acesso padrão.
+**A análise do app (acesso avançado) NÃO é necessária** para o robô atender os pacientes. Só será necessária se o app passar a
+atender contas de OUTRAS empresas. Por isso a verificação da empresa e os vídeos ficam **parados**, sem urgência.
 
-## Pontos que travam o envio (decisão sua)
-1. **Verificação da empresa.** O app pertence ao portfólio **Clinical Mobile Inova Tec**, mas a conta de anúncios e a
-   página do consultório estão no portfólio **Anderson Andrade Fisio**. A Meta exige verificação da empresa dona do app
-   para dar acesso avançado. Decida qual das duas será verificada (precisa de CNPJ e documentos) e, se for a do consultório,
-   o app precisa ser movido para ela.
-2. **Vídeo de demonstração** de cada permissão (screencast). Eu não consigo gravar; roteiro abaixo.
-3. O app precisa estar **funcionando** na hora da análise (a equipe da Meta testa). Não troque chaves durante a análise.
+O risco real era outro: a **chave de acesso do Instagram vale 60 dias** e o painel não a renovava (em 21/10 houve falhas por "chave inválida").
+Foi criada a renovação automática (tabela `ig_credencial`, relógio a cada 12 h, aviso por e-mail se falhar).
 
 ## Roteiro do vídeo (1 vídeo por permissão, 1–2 minutos, com tela do celular e do painel)
 **manage_messages:** (1) outra conta do Instagram manda um direct para @andersonandrade_fisio; (2) mostrar a mensagem chegando

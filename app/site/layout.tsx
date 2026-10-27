@@ -85,13 +85,11 @@ function jsonLd() {
       "Atendimento fisioterapêutico individualizado em Florianópolis, com foco em dores na coluna, cervical e lombar, e terapia manual.",
     slogan: SLOGAN,
     sameAs: [INSTAGRAM_URL, ...(FACEBOOK_URL ? [FACEBOOK_URL] : [])],
+    // Dias fixos da agenda. Segunda e sábado (semanas alternadas) ficam de fora: o formato não representa "semana sim, semana não".
     openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "08:00",
-        closes: "19:00",
-      },
+      { "@type": "OpeningHoursSpecification", dayOfWeek: ["Tuesday", "Wednesday"], opens: "08:00", closes: "17:00" },
+      { "@type": "OpeningHoursSpecification", dayOfWeek: ["Thursday", "Friday"], opens: "08:00", closes: "12:00" },
+      { "@type": "OpeningHoursSpecification", dayOfWeek: ["Thursday", "Friday"], opens: "13:30", closes: "17:00" },
     ],
     employee: { "@type": "Person", name: PROFISSIONAL, jobTitle: "Fisioterapeuta" },
     location: [

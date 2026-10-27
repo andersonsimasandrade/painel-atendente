@@ -86,7 +86,8 @@ export const ORIENTACAO_ESTACIONAMENTO_CENTRO =
   "🚗 Estacione no estacionamento do Beiramar Shopping e saia pelo Supermercado Imperatriz Gourmet, " +
   "no Piso L1 (térreo), com acesso pelo Portão A, voltado para a Rua Bocaiúva.";
 
-export const HORARIO_TEXTO = "Segunda a sexta, das 8h às 19h";
+// Agenda real (veja também lib/horarios-atendimento.ts). Mudou a rotina? Altere aqui e em app/site/layout.tsx (dados para o Google).
+export const HORARIO_TEXTO = "Terça a sexta, das 8h às 17h (segundas e sábados de manhã em semanas alternadas)";
 
 export const DIAS = [
   { id: "seg", nome: "Segunda" },

@@ -22,7 +22,7 @@ import type { HorarioBot } from "@/lib/types";
 const HUMANO_HORAS = 48; // depois de uma transferência ou de o Anderson responder, o robô fica quieto por 48 h
 const LIMITE_RESPOSTAS_POR_HORA = 12;
 const FORA_DO_HORARIO =
-  "Olá! Obrigado pelo contato 😊 O consultório atende de segunda a sexta, das 8h às 19h. Assim que abrir, a gente te responde por aqui.";
+  "Olá! Obrigado pelo contato 😊 O consultório atende de terça a sexta, das 8h às 17h. Assim que abrir, a gente te responde por aqui.";
 
 const RESPOSTAS_PUBLICAS = [
   "Obrigado pelo comentário! 😊 Te mandei uma mensagem no direct.",

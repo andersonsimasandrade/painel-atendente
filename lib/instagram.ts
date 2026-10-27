@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { tokenIG } from "@/lib/ig-token";
 
 // Integração com a API do Instagram (login do Instagram).
 // Variáveis de ambiente (nenhuma é obrigatória para o painel subir):
@@ -124,7 +125,7 @@ export interface ResultadoIG {
 }
 
 async function chamar(caminho: string, corpo: unknown): Promise<ResultadoIG> {
-  const token = (process.env.INSTAGRAM_ACCESS_TOKEN ?? "").trim();
+  const token = await tokenIG();
   if (!token) return { ok: false, status: 0, erro: "INSTAGRAM_ACCESS_TOKEN ausente" };
   try {
     const r = await fetch(`${GRAPH}${caminho}`, {
@@ -168,7 +169,7 @@ export function responderComentario(comentarioId: string, texto: string) {
 
 /** Nome e @ de quem escreveu (só funciona depois que a pessoa mandou mensagem). */
 export async function perfilDe(igId: string): Promise<{ nome: string | null; username: string | null }> {
-  const token = (process.env.INSTAGRAM_ACCESS_TOKEN ?? "").trim();
+  const token = await tokenIG();
   if (!token) return { nome: null, username: null };
   try {
     const r = await fetch(`${GRAPH}/${encodeURIComponent(igId)}?fields=name,username`, {

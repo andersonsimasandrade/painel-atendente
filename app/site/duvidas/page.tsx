@@ -47,7 +47,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Em quais dias e horários atendem?",
-    a: "De segunda a sexta, das 8h às 19h, em Capoeiras e no Centro. Os horários são combinados pelo WhatsApp.",
+    a: "De terça a sexta, das 8h às 17h, em Capoeiras e no Centro (segundas e sábados de manhã em semanas alternadas). Os horários são combinados pelo WhatsApp.",
   },
 ];
 
