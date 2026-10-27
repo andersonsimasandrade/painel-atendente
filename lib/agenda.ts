@@ -93,6 +93,8 @@ export type AgendamentoView = {
   lembrete_enviado_em: string | null;
   vendedor_nome: string;
   vendedor_slug: string;
+  local: string | null;
+  origem_canal: string | null;
 };
 
 export type AgendamentoLembrete = {
@@ -116,6 +118,7 @@ type AgRow = {
   lembrete_enviado_em: string | null;
   vendedor_id: string;
   local?: string | null;
+  origem_canal?: string | null;
 };
 
 /** Consultores ativos (p/ o filtro do admin). Vazio em erro — fail-safe. */
@@ -158,7 +161,7 @@ export async function listarAgendamentos(slug?: string): Promise<AgendamentoView
       s
         .from("agendamentos")
         .select(
-          "id, telefone_lead, nome_lead, data_hora, status, origem, lembrete_enviado_em, vendedor_id",
+          "id, telefone_lead, nome_lead, data_hora, status, origem, lembrete_enviado_em, vendedor_id, local, origem_canal",
         )
         .neq("status", "cancelado")
         .gte("data_hora", desde)
@@ -178,6 +181,8 @@ export async function listarAgendamentos(slug?: string): Promise<AgendamentoView
         lembrete_enviado_em: r.lembrete_enviado_em,
         vendedor_nome: v?.nome ?? "—",
         vendedor_slug: v?.slug ?? "",
+        local: r.local ?? null,
+        origem_canal: r.origem_canal ?? null,
       };
     });
     return slug ? out.filter((a) => a.vendedor_slug === slug) : out;
@@ -336,5 +341,46 @@ export async function listarParaSync(): Promise<AgendamentoSync[]> {
   } catch (e) {
     console.error("[listarParaSync]", e);
     return [];
+  }
+}
+
+/** REMARCAR: muda dia/horário/consultório. O Google Agenda acompanha na próxima sincronização (o id do evento é o mesmo). */
+export async function remarcarAgendamento(
+  id: string,
+  dataHoraIso: string,
+  local: "capoeiras" | "centro",
+  vendedorId?: string,
+): Promise<{ ok: true } | { ok: false; conflito?: boolean; error: string }> {
+  try {
+    let q = getClient()
+      .from("agendamentos")
+      .update({ data_hora: dataHoraIso, local, lembrete_enviado_em: null, status: "agendado" })
+      .eq("id", id);
+    if (vendedorId) q = q.eq("vendedor_id", vendedorId);
+    const res = await q.select("id");
+    if (res.error) {
+      const conflito = /duplicate key|unique/i.test(res.error.message);
+      return { ok: false, conflito, error: res.error.message };
+    }
+    if (!res.data?.length) return { ok: false, error: "Agendamento não encontrado." };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erro ao remarcar." };
+  }
+}
+
+/** CANCELAR: o evento some do Google Agenda na próxima sincronização e a conversão ainda pendente é descartada. */
+export async function cancelarAgendamento(id: string, vendedorId?: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const sb = getClient();
+    let q = sb.from("agendamentos").update({ status: "cancelado" }).eq("id", id);
+    if (vendedorId) q = q.eq("vendedor_id", vendedorId);
+    const res = await q.select("id");
+    if (res.error) return { ok: false, error: res.error.message };
+    if (!res.data?.length) return { ok: false, error: "Agendamento não encontrado." };
+    await sb.from("conversoes").update({ status: "ignorado", resposta: "agendamento cancelado" }).eq("agendamento_id", id).eq("status", "pendente");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erro ao cancelar." };
   }
 }

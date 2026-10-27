@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: { telefone: strin
     }
     if ("marca" in b) patch.marca = String(b.marca ?? "");
     if ("origem" in b) patch.origem = String(b.origem ?? "");
-    for (const k of ["email", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "cnpj", "etapa", "canal"] as const) {
+    for (const k of ["email", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "cnpj", "etapa", "canal", "origem_canal"] as const) {
       if (k in b) patch[k] = String(b[k] ?? "");
     }
   } catch {

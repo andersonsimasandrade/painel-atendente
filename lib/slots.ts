@@ -1,4 +1,5 @@
 import { SlotDia, Vendedor } from "./types";
+import { horariosDoDia } from "./horarios-atendimento";
 
 // Brasil sem horário de verão desde 2019 → offset fixo -03:00.
 const OFFSET = "-03:00";
@@ -32,7 +33,6 @@ export function gerarSlotsDias(
   for (let i = 0; i < horizonte; i++) {
     const d = new Date(base + i * 86400000);
     const dow = d.getUTCDay(); // 0=dom..6=sáb (calendário SP)
-    if (!disponibilidade.dias.includes(dow)) continue;
 
     const y = d.getUTCFullYear();
     const m = d.getUTCMonth() + 1;
@@ -40,7 +40,9 @@ export function gerarSlotsDias(
     const dataIso = `${y}-${p2(m)}-${p2(dd)}`;
 
     const slots: SlotDia["slots"] = [];
-    for (const hhmm of disponibilidade.horarios) {
+    // Os horários vêm das regras reais de atendimento (lib/horarios-atendimento.ts); `disponibilidade` do cadastro fica só por compatibilidade.
+    void disponibilidade;
+    for (const hhmm of horariosDoDia(dataIso)) {
       const [HH, MM] = hhmm.split(":");
       const iso = new Date(`${dataIso}T${HH}:${MM}:00${OFFSET}`).toISOString();
       if (new Date(iso).getTime() <= agora.getTime()) continue; // já passou

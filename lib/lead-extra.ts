@@ -5,18 +5,24 @@ import type { EnderecoLead } from "@/components/lead/EditarEndereco";
 
 export interface ExtraLead extends EnderecoLead {
   email: string | null;
+  origem_canal: string | null;
+  origem_manual: boolean;
+  tem_gclid: boolean;
+  tem_fbclid: boolean;
 }
 
 export async function getExtraLead(telefone: string): Promise<ExtraLead> {
-  const vazio: ExtraLead = { email: null, cep: null, logradouro: null, numero: null, complemento: null, bairro: null, cidade: null, uf: null };
+  const vazio: ExtraLead = { origem_canal: null, origem_manual: false, tem_gclid: false, tem_fbclid: false, email: null, cep: null, logradouro: null, numero: null, complemento: null, bairro: null, cidade: null, uf: null };
   try {
     const r = await getClient()
       .from("ff_contatos")
-      .select("email, cep, logradouro, numero, complemento, bairro, cidade, uf")
+      .select("email, cep, logradouro, numero, complemento, bairro, cidade, uf, origem_canal, origem_manual, gclid, fbclid")
       .in("telefone", variantesTelefone(telefone))
       .limit(1);
-    const c = (r.data?.[0] ?? null) as Record<string, string | null> | null;
-    return c ? { ...vazio, ...c } : vazio;
+    const c = (r.data?.[0] ?? null) as (Record<string, string | boolean | null>) | null;
+    if (!c) return vazio;
+    const { gclid, fbclid, ...resto } = c;
+    return { ...vazio, ...(resto as Partial<ExtraLead>), tem_gclid: !!gclid, tem_fbclid: !!fbclid };
   } catch {
     return vazio;
   }

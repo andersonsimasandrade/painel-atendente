@@ -1796,9 +1796,11 @@ export async function setDadosLead(
     cnpj?: string | null;
     etapa?: string | null;
     canal?: string | null;
+    origem_canal?: string | null;
   },
 ): Promise<{ ok: boolean; error?: string }> {
   const upd: Record<string, unknown> = {};
+  let reaplicarOrigem = false;
   const tocados: string[] = [];
   // Campos de texto livre editáveis na ficha (string vazia limpa o campo).
   const textos: [keyof typeof patch, string, number][] = [
@@ -1837,6 +1839,13 @@ export async function setDadosLead(
     upd.cnpj_numero = d || null;
     upd.cnpj = d ? true : null;
     tocados.push("cnpj", "cnpj_numero");
+  }
+  if ("origem_canal" in patch) {
+    const o = String(patch.origem_canal ?? "").trim().toLowerCase();
+    if (o && !["google", "meta", "instagram", "indicacao", "site"].includes(o)) return { ok: false, error: "Origem inválida." };
+    upd.origem_canal = o || null;
+    upd.origem_manual = !!o; // o que você define à mão não é sobrescrito pelo sistema
+    reaplicarOrigem = !o; // limpar = deixa o sistema recalcular
   }
   if ("canal" in patch) {
     const c = String(patch.canal ?? "").trim().toLowerCase();
@@ -1901,6 +1910,9 @@ export async function setDadosLead(
       .select("telefone");
     if (res.error) return { ok: false, error: res.error.message };
     if (!res.data?.length) return { ok: false, error: "Lead não encontrado." };
+    if (reaplicarOrigem) {
+      for (const r of res.data as { telefone: string }[]) await supabase.rpc("aplicar_origem_contato", { p_tel: r.telefone });
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao salvar." };

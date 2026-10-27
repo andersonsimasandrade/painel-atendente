@@ -5,5 +5,7 @@ export async function register() {
     iniciarRelogioInstagram();
     const { iniciarRelogioDeTarefas } = await import("./lib/tarefas-relogio");
     iniciarRelogioDeTarefas();
+    const { iniciarRelogioDeConversoes } = await import("./lib/conversoes-relogio");
+    iniciarRelogioDeConversoes();
   }
 }

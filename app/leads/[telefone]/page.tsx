@@ -40,6 +40,7 @@ import { listarNegocios } from "@/lib/negocios";
 import { getExtraLead, voltouAFalar } from "@/lib/lead-extra";
 import { NegociosLead } from "@/components/lead/NegociosLead";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
+import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -283,7 +284,16 @@ export default async function LeadDetailPage({
                   {formatBRL(lead.valor_investimento)}
                 </EditarCampo>
               </Field>
-              <Field label="Origem" className="sm:col-span-2 lg:col-span-2">
+              <Field label="Origem do contato">
+                <OrigemCanalLead
+                  key={`oc:${extra.origem_canal ?? ""}:${extra.origem_manual}`}
+                  telefone={lead.telefone}
+                  valor={extra.origem_canal}
+                  manual={extra.origem_manual}
+                  temClique={{ google: extra.tem_gclid, meta: extra.tem_fbclid }}
+                />
+              </Field>
+              <Field label="Origem (campanha ou anúncio)" className="sm:col-span-2 lg:col-span-2">
                 <EditarCampo
                   key={`ori:${lead.origem_campanha ?? ""}`}
                   telefone={lead.telefone}

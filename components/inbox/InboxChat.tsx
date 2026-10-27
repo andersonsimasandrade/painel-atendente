@@ -17,6 +17,7 @@ import { initials, formatPhone, consultorCor, formatDateTime } from "@/lib/forma
 import { EmptyState } from "../EmptyState";
 import { MarcarLida } from "../MarcarLida";
 import { MudarEstagio } from "../MudarEstagio";
+import { MarcarAvaliacaoRapido } from "../MarcarAvaliacaoRapido";
 import { EditarNome } from "../EditarNome";
 import { useAudioRecorder } from "./useAudioRecorder";
 import { Sigilo } from "../Sigilo";
@@ -1225,6 +1226,7 @@ export function InboxChat({
               que a informação está fresca; na prática o funil parava de ser
               atualizado nos atendimentos feitos em rua. */}
           <MudarEstagio telefone={telefone} stageAtual={funnelStage} compacto etapas={etapas} />
+          <MarcarAvaliacaoRapido telefone={telefone} nome={nome} />
           <button
             type="button"
             onClick={() => {

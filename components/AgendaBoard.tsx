@@ -28,6 +28,87 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
+const ROTULO_LOCAL: Record<string, string> = { capoeiras: "Capoeiras", centro: "Centro" };
+const ROTULO_ORIGEM: Record<string, string> = { google: "Google", meta: "Meta", instagram: "Instagram", indicacao: "Indicação", site: "Site" };
+
+function Chips({ a }: { a: AgendamentoView }) {
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      {a.local && (
+        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-ink-muted ring-1 ring-inset ring-line">{ROTULO_LOCAL[a.local] ?? a.local}</span>
+      )}
+      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand ring-1 ring-inset ring-brand/25" title="Origem do contato">
+        {a.origem_canal ? ROTULO_ORIGEM[a.origem_canal] ?? a.origem_canal : "Origem não informada"}
+      </span>
+    </span>
+  );
+}
+
+function Remarcar({ a, onFeito }: { a: AgendamentoView; onFeito: () => void }) {
+  const [aberto, setAberto] = useState(false);
+  const dt = new Date(new Date(a.data_hora).getTime() - 3 * 3600 * 1000).toISOString();
+  const [data, setData] = useState(dt.slice(0, 10));
+  const [hora, setHora] = useState(dt.slice(11, 16));
+  const [local, setLocal] = useState<"capoeiras" | "centro">(a.local === "centro" ? "centro" : "capoeiras");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
+  async function enviar(corpo: Record<string, unknown>, texto: string) {
+    setSalvando(true);
+    setMsg(null);
+    try {
+      const r = await fetch(`/api/agenda/${encodeURIComponent(a.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) {
+        setMsg(j.error ?? "Não consegui salvar.");
+        return;
+      }
+      setMsg(texto);
+      setTimeout(onFeito, 900);
+    } catch {
+      setMsg("Falha de rede.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (!aberto) {
+    return (
+      <button type="button" onClick={() => setAberto(true)} className="text-[11.5px] text-ink-faint underline-offset-2 hover:text-ink-muted hover:underline">
+        remarcar ou cancelar
+      </button>
+    );
+  }
+  const campo = "rounded-lg border border-line bg-base/70 px-2 py-1 text-[12px] text-ink outline-none focus:border-brand/60";
+  return (
+    <span className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-line bg-white/[0.02] p-2">
+      <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={campo} />
+      <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className={campo} />
+      <select value={local} onChange={(e) => setLocal(e.target.value as "capoeiras" | "centro")} className={campo}>
+        <option value="capoeiras" style={{ color: "var(--c-ink)", background: "var(--c-surface2)" }}>Capoeiras</option>
+        <option value="centro" style={{ color: "var(--c-ink)", background: "var(--c-surface2)" }}>Centro</option>
+      </select>
+      <button type="button" disabled={salvando} onClick={() => void enviar({ data, hora, local }, "Remarcada. O Google Agenda atualiza em poucos minutos.")} className="rounded-lg bg-brand px-2.5 py-1 text-[12px] font-semibold text-[#04140d] disabled:opacity-50">
+        Remarcar
+      </button>
+      <button
+        type="button"
+        disabled={salvando}
+        onClick={() => {
+          if (window.confirm("Cancelar esta consulta? O evento sai do Google Agenda.")) void enviar({ cancelar: true }, "Cancelada.");
+        }}
+        className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[12px] font-semibold text-red-300 disabled:opacity-50"
+      >
+        Cancelar consulta
+      </button>
+      <button type="button" onClick={() => setAberto(false)} className="text-[11.5px] text-ink-faint hover:text-ink-muted">
+        fechar
+      </button>
+      {msg && <span className="w-full text-[11.5px] text-ink-muted">{msg}</span>}
+    </span>
+  );
+}
+
 function LeadLine({ a }: { a: AgendamentoView }) {
   return (
     <div className="min-w-0">
@@ -126,6 +207,7 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
             {aMarcar.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <LeadLine a={a} />
+                <Chips a={a} />
                 <span className="text-[12.5px] text-ink-muted">{formatarBR(a.data_hora)}</span>
                 <div className="ml-auto flex items-center gap-2">
                   <button
@@ -158,6 +240,7 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
             {proximas.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <LeadLine a={a} />
+                <Chips a={a} />
                 <div className="ml-auto flex items-center gap-2.5">
                   <span className="text-[12.5px] text-ink">{formatarBR(a.data_hora)}</span>
                   <StatusPill status={a.status} />
@@ -167,6 +250,7 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
                     </span>
                   )}
                 </div>
+                <Remarcar a={a} onFeito={() => window.location.reload()} />
               </li>
             ))}
           </ul>

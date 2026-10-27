@@ -7,6 +7,7 @@ import { hojeSP, addDias } from "@/lib/trafego";
 import { inicioProjeto } from "@/lib/periodo";
 import { formatBRL } from "@/lib/format";
 import { contatarAgora, metricasNegocios } from "@/lib/negocios";
+import { avaliacoesDaSemana, marcadasPorOrigem, semanaAtual } from "@/lib/avaliacoes";
 import { formatPhone } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -109,7 +110,14 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
   const range = searchParams?.range && RANGES[searchParams.range] ? searchParams.range : "30d";
   const hoje = hojeSP();
   const desde = RANGES[range].desde(hoje);
-  const [r, neg, pendentes] = await Promise.all([montarIndicadores(desde, hoje), metricasNegocios(desde, hoje), contatarAgora(12)]);
+  const [r, neg, pendentes, semana, porOrigem] = await Promise.all([
+    montarIndicadores(desde, hoje),
+    metricasNegocios(desde, hoje),
+    contatarAgora(12),
+    avaliacoesDaSemana(),
+    marcadasPorOrigem(desde, hoje),
+  ]);
+  const sem = semanaAtual();
   const t = r.total;
   const custoTotal = r.custo.google + r.custo.meta;
 
@@ -152,6 +160,52 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
             registrado. Pedidos, conversas e consultas já vêm do CRM.
           </p>
         )}
+
+        <Panel
+          title="Custo por avaliação marcada"
+          subtitle="Investimento do período ÷ avaliações marcadas por quem chegou por cada anúncio (a origem vem do clique ou é marcada na ficha)"
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(
+              [
+                ["google", "Google Ads", r.custo.google],
+                ["meta", "Meta Ads", r.custo.meta],
+              ] as const
+            ).map(([k, rot, gasto]) => {
+              const n = porOrigem[k] ?? 0;
+              return <Cartao key={k} titulo={`${rot}: ${n} avaliação(ões)`} valor={n > 0 && gasto > 0 ? formatBRL(gasto / n) : "—"} dica={gasto > 0 ? `${formatBRL(gasto)} investidos` : "sem investimento no período"} />;
+            })}
+            <Cartao titulo="Instagram (orgânico)" valor={String(porOrigem.instagram ?? 0)} dica="avaliações marcadas" />
+            <Cartao titulo="Site, indicação e sem origem" valor={String((porOrigem.site ?? 0) + (porOrigem.indicacao ?? 0) + (porOrigem.sem_origem ?? 0))} dica="avaliações marcadas" />
+          </div>
+        </Panel>
+
+        <Panel
+          title="Avaliações da semana"
+          subtitle={`De ${sem.desde.split("-").reverse().slice(0, 2).join("/")} a ${sem.ate.split("-").reverse().slice(0, 2).join("/")}, com a origem de cada contato`}
+        >
+          {semana.length === 0 ? (
+            <p className="text-[12.5px] text-ink-muted">Nenhuma avaliação marcada para esta semana ainda. Marque pela conversa (botão "Marcou avaliação") ou pela Agenda.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {semana.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-[12.5px]">
+                  <span className="w-[120px] text-ink">
+                    {new Date(a.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  <Link href={`/leads/${encodeURIComponent(a.telefone)}`} className="font-semibold text-ink underline-offset-2 hover:underline">
+                    {a.nome || formatPhone(a.telefone)}
+                  </Link>
+                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-ink-muted">{a.local === "capoeiras" ? "Capoeiras" : a.local === "centro" ? "Centro" : "Local não informado"}</span>
+                  <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                    {a.origem_canal ? ({ google: "Google", meta: "Meta", instagram: "Instagram", indicacao: "Indicação", site: "Site" } as Record<string, string>)[a.origem_canal] ?? a.origem_canal : "Origem não informada"}
+                  </span>
+                  <span className="ml-auto text-ink-muted">{a.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
 
         <Panel
           title="Negócios"

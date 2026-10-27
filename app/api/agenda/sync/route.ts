@@ -32,11 +32,12 @@ export async function GET(req: Request) {
       id: a.id,
       cancelado: a.status === "cancelado",
       status: a.status,
-      titulo: `Fisioterapia: ${a.nome ?? a.telefone}`,
+      titulo: `Fisioterapia${cons ? ` · ${cons.bairro}` : ""}: ${a.nome ?? a.telefone}`,
       inicio: ini.toISOString(),
       fim: fim.toISOString(),
       local: cons ? `${cons.nome} — ${cons.linhaEndereco}` : "",
-      descricao: `Paciente: ${a.nome ?? "—"}\nWhatsApp: https://wa.me/${a.telefone}\nOrigem: ${a.origem ?? "—"}\nStatus: ${a.status}`,
+      descricao: `Paciente: ${a.nome ?? "—"}\nWhatsApp: https://wa.me/${a.telefone}\nConsultório: ${cons ? cons.bairro : "-"}
+Origem: ${a.origem ?? "—"}\nStatus: ${a.status}`,
     };
   });
   // Tarefas de relacionamento (aprovar/fazer) também entram na agenda, no horário planejado.
