@@ -143,6 +143,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <Link href="/duvidas" className="hidden rounded-lg px-2.5 py-2 text-[#4A5F5D] hover:text-[#354746] sm:block">
               Dúvidas
             </Link>
+            <Link href="/blog" className="rounded-lg px-2.5 py-2 text-[#4A5F5D] hover:text-[#354746]">
+              Blog
+            </Link>
             <Link
               href="/agendar"
               className="rounded-xl bg-[#0F7F70] px-4 py-2.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-[#0B6B5E]"
@@ -196,6 +199,11 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <li>
                 <Link href="/duvidas" className="underline-offset-2 hover:underline">
                   Dúvidas frequentes
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="underline-offset-2 hover:underline">
+                  Blog
                 </Link>
               </li>
               <li>
