@@ -1,7 +1,9 @@
 // HORÁRIOS EM QUE O ANDERSON ATENDE (usados nas sugestões de horário do painel e na página pública de agendamento).
-//   • quarta, quinta e sexta: das 08:00 às 17:00, sem pausa para almoço
-//   • segunda e sábado: só de manhã (08:00–12:00), em semanas ALTERNADAS (semana sim, semana não)
-//   • terça e domingo: não atende
+//   • segunda (só nas semanas sem as crianças), terça e quarta: 08:00–17:00, sem pausa
+//   • quinta e sexta: 08:00–12:00 e 13:30–17:00 (pausa para levar as crianças ao colégio)
+//   • sábado: só de manhã (08:00–12:00), nas mesmas semanas alternadas da segunda
+//   • domingo: não atende
+//   • urgência: dá para marcar à mão fora desses horários (o painel só avisa), com aprovação prévia do Anderson
 // Cada atendimento dura 60 minutos. Funções puras, sem acesso a banco.
 //
 // >>> AJUSTE AQUI se a rotina mudar. SEMANA_REF é uma SEGUNDA-FEIRA em que segunda e sábado ESTÃO abertos;
@@ -15,14 +17,18 @@ interface Regra {
   janelas: Janela[];
 }
 
-// Sem pausa para almoço: agenda cheia das 08:00 às 17:00 (9 horários por dia).
-const MANHA_E_TARDE: Janela[] = [["08:00", "17:00"]];
+const DIA_INTEIRO: Janela[] = [["08:00", "17:00"]]; // 9 horários, sem pausa
+const COM_PAUSA: Janela[] = [
+  ["08:00", "12:00"],
+  ["13:30", "17:00"],
+];
 
 export const REGRAS: Record<number, Regra> = {
-  1: { alterna: true, janelas: [["08:00", "12:00"]] }, // segunda
-  3: { janelas: MANHA_E_TARDE }, // quarta
-  4: { janelas: MANHA_E_TARDE }, // quinta
-  5: { janelas: MANHA_E_TARDE }, // sexta
+  1: { alterna: true, janelas: DIA_INTEIRO }, // segunda
+  2: { janelas: DIA_INTEIRO }, // terça
+  3: { janelas: DIA_INTEIRO }, // quarta
+  4: { janelas: COM_PAUSA }, // quinta
+  5: { janelas: COM_PAUSA }, // sexta
   6: { alterna: true, janelas: [["08:00", "12:00"]] }, // sábado
 };
 
