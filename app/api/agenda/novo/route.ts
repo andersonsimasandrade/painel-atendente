@@ -5,7 +5,7 @@ import { criarAgendamento, getVendedorBySlug, listarVendedores, resolverLead } f
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { formatarBR } from "@/lib/slots";
 import { apenasDigitos } from "@/lib/format";
-import { CONSULTORIOS } from "@/lib/site";
+import { CONSULTORIOS, ORIENTACAO_ESTACIONAMENTO_CENTRO } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,7 +83,9 @@ export async function POST(req: Request) {
     const primeiro = nome ? nome.split(" ")[0] : "";
     const texto =
       `Olá${primeiro ? ", " + primeiro : ""}! Sua consulta está agendada para *${quando}*, no ${cons.nome}.\n` +
-      `📍 ${cons.linhaEndereco}\n\n` +
+      `📍 ${cons.linhaEndereco}\n` +
+      (local === "centro" ? `${ORIENTACAO_ESTACIONAMENTO_CENTRO}\n` : "") +
+      `\n` +
       `Se tiver exames, leve para o atendimento, e use roupa confortável e folgada. ` +
       `Para remarcar, avise com 48 horas de antecedência. Até lá! 😊`;
     const env = await enviarTextoInstancia(vend.instancia_whatsapp, telefone, texto);

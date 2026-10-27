@@ -3,6 +3,8 @@
 // está a ≤ 3h30 da consulta e ainda não foi lembrado (idempotência na coluna
 // lembrete_enviado_em garante 1 envio). Nunca dispara depois da hora.
 
+import { ORIENTACAO_ESTACIONAMENTO_CENTRO } from "@/lib/site";
+
 const JANELA_MS = 3.5 * 3600 * 1000; // 3h30 — cobre o gap do cron horário sem atrasar
 
 const p2 = (n: number) => String(n).padStart(2, "0");
@@ -32,7 +34,8 @@ const LUGAR: Record<string, string> = {
   centro: " no consultório do Centro (R. Altamiro Guimarães, 190, Sala 06, Espaço Beira Mar)",
 };
 
-// Lembrete da sessão de fisioterapia (~3h antes). Tom da marca: acolhedor e claro.
+// Lembrete da consulta (~3h antes). Tom da marca: acolhedor e claro.
+// No Centro (Espaço Beira Mar) segue também a orientação de estacionamento.
 export function mensagemLembrete(
   _vendedorNome: string,
   nomeLead: string | null,
@@ -42,8 +45,10 @@ export function mensagemLembrete(
   const primeiro = nomeLead ? nomeLead.trim().split(/\s+/)[0] : "";
   const hora = horaSP(iso);
   const lugar = (local && LUGAR[local]) || "";
+  const estacionamento = local === "centro" ? `${ORIENTACAO_ESTACIONAMENTO_CENTRO}\n\n` : "";
   return (
-    `Olá${primeiro ? ", " + primeiro : ""}! Passando para lembrar da sua sessão de hoje, às *${hora}*${lugar}. 😊\n\n` +
+    `Olá${primeiro ? ", " + primeiro : ""}! Passando para lembrar da sua consulta de hoje, às *${hora}*${lugar}. 😊\n\n` +
+    estacionamento +
     `Se tiver exames, leve para o atendimento. Qualquer imprevisto, é só avisar por aqui. Até logo!`
   );
 }

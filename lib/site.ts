@@ -81,6 +81,11 @@ export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
   },
 };
 
+/** Orientação de estacionamento enviada a quem tem consulta no Espaço Beira Mar (Centro). */
+export const ORIENTACAO_ESTACIONAMENTO_CENTRO =
+  "🚗 Estacione no estacionamento do Beiramar Shopping e saia pelo Supermercado Imperatriz Gourmet, " +
+  "no Piso L1 (térreo), com acesso pelo Portão A, voltado para a Rua Bocaiúva.";
+
 export const HORARIO_TEXTO = "Segunda a sexta, das 8h às 19h";
 
 export const DIAS = [
