@@ -30,12 +30,12 @@ const FAQ: { q: string; a: string }[] = [
     a: "Adultos, idosos e gestantes. Crianças também, desde que um responsável esteja presente durante toda a sessão.",
   },
   {
-    q: "Qual o valor da consulta? Quais as formas de pagamento?",
-    a: "A consulta particular custa R$ 250,00. O atendimento é particular, sem convênio, e o pagamento é por Pix ou em dinheiro.",
+    q: "Como funciona o pagamento?",
+    a: "O atendimento é particular, sem convênio, e o pagamento é por Pix ou em dinheiro. Os valores são informados pelo WhatsApp na hora de combinar o horário.",
   },
   {
     q: "Vocês fazem atendimento domiciliar?",
-    a: "Sim, mediante consulta. O atendimento domiciliar custa R$ 350,00, mais o deslocamento, que varia conforme a distância. Combine pelo WhatsApp.",
+    a: "Sim, mediante consulta. O valor depende da distância do deslocamento e é informado pelo WhatsApp, na hora de combinar.",
   },
   {
     q: "Vocês dão recibo?",
