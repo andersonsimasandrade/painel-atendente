@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessao } from "@/lib/session";
 import { getClient } from "@/lib/db";
-import { criarAgendamento, getVendedorBySlug, listarVendedores } from "@/lib/agenda";
+import { criarAgendamento, getVendedorBySlug, listarVendedores, resolverLead } from "@/lib/agenda";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { formatarBR } from "@/lib/slots";
 import { apenasDigitos } from "@/lib/format";
@@ -23,7 +23,9 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "Dados inválidos." }, { status: 400 });
   }
-  const telefone = apenasDigitos(String(b.telefone ?? ""));
+  const digitado = apenasDigitos(String(b.telefone ?? ""));
+  // Usa o número na forma que o cadastro (e o robô) conhece: com ou sem o 9, é a mesma pessoa.
+  const telefone = (digitado.length >= 10 && digitado.length <= 15 ? await resolverLead(digitado) : null) ?? digitado;
   const nome = String(b.nome ?? "").trim().slice(0, 120) || null;
   const data = String(b.data ?? "");
   const hora = String(b.hora ?? "");
@@ -68,6 +70,8 @@ export async function POST(req: Request) {
       .update({ funnel_stage: "agendado", funnel_rank: 4 })
       .eq("telefone", telefone)
       .lt("funnel_rank", 4);
+    // Lead sem nome no cadastro ganha o nome informado na marcação (nunca sobrescreve um nome existente).
+    if (nome) await getClient().from("ff_contatos").update({ nome }).eq("telefone", telefone).is("nome", null);
   } catch (e) {
     console.error("[agenda/novo] funil:", e);
   }
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
   if (confirmar) {
     const primeiro = nome ? nome.split(" ")[0] : "";
     const texto =
-      `Olá${primeiro ? ", " + primeiro : ""}! Sua sessão está agendada para *${quando}*, no ${cons.nome}.\n` +
+      `Olá${primeiro ? ", " + primeiro : ""}! Sua consulta está agendada para *${quando}*, no ${cons.nome}.\n` +
       `📍 ${cons.linhaEndereco}\n\n` +
       `Se tiver exames, leve para o atendimento, e use roupa confortável e folgada. ` +
       `Para remarcar, avise com 48 horas de antecedência. Até lá! 😊`;
@@ -94,7 +98,7 @@ export async function POST(req: Request) {
         session_id: telefone,
         message: {
           type: "ai",
-          content: `📅 Sessão agendada: ${quando} (${cons.bairro}).`,
+          content: `📅 Consulta agendada: ${quando} (${cons.bairro}).`,
           tool_calls: [],
           additional_kwargs: { via: "sistema" },
           response_metadata: {},

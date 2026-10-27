@@ -16,7 +16,8 @@ import { LiveStatus } from "@/components/LiveStatus";
 import { Panel } from "@/components/Panel";
 import { MudarEstagio } from "@/components/MudarEstagio";
 import { EditarNome } from "@/components/EditarNome";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { resolverLead } from "@/lib/agenda";
 import { getSessao } from "@/lib/session";
 import { podeVerLead } from "@/lib/escopo";
 import { PerfilBadge } from "@/components/PerfilBadge";
@@ -92,6 +93,9 @@ export default async function LeadDetailPage({
   params: { telefone: string };
 }) {
   const telefone = params.telefone;
+  // O mesmo número pode vir com ou sem o 9 (o WhatsApp entrega sem): abre a ficha na forma que o cadastro conhece.
+  const canonico = await resolverLead(telefone);
+  if (canonico && canonico !== telefone) redirect(`/leads/${encodeURIComponent(canonico)}`);
   // Escopo: um consultor não abre o lead de outro nem digitando a URL.
   // Responde "não encontrado" (não confirma que o lead existe).
   const sess = await getSessao();
