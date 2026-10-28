@@ -43,3 +43,11 @@ Depoimentos só com TCLE assinado.
 ## Depois de publicar
 - Conferir em 24 h o Gerenciador de Eventos (visualizações de página) e o painel **Indicadores** (origem Meta).
 - Conversões "Agendamento" chegam à Meta pelo painel (API de Conversões, a cada 10 min) quando alguém que veio do anúncio é marcado.
+
+---
+## Situação em 28/10/2026
+- **Anúncio 1** (retrato camisa branca) e **Anúncio 2** (retrato terno azul, "Primeira vez numa avaliação…") publicados e **Programados** para 02/11 08:00, R$ 33/dia no total, destino: página inicial (utm_content=anuncio1 e anuncio2).
+- O anúncio 2 NÃO vai para o blog (ainda sem posts) nem para /duvidas.
+- **Regras automáticas na Meta (ligadas):** pausar anúncio com R$ 30 gastos e 0 cliques; aviso se o gasto do dia passar de R$ 60.
+- Ao criar anúncios novos: criativo primeiro, URL depois; não selecionar imagens geradas por IA; deixar os aprimoramentos de IA desligados; nome "Anúncio N | tema | formato" + utm_content=anuncioN.
+- Campo "Número de telefone do WhatsApp" do anúncio: usar o número comercial (+55 48 9973-0494), nunca o pessoal.
