@@ -1,5 +1,6 @@
 import { rodarLembreteInstagram } from "@/lib/ig-lembrete";
 import { manterTokenIG } from "@/lib/ig-token";
+import { rodarComentariosYT } from "@/lib/yt-robo";
 
 // Relógio interno: roda o lembrete do Instagram a cada 15 minutos enquanto o painel estiver no ar.
 // Se houver mais de uma cópia do painel rodando, o lembrete nunca sai em dobro (cada contato é "reivindicado" no banco antes do envio).
@@ -29,4 +30,16 @@ export function iniciarRelogioInstagram() {
   };
   setTimeout(chave, 3 * 60 * 1000);
   setInterval(chave, 12 * 3600 * 1000);
+
+  // Comentários do YouTube: a cada 15 minutos (só atua com o canal conectado e entre 8h e 20h).
+  const youtube = async () => {
+    try {
+      const r = await rodarComentariosYT();
+      if (r.respondidos) console.log(`[yt-robo] comentários respondidos: ${r.respondidos}`);
+    } catch (e) {
+      console.error("[yt-robo]", e instanceof Error ? e.message : e);
+    }
+  };
+  setTimeout(youtube, 4 * 60 * 1000);
+  setInterval(youtube, 15 * 60 * 1000);
 }
