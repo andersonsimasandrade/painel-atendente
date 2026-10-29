@@ -138,10 +138,10 @@ export function renderMarkdown(md: string): ReactNode {
     if (/^\s*>/.test(l)) {
       const buf: string[] = [];
       while (i < linhas.length && /^\s*>/.test(linhas[i])) buf.push(linhas[i++].replace(/^\s*>\s?/, ""));
-      const k = chave();
+      // O conteúdo da citação é markdown também (o "Resumo em 30 segundos" é uma lista dentro da citação).
       blocos.push(
-        <blockquote key={k} className="my-5 border-l-4 border-[#1EB49F] bg-[#EAF8F6] px-4 py-3 text-[#3F5452]">
-          {inline(buf.join(" "), k)}
+        <blockquote key={chave()} className="my-5 border-l-4 border-[#1EB49F] bg-[#EAF8F6] px-4 py-1 text-[#3F5452] [&_p]:my-2 [&_ul]:my-2">
+          {renderMarkdown(buf.join("\n"))}
         </blockquote>,
       );
       continue;

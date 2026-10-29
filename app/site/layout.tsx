@@ -217,6 +217,11 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 </Link>
               </li>
               <li>
+                <Link href="/tratamentos" className="underline-offset-2 hover:underline">
+                  Tratamentos
+                </Link>
+              </li>
+              <li>
                 <Link href="/duvidas" className="underline-offset-2 hover:underline">
                   Dúvidas frequentes
                 </Link>
