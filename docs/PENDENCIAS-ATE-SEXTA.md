@@ -22,7 +22,8 @@ Elas só rodam com o app do Claude aberto e precisam da sua aprovação na prime
    - `relatorio-semanal-anuncios`
 3. Deu certo quando cada uma mostra "Concluída".
 
-### 3. Conectar o canal do YouTube ao painel (20 min) — VOCÊ (uma vez só)
+### 3. Conectar o canal do YouTube ao painel (5 min) — VOCÊ (uma vez só)
+**Atualização de 29/10:** o Claude já fez 3a (projeto `painel-atendente-fisioterapia`), a API do YouTube, o escopo, o Branding, a publicação ("Em produção") e criou o cliente OAuth. Faltam só 3b (copiar ID e chave secreta para o EasyPanel) e 3c.
 O Google exige que o próprio dono autorize. Faça logado na conta que é dona do canal **Anderson Simas**.
 
 **3a. Criar o acesso no Google Cloud**
