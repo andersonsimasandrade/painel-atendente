@@ -63,6 +63,17 @@ export async function POST(req: Request) {
     );
   }
 
+  // Número novo: a marcação já cadastra o lead (assim ele aparece em Leads e no funil).
+  try {
+    if (!(await resolverLead(telefone))) {
+      await getClient()
+        .from("ff_contatos")
+        .insert({ telefone, nome, ultima_instancia: (process.env.EVOLUTION_INSTANCE ?? "").trim() || null });
+    }
+  } catch (e) {
+    console.error("[agenda/novo] cadastro do lead:", e);
+  }
+
   // Funil: agendado (sem rebaixar quem já está além).
   try {
     await getClient()

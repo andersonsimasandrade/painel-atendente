@@ -9,6 +9,7 @@ import { DbErrorState } from "@/components/DbErrorState";
 import { LeadsFilterBar } from "@/components/LeadsFilterBar";
 import { LeadsDirectory } from "@/components/LeadsDirectory";
 import { LeadsOrigem } from "@/components/LeadsOrigem";
+import { NovoLead } from "@/components/NovoLead";
 import { FiltroConsultor } from "@/components/FiltroConsultor";
 import { getSessao } from "@/lib/session";
 import { escopoDaLista } from "@/lib/escopo";
@@ -95,6 +96,7 @@ export default async function LeadsPage({
       />
 
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <NovoLead />
         <Panel
           title="Filtrar leads"
           subtitle="Busque por nome ou telefone e refine por situação, categoria, estágio, UF, CNPJ, desfecho e data de entrada"
