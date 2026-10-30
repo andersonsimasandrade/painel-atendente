@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { refreshPausado } from "@/lib/pausa-refresh";
 
 /**
  * Indicador "ao vivo": mostra o tempo desde a última atualização e
@@ -22,6 +23,7 @@ export function LiveStatus({ generatedAt }: { generatedAt: string }) {
   useEffect(() => {
     const REFRESH_MS = 60_000;
     const id = setInterval(() => {
+      if (refreshPausado()) return; // há um formulário aberto: não derruba o que está sendo digitado
       setRefreshing(true);
       router.refresh();
       // some o "atualizando" após um instante

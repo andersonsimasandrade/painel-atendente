@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { guardarRascunho, lerRascunho, pausarRefresh } from "@/lib/pausa-refresh";
 import { PhoneField } from "./PhoneField";
 
 // Cadastro manual de lead (quem ligou, indicação, conversa pelo celular). Opcionalmente já marca a consulta.
@@ -20,6 +21,36 @@ export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nom
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+
+  // Rascunho: se a página recarregar (comum no celular ao abrir o calendário), o formulário volta como estava.
+  const [carregado, setCarregado] = useState(false);
+  useEffect(() => {
+    const r = lerRascunho<Record<string, unknown>>("novo-lead");
+    if (r) {
+      setAberto(r.aberto === true);
+      setTelefone(String(r.telefone ?? ""));
+      setNome(String(r.nome ?? ""));
+      setOrigem(String(r.origem ?? ""));
+      setParceiro(String(r.parceiro ?? ""));
+      setObs(String(r.obs ?? ""));
+      setMarcar(r.marcar === true);
+      setData(String(r.data ?? ""));
+      setHora(String(r.hora ?? ""));
+      setLocal(r.local === "capoeiras" || r.local === "centro" ? r.local : "");
+      setConfirmar(r.confirmar === true);
+    }
+    setCarregado(true);
+  }, []);
+  useEffect(() => {
+    if (!carregado) return;
+    guardarRascunho("novo-lead", aberto ? { aberto, telefone, nome, origem, parceiro, obs, marcar, data, hora, local, confirmar } : null);
+  }, [carregado, aberto, telefone, nome, origem, parceiro, obs, marcar, data, hora, local, confirmar]);
+  // Com o formulário aberto, a atualização automática da página fica pausada.
+  useEffect(() => {
+    if (!aberto) return;
+    pausarRefresh(true);
+    return () => pausarRefresh(false);
+  }, [aberto]);
 
   const digitos = telefone.replace(/\D/g, "");
   const pronto = digitos.length >= 10 && (!marcar || (!!data && !!hora && !!local));
@@ -49,6 +80,7 @@ export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nom
         msg += ` Consulta marcada: ${d2.quando}.` + (confirmar ? (d2.confirmado ? " Confirmação enviada." : " (A confirmação por WhatsApp não saiu.)") : "");
       }
       setOk(msg);
+      guardarRascunho("novo-lead", null);
       setTimeout(() => window.location.reload(), 1600);
     } catch {
       setErro("Falha de rede. Tente de novo.");

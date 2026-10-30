@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { pausarRefresh } from "@/lib/pausa-refresh";
 import { PhoneField } from "./PhoneField";
 
 // O Anderson marca a sessão aqui depois de combinar o horário com o paciente.
@@ -17,6 +18,12 @@ export function NovoAgendamento() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    pausarRefresh(true);
+    return () => pausarRefresh(false);
+  }, [aberto]);
 
   const digitos = telefone.replace(/\D/g, "");
   const pronto = digitos.length >= 10 && !!data && !!hora && !!local;
