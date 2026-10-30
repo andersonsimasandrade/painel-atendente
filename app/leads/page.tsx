@@ -10,6 +10,7 @@ import { LeadsFilterBar } from "@/components/LeadsFilterBar";
 import { LeadsDirectory } from "@/components/LeadsDirectory";
 import { LeadsOrigem } from "@/components/LeadsOrigem";
 import { NovoLead } from "@/components/NovoLead";
+import { listarParceiros } from "@/lib/indicacoes";
 import { FiltroConsultor } from "@/components/FiltroConsultor";
 import { getSessao } from "@/lib/session";
 import { escopoDaLista } from "@/lib/escopo";
@@ -69,11 +70,12 @@ export default async function LeadsPage({
     dono,
   };
 
-  const [result, consultores, etapas] = await Promise.all([
+  const [result, consultores, etapas, parceiros] = await Promise.all([
     getLeads(query),
     // Fail-closed: só admin recebe o roster (sessão revogada/papel novo, não).
     sess?.papel === "admin" ? listarVendedores() : Promise.resolve([]),
     getEtapas(),
+    listarParceiros(),
   ]);
 
   if (!result.ok) {
@@ -96,7 +98,7 @@ export default async function LeadsPage({
       />
 
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <NovoLead />
+        <NovoLead parceiros={parceiros.filter((p) => p.ativo).map((p) => ({ codigo: p.codigo, nome: p.nome }))} />
         <Panel
           title="Filtrar leads"
           subtitle="Busque por nome ou telefone e refine por situação, categoria, estágio, UF, CNPJ, desfecho e data de entrada"

@@ -5,7 +5,8 @@ import { PhoneField } from "./PhoneField";
 
 // Cadastro manual de lead (quem ligou, indicação, conversa pelo celular). Opcionalmente já marca a consulta.
 // Fluxo: cadastra o lead → (se marcou dia e horário) grava a consulta na agenda → recarrega a lista.
-export function NovoLead() {
+export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nome: string }[] }) {
+  const [parceiro, setParceiro] = useState("");
   const [aberto, setAberto] = useState(false);
   const [telefone, setTelefone] = useState("");
   const [nome, setNome] = useState("");
@@ -32,7 +33,7 @@ export function NovoLead() {
       const r1 = await fetch("/api/lead/novo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ telefone, nome, origem, observacoes: obs }),
+        body: JSON.stringify({ telefone, nome, origem, observacoes: obs, parceiro: origem === "indicacao" ? parceiro : "" }),
       });
       const d1 = (await r1.json()) as { ok: boolean; error?: string; jaExistia?: boolean };
       if (!r1.ok || !d1.ok) return setErro(d1.error ?? "Não consegui cadastrar.");
@@ -94,6 +95,19 @@ export function NovoLead() {
               <option value="site">Site</option>
             </select>
           </label>
+          {origem === "indicacao" && parceiros.length > 0 && (
+            <label>
+              <span className={rotulo}>Indicado por qual parceiro?</span>
+              <select className={campo} value={parceiro} onChange={(e) => setParceiro(e.target.value)}>
+                <option value="">Pessoa física / outro</option>
+                {parceiros.map((p) => (
+                  <option key={p.codigo} value={p.codigo}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             <span className={rotulo}>Observação</span>
             <input className={campo} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: ligou pedindo horário" />

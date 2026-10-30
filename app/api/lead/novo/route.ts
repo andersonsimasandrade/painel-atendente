@@ -3,6 +3,7 @@ import { getSessao } from "@/lib/session";
 import { getClient } from "@/lib/db";
 import { resolverLead } from "@/lib/agenda";
 import { apenasDigitos } from "@/lib/format";
+import { parceiroPorCodigo } from "@/lib/indicacoes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
   const origem = ORIGENS.find((o) => o === b.origem) ?? null;
 
   const sb = getClient();
+  // Parceiro que indicou (só vale se a origem for "indicação" e o código existir).
+  const codigoParceiro = String(b.parceiro ?? "").trim().slice(0, 60);
+  const parceiro = origem === "indicacao" && codigoParceiro && (await parceiroPorCodigo(codigoParceiro)) ? codigoParceiro : null;
   const existente = await resolverLead(digitado);
   if (existente) {
     const r = await sb.from("ff_contatos").select("nome, observacoes").eq("telefone", existente).limit(1);
@@ -47,6 +51,7 @@ export async function POST(req: Request) {
     nome,
     observacoes: obs,
     origem_canal: origem,
+    origem_parceiro: origem === "indicacao" ? parceiro : null,
     origem_manual: !!origem,
     origem_em: origem ? new Date().toISOString() : null,
     ultima_instancia: (process.env.EVOLUTION_INSTANCE ?? "").trim() || null,

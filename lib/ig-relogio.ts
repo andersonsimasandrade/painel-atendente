@@ -1,6 +1,7 @@
 import { rodarLembreteInstagram } from "@/lib/ig-lembrete";
 import { manterTokenIG } from "@/lib/ig-token";
 import { rodarComentariosYT } from "@/lib/yt-robo";
+import { rodarIndicacoes } from "@/lib/indicacoes";
 
 // Relógio interno: roda o lembrete do Instagram a cada 15 minutos enquanto o painel estiver no ar.
 // Se houver mais de uma cópia do painel rodando, o lembrete nunca sai em dobro (cada contato é "reivindicado" no banco antes do envio).
@@ -42,4 +43,16 @@ export function iniciarRelogioInstagram() {
   };
   setTimeout(youtube, 4 * 60 * 1000);
   setInterval(youtube, 15 * 60 * 1000);
+
+  // Indicações de parceiros: a cada 5 minutos libera as que cumpriram a espera e avisa o Anderson (08h–20h).
+  const indicacoes = async () => {
+    try {
+      const r = await rodarIndicacoes();
+      if (r.liberadas || r.responderam) console.log(`[indicacoes] liberadas: ${r.liberadas}, escreveram sozinhas: ${r.responderam}`);
+    } catch (e) {
+      console.error("[indicacoes]", e instanceof Error ? e.message : e);
+    }
+  };
+  setTimeout(indicacoes, 90 * 1000);
+  setInterval(indicacoes, 5 * 60 * 1000);
 }
