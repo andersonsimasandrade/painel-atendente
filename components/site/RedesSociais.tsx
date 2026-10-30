@@ -1,4 +1,4 @@
-import { FACEBOOK_URL, INSTAGRAM, INSTAGRAM_URL } from "@/lib/site";
+import { FACEBOOK_URL, INSTAGRAM, INSTAGRAM_URL, YOUTUBE_URL } from "@/lib/site";
 
 function IconeInstagram({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -18,6 +18,14 @@ function IconeFacebook({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
+function IconeYouTube({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8zM10 15V9l5.2 3L10 15z" />
+    </svg>
+  );
+}
+
 /** Ícones das redes sociais. O Facebook só aparece quando FACEBOOK_URL estiver preenchido em lib/site.ts. */
 export function RedesSociais({ comTexto = false, className = "" }: { comTexto?: boolean; className?: string }) {
   const base =
@@ -32,6 +40,12 @@ export function RedesSociais({ comTexto = false, className = "" }: { comTexto?: 
         <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className={base}>
           <IconeFacebook />
           {comTexto ? <span>Facebook</span> : null}
+        </a>
+      ) : null}
+      {YOUTUBE_URL ? (
+        <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className={base}>
+          <IconeYouTube />
+          {comTexto ? <span>YouTube</span> : null}
         </a>
       ) : null}
     </div>

@@ -24,6 +24,8 @@ export const INSTAGRAM = "andersonandrade_fisio";
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM}/`;
 /** Página do Facebook. Preencha com o endereço completo (https://www.facebook.com/...) e o ícone aparece no site. */
 export const FACEBOOK_URL = "https://www.facebook.com/andersonandradefisio";
+/** Canal do YouTube (vazio = o ícone some). */
+export const YOUTUBE_URL = "https://www.youtube.com/@andersonandradefisio";
 
 /** Quem atende no WhatsApp do site: o robô (assistente virtual) e, depois, o Anderson.
  *  Em 12/10/2026 o número do robô foi banido e o site passou a usar o WhatsApp
@@ -75,7 +77,7 @@ export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
     mapaUrl:
       "https://www.google.com/maps/search/?api=1&query=R.+Altamiro+Guimar%C3%A3es%2C+190%2C+Florian%C3%B3polis%2C+SC",
     comoChegar: [
-      "Espaço Beira Mar, Sala 06, na R. Altamiro Guimarães, 190.",
+      "Espaço Beira Mar, Sala 06, na R. Altamiro Guimarães, 190, ao lado do Beiramar Shopping.",
       "Atendimento com hora marcada: combine o horário antes pelo WhatsApp.",
     ],
   },

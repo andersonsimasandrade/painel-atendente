@@ -6,6 +6,7 @@ import {
   CREFITO,
   HORARIO_TEXTO,
   FACEBOOK_URL,
+  YOUTUBE_URL,
   INSTAGRAM_URL,
   MARCA,
   PROFISSIONAL,
@@ -84,7 +85,7 @@ function jsonLd() {
     description:
       "Atendimento fisioterapêutico individualizado em Florianópolis, com foco em dores na coluna, cervical e lombar, e terapia manual.",
     slogan: SLOGAN,
-    sameAs: [INSTAGRAM_URL, ...(FACEBOOK_URL ? [FACEBOOK_URL] : [])],
+    sameAs: [INSTAGRAM_URL, ...(FACEBOOK_URL ? [FACEBOOK_URL] : []), ...(YOUTUBE_URL ? [YOUTUBE_URL] : [])],
     // Dias fixos da agenda. Segunda e sábado (semanas alternadas) ficam de fora: o formato não representa "semana sim, semana não".
     openingHoursSpecification: [
       { "@type": "OpeningHoursSpecification", dayOfWeek: ["Tuesday", "Wednesday"], opens: "08:00", closes: "17:00" },
