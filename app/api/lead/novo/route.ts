@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 // POST /api/lead/novo { telefone, nome, origem, observacoes }
 // Cadastro manual de um lead (quem ligou, indicação, conversa pelo celular...). Só quem está logado no painel.
 // Se o número já existe, não duplica: completa nome/observação e devolve o cadastro que já havia.
-const ORIGENS = ["indicacao", "instagram", "google", "meta", "site"] as const;
+const ORIGENS = ["indicacao", "instagram", "google", "meta", "site", "youtube"] as const;
 
 export async function POST(req: Request) {
   const sess = await getSessao();

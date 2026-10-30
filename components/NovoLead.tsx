@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { guardarRascunho, lerRascunho, pausarRefresh } from "@/lib/pausa-refresh";
 import { PhoneField } from "./PhoneField";
+import { AvisoTelefone } from "./AvisoTelefone";
 
 // Cadastro manual de lead (quem ligou, indicação, conversa pelo celular). Opcionalmente já marca a consulta.
 // Fluxo: cadastra o lead → (se marcou dia e horário) grava a consulta na agenda → recarrega a lista.
 export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nome: string }[] }) {
   const [parceiro, setParceiro] = useState("");
+  const [chaveTel, setChaveTel] = useState(0); // remonta o campo de telefone quando o rascunho é restaurado
   const [aberto, setAberto] = useState(false);
   const [telefone, setTelefone] = useState("");
   const [nome, setNome] = useState("");
@@ -38,6 +40,7 @@ export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nom
       setHora(String(r.hora ?? ""));
       setLocal(r.local === "capoeiras" || r.local === "centro" ? r.local : "");
       setConfirmar(r.confirmar === true);
+      setChaveTel((n) => n + 1);
     }
     setCarregado(true);
   }, []);
@@ -110,8 +113,9 @@ export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nom
         <form onSubmit={salvar} className="mt-3.5 grid gap-3 border-t border-line pt-3.5 sm:grid-cols-2">
           <label>
             <span className={rotulo}>WhatsApp (com DDD) *</span>
-            <PhoneField value={telefone} onChange={setTelefone} variant="dark" autoFocus />
+            <PhoneField key={chaveTel} value={telefone} onChange={setTelefone} variant="dark" autoFocus />
           </label>
+          <AvisoTelefone telefone={telefone} modo="aviso" />
           <label>
             <span className={rotulo}>Nome</span>
             <input className={campo} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da pessoa" />
@@ -124,6 +128,7 @@ export function NovoLead({ parceiros = [] }: { parceiros?: { codigo: string; nom
               <option value="instagram">Instagram</option>
               <option value="google">Google</option>
               <option value="meta">Anúncio no Facebook/Instagram</option>
+              <option value="youtube">YouTube</option>
               <option value="site">Site</option>
             </select>
           </label>

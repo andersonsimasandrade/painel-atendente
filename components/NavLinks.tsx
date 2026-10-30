@@ -36,6 +36,7 @@ const LINKS: {
   { href: "/funil", label: "Funil", match: (p) => p.startsWith("/funil") },
   { href: "/agenda", label: "Agenda", match: (p) => p === "/agenda" || p.startsWith("/agenda/") },
   { href: "/atendimento", label: "Atendimento", match: (p) => p.startsWith("/atendimento") },
+  { href: "/youtube", label: "YouTube", match: (p) => p.startsWith("/youtube"), admin: true },
   { href: "/indicacoes", label: "Indicações", match: (p) => p.startsWith("/indicacoes"), admin: true },
   { href: "/trafego", label: "Tráfego", match: (p) => p.startsWith("/trafego"), admin: true },
   { href: "/indicadores", label: "Indicadores", match: (p) => p.startsWith("/indicadores"), admin: true },

@@ -1842,7 +1842,7 @@ export async function setDadosLead(
   }
   if ("origem_canal" in patch) {
     const o = String(patch.origem_canal ?? "").trim().toLowerCase();
-    if (o && !["google", "meta", "instagram", "indicacao", "site"].includes(o)) return { ok: false, error: "Origem inválida." };
+    if (o && !["google", "meta", "instagram", "indicacao", "site", "youtube"].includes(o)) return { ok: false, error: "Origem inválida." };
     upd.origem_canal = o || null;
     upd.origem_manual = !!o; // o que você define à mão não é sobrescrito pelo sistema
     reaplicarOrigem = !o; // limpar = deixa o sistema recalcular

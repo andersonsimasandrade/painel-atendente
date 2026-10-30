@@ -176,7 +176,7 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
               return <Cartao key={k} titulo={`${rot}: ${n} avaliação(ões)`} valor={n > 0 && gasto > 0 ? formatBRL(gasto / n) : "—"} dica={gasto > 0 ? `${formatBRL(gasto)} investidos` : "sem investimento no período"} />;
             })}
             <Cartao titulo="Instagram (orgânico)" valor={String(porOrigem.instagram ?? 0)} dica="avaliações marcadas" />
-            <Cartao titulo="Site, indicação e sem origem" valor={String((porOrigem.site ?? 0) + (porOrigem.indicacao ?? 0) + (porOrigem.sem_origem ?? 0))} dica="avaliações marcadas" />
+            <Cartao titulo="Site, indicação, YouTube e sem origem" valor={String((porOrigem.site ?? 0) + (porOrigem.indicacao ?? 0) + (porOrigem.youtube ?? 0) + (porOrigem.sem_origem ?? 0))} dica="avaliações marcadas" />
           </div>
         </Panel>
 
@@ -198,7 +198,7 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
                   </Link>
                   <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-ink-muted">{a.local === "capoeiras" ? "Capoeiras" : a.local === "centro" ? "Centro" : "Local não informado"}</span>
                   <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
-                    {a.origem_canal ? ({ google: "Google", meta: "Meta", instagram: "Instagram", indicacao: "Indicação", site: "Site" } as Record<string, string>)[a.origem_canal] ?? a.origem_canal : "Origem não informada"}
+                    {a.origem_canal ? ({ google: "Google", meta: "Meta", instagram: "Instagram", indicacao: "Indicação", site: "Site", youtube: "YouTube" } as Record<string, string>)[a.origem_canal] ?? a.origem_canal : "Origem não informada"}
                   </span>
                   <span className="ml-auto text-ink-muted">{a.status}</span>
                 </li>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { pausarRefresh } from "@/lib/pausa-refresh";
 import { PhoneField } from "./PhoneField";
 import { BuscaPaciente } from "./BuscaPaciente";
+import { AvisoTelefone } from "./AvisoTelefone";
 
 // O Anderson marca a sessão aqui depois de combinar o horário com o paciente.
 // Grava na agenda do painel, atualiza o funil e (opcional) confirma pelo WhatsApp.
@@ -112,6 +113,15 @@ export function NovoAgendamento() {
             <span className="mb-1 block text-[11.5px] font-medium text-ink-muted">WhatsApp do paciente (com DDD) *</span>
             <PhoneField key={chaveTel} value={telefone} onChange={setTelefone} variant="dark" autoFocus />
           </label>
+          <AvisoTelefone
+            telefone={telefone}
+            modo="usar"
+            onEscolher={(p) => {
+              setTelefone(p.telefone);
+              setNome(p.nome ?? "");
+              setChaveTel((n) => n + 1);
+            }}
+          />
           <label>
             <span className="mb-1 block text-[11.5px] font-medium text-ink-muted">Nome</span>
             <input className={campo} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do paciente" />

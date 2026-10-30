@@ -9,6 +9,7 @@ const OPCOES = [
   { v: "meta", t: "Meta (anúncio)" },
   { v: "instagram", t: "Instagram (orgânico)" },
   { v: "indicacao", t: "Indicação" },
+  { v: "youtube", t: "YouTube" },
   { v: "site", t: "Site" },
 ];
 
