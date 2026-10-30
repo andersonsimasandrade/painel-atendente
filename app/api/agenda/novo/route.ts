@@ -5,6 +5,8 @@ import { criarAgendamento, getVendedorBySlug, listarVendedores, resolverLead } f
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { formatarBR } from "@/lib/slots";
 import { apenasDigitos } from "@/lib/format";
+import { textoConfirmacao } from "@/lib/confirmacao";
+import { variantesTelefone } from "@/lib/telefone";
 import { CONSULTORIOS, ORIENTACAO_ESTACIONAMENTO_CENTRO } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -91,14 +93,14 @@ export async function POST(req: Request) {
   const cons = CONSULTORIOS[local];
   let confirmado = false;
   if (confirmar) {
-    const primeiro = nome ? nome.split(" ")[0] : "";
-    const texto =
-      `Olá${primeiro ? ", " + primeiro : ""}! Sua consulta está agendada para *${quando}*, no ${cons.nome}.\n` +
-      `📍 ${cons.linhaEndereco}\n` +
-      (local === "centro" ? `${ORIENTACAO_ESTACIONAMENTO_CENTRO}\n` : "") +
-      `\n` +
-      `Se tiver exames, leve para o atendimento, e use roupa confortável e folgada. ` +
-      `Para remarcar, avise com 48 horas de antecedência. Até lá! 😊`;
+    // Primeira vez = sem consulta anterior (fora a que acabou de ser marcada) e sem conversa registrada.
+    const variantes = variantesTelefone(telefone);
+    const [anteriores, cadastro] = await Promise.all([
+      getClient().from("agendamentos").select("id", { count: "exact", head: true }).in("telefone_lead", variantes).neq("status", "cancelado").neq("id", criado.id),
+      getClient().from("ff_contatos").select("total_mensagens").in("telefone", variantes).limit(1),
+    ]);
+    const msgs = Number((cadastro.data?.[0] as { total_mensagens: number | null } | undefined)?.total_mensagens ?? 0);
+    const texto = textoConfirmacao({ nome, iso, local, primeiraVez: (anteriores.count ?? 0) === 0 && msgs === 0 });
     const env = await enviarTextoInstancia(vend.instancia_whatsapp, telefone, texto);
     confirmado = env.ok;
     if (!env.ok) console.error("[agenda/novo] confirmação falhou:", env.error);

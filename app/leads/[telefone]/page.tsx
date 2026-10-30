@@ -156,6 +156,12 @@ export default async function LeadDetailPage({
         right={
           <>
             <Link
+              href={`/agenda?novo=1&telefone=${encodeURIComponent(lead.telefone)}&nome=${encodeURIComponent(lead.nome ?? "")}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-semibold text-ink transition hover:border-line-strong"
+            >
+              + Nova sessão
+            </Link>
+            <Link
               href={`/conversas?tel=${encodeURIComponent(lead.telefone)}`}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-[#04140d] transition hover:bg-brand-bright"
             >

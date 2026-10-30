@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { pausarRefresh } from "@/lib/pausa-refresh";
 import { PhoneField } from "./PhoneField";
+import { BuscaPaciente } from "./BuscaPaciente";
 
 // O Anderson marca a sessão aqui depois de combinar o horário com o paciente.
 // Grava na agenda do painel, atualiza o funil e (opcional) confirma pelo WhatsApp.
@@ -10,6 +11,7 @@ import { PhoneField } from "./PhoneField";
 export function NovoAgendamento() {
   const [aberto, setAberto] = useState(false);
   const [telefone, setTelefone] = useState("");
+  const [chaveTel, setChaveTel] = useState(0); // força o campo de telefone a mostrar o número escolhido na busca
   const [nome, setNome] = useState("");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
@@ -24,6 +26,19 @@ export function NovoAgendamento() {
     pausarRefresh(true);
     return () => pausarRefresh(false);
   }, [aberto]);
+
+  // Atalho "Nova sessão" (lead ou agenda): /agenda?novo=1&telefone=...&nome=... já abre o formulário preenchido.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("novo") !== "1") return;
+    const t = (q.get("telefone") ?? "").replace(/\D/g, "");
+    if (t) {
+      setTelefone(t);
+      setChaveTel((n) => n + 1);
+    }
+    setNome(q.get("nome") ?? "");
+    setAberto(true);
+  }, []);
 
   const digitos = telefone.replace(/\D/g, "");
   const pronto = digitos.length >= 10 && !!data && !!hora && !!local;
@@ -86,9 +101,16 @@ export function NovoAgendamento() {
 
       {aberto && (
         <form onSubmit={salvar} className="mt-3.5 grid gap-3 border-t border-line pt-3.5 sm:grid-cols-2">
+          <BuscaPaciente
+            onEscolher={(p) => {
+              setTelefone(p.telefone.replace(/\D/g, ""));
+              setNome(p.nome ?? "");
+              setChaveTel((n) => n + 1);
+            }}
+          />
           <label className="sm:col-span-1">
             <span className="mb-1 block text-[11.5px] font-medium text-ink-muted">WhatsApp do paciente (com DDD) *</span>
-            <PhoneField value={telefone} onChange={setTelefone} variant="dark" autoFocus />
+            <PhoneField key={chaveTel} value={telefone} onChange={setTelefone} variant="dark" autoFocus />
           </label>
           <label>
             <span className="mb-1 block text-[11.5px] font-medium text-ink-muted">Nome</span>

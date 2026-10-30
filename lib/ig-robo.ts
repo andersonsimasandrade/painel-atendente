@@ -98,34 +98,65 @@ function modelosGroq(): string[] {
   return extra ? [extra, ...base.filter((m) => m !== extra)] : base;
 }
 
-async function pedirAoModelo(sistema: string, historico: { role: "user" | "assistant"; content: string }[]): Promise<string | null> {
-  const key = (process.env.GROQ_API_KEY ?? "").trim();
-  if (!key) return null;
-  for (const model of modelosGroq()) {
+interface RespostaModelo {
+  texto: string | null;
+  erro?: string;
+}
+
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Pede a resposta à IA. Tenta os modelos do Groq (com uma pausa curta quando o limite por minuto estoura) e,
+// se houver OPENAI_API_KEY, usa a OpenAI como reserva. Devolve o motivo da falha para ficar registrado.
+async function pedirAoModelo(sistema: string, historico: { role: "user" | "assistant"; content: string }[]): Promise<RespostaModelo> {
+  const falhas: string[] = [];
+  const mensagens = [{ role: "system", content: sistema }, ...historico];
+
+  async function chamar(url: string, key: string, model: string): Promise<{ texto?: string; status?: number; espera?: number; msg?: string }> {
     try {
-      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      const r = await fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          temperature: 0.3,
-          max_tokens: 500,
-          messages: [{ role: "system", content: sistema }, ...historico],
-        }),
-        signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({ model, temperature: 0.3, max_tokens: 350, messages: mensagens }),
+        signal: AbortSignal.timeout(25000),
       });
       if (!r.ok) {
-        console.error(`[ig-robo] modelo ${model}: ${r.status}`);
-        continue;
+        const ra = Number(r.headers.get("retry-after"));
+        return { status: r.status, espera: Number.isFinite(ra) ? ra : undefined, msg: (await r.text().catch(() => "")).slice(0, 120) };
       }
       const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
       const c = j.choices?.[0]?.message?.content?.trim();
-      if (c) return c;
+      return c ? { texto: c } : { msg: "resposta vazia" };
     } catch (e) {
-      console.error(`[ig-robo] modelo ${model}:`, e instanceof Error ? e.message : e);
+      return { msg: e instanceof Error ? e.message : "erro" };
     }
   }
-  return null;
+
+  const groq = (process.env.GROQ_API_KEY ?? "").trim();
+  if (groq) {
+    for (const model of modelosGroq()) {
+      for (let tentativa = 0; tentativa < 2; tentativa++) {
+        const r = await chamar("https://api.groq.com/openai/v1/chat/completions", groq, model);
+        if (r.texto) return { texto: r.texto };
+        falhas.push(`groq ${model}: ${r.status ?? ""} ${r.msg ?? ""}`.trim());
+        console.error(`[ig-robo] modelo ${model}: ${r.status ?? ""} ${r.msg ?? ""}`);
+        // limite por minuto: espera o tempo que o Groq pediu (até 12 s) e tenta o mesmo modelo de novo
+        if (r.status === 429 && tentativa === 0 && (r.espera ?? 5) <= 12) {
+          await esperar(Math.max(1, r.espera ?? 5) * 1000 + 300);
+          continue;
+        }
+        break;
+      }
+    }
+  } else falhas.push("GROQ_API_KEY ausente");
+
+  const openai = (process.env.OPENAI_API_KEY ?? "").trim();
+  if (openai) {
+    const r = await chamar("https://api.openai.com/v1/chat/completions", openai, (process.env.IG_OPENAI_MODEL ?? "gpt-4.1-mini").trim());
+    if (r.texto) return { texto: r.texto };
+    falhas.push(`openai: ${r.status ?? ""} ${r.msg ?? ""}`.trim());
+    console.error("[ig-robo] openai:", r.status ?? "", r.msg ?? "");
+  }
+  return { texto: null, erro: falhas.join(" | ").slice(0, 290) };
 }
 
 async function avisarDono(texto: string) {
@@ -271,15 +302,23 @@ async function tratarMensagem(e: EventoIG) {
   const recentes = await sb.from("ig_mensagens").select("id", { count: "exact", head: true }).eq("ig_id", id).eq("papel", "assistant").gte("criado_em", hora);
   if ((recentes.count ?? 0) >= LIMITE_RESPOSTAS_POR_HORA) return void (await marcarEvento(e, "limite"));
 
-  const h = await sb.from("ig_mensagens").select("papel, texto").eq("ig_id", id).order("id", { ascending: false }).limit(14);
+  const h = await sb.from("ig_mensagens").select("papel, texto").eq("ig_id", id).order("id", { ascending: false }).limit(10);
   const historico = ((h.data ?? []) as { papel: string; texto: string }[])
     .reverse()
     .map((m) => ({ role: (m.papel === "user" ? "user" : "assistant") as "user" | "assistant", content: m.texto }));
 
   const sistema = PROMPT_IG.replace("__NOME__", contato.nome?.split(" ")[0] || "DESCONHECIDO");
-  const bruto = await pedirAoModelo(sistema, historico);
+  const resp = await pedirAoModelo(sistema, historico);
+  const bruto = resp.texto;
   if (!bruto) {
-    await marcarEvento(e, "erro_modelo");
+    await marcarEvento(e, "erro_modelo", resp.erro);
+    // Nunca deixa a pessoa no vácuo: uma frase de espera (no máximo uma a cada 30 min) e o aviso ao Anderson.
+    const recente = await sb.from("ig_mensagens").select("id").eq("ig_id", id).eq("tipo", "espera").gte("criado_em", new Date(Date.now() - 30 * 60 * 1000).toISOString()).limit(1);
+    if (!recente.data?.length) {
+      const espera = "Recebi a sua mensagem! Só um instante que já te respondo 🙂";
+      const r = await enviarDM(id, espera);
+      if (r.ok) await sb.from("ig_mensagens").insert({ ig_id: id, papel: "assistant", texto: espera, mid: r.id ?? null, tipo: "espera" });
+    }
     await avisarDono(`⚠️ Instagram: não consegui responder ${contato.username ? "@" + contato.username : "uma pessoa"} (falha do modelo). Última mensagem: "${texto.slice(0, 160)}". Responda pelo Instagram.`);
     return;
   }

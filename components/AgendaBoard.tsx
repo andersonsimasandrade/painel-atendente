@@ -251,6 +251,9 @@ export function AgendaBoard({ items: inicial }: { items: AgendamentoView[] }) {
                   )}
                 </div>
                 <Remarcar a={a} onFeito={() => window.location.reload()} />
+                <a href={`/agenda?novo=1&telefone=${encodeURIComponent(a.telefone_lead)}&nome=${encodeURIComponent(a.nome_lead ?? "")}`} className="text-[12px] text-ink-muted underline-offset-2 hover:text-ink hover:underline">
+                  + nova sessão
+                </a>
               </li>
             ))}
           </ul>
