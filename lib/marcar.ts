@@ -19,10 +19,17 @@ async function consultorPadrao() {
 export async function horariosLivres(dias = 8): Promise<{ ok: boolean; dias: SlotDia[]; texto: string; erro?: string }> {
   const vend = await consultorPadrao();
   if (!vend) return { ok: false, dias: [], texto: "", erro: "Nenhum consultor ativo." };
-  const lista = gerarSlotsDias(vend.disponibilidade, await getOcupados(vend.id), { horizonteDias: Math.min(21, Math.max(1, dias)) });
+  const ocupados = await getOcupados(vend.id);
+  const lista = gerarSlotsDias(vend.disponibilidade, ocupados, { horizonteDias: Math.min(21, Math.max(1, dias)) });
+  // Horário "colado" = logo antes ou logo depois de uma consulta já marcada (otimiza a logística do Anderson): marcado com ★.
+  const HORA = 3600 * 1000;
+  const colado = (iso: string) => {
+    const t = new Date(iso).getTime();
+    return ocupados.has(new Date(t - HORA).toISOString()) || ocupados.has(new Date(t + HORA).toISOString());
+  };
   const SEMANA: Record<string, string> = { DOM: "domingo", SEG: "segunda", TER: "terça", QUA: "quarta", QUI: "quinta", SEX: "sexta", "SÁB": "sábado" };
   const texto = lista
-    .map((d) => `${SEMANA[d.diaSemana] ?? d.diaSemana} ${d.diaMes} (${d.dataIso}): ${d.slots.map((s) => s.hora).join(", ")}`)
+    .map((d) => `${SEMANA[d.diaSemana] ?? d.diaSemana} ${d.diaMes} (${d.dataIso}): ${d.slots.map((s) => (colado(s.iso) ? `${s.hora}★` : s.hora)).join(", ")}`)
     .join("\n");
   return { ok: true, dias: lista, texto };
 }
