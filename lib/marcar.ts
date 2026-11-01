@@ -78,13 +78,11 @@ export async function marcarPeloRobo(p: PedidoMarcacao): Promise<ResultadoMarcac
 
   // Confirmação completa pelo WhatsApp (primeira vez = com apresentação).
   const variantes = variantesTelefone(telefone);
-  const [anteriores, cad] = await Promise.all([
+  const [anteriores] = await Promise.all([
     sb.from("agendamentos").select("id", { count: "exact", head: true }).in("telefone_lead", variantes).neq("status", "cancelado").neq("id", criado.id),
-    sb.from("ff_contatos").select("total_mensagens").in("telefone", variantes).limit(1),
   ]);
-  const msgs = Number((cad.data?.[0] as { total_mensagens: number | null } | undefined)?.total_mensagens ?? 0);
-  // O paciente acabou de conversar com o robô, então "primeira vez" aqui = nenhuma consulta anterior.
-  const texto = textoConfirmacao({ nome: p.nome, iso, local: p.local, primeiraVez: (anteriores.count ?? 0) === 0 && msgs <= 1 });
+  // O paciente acabou de conversar com o robô, então "primeira vez" aqui = nenhuma consulta anterior (as mensagens da conversa não contam).
+  const texto = textoConfirmacao({ nome: p.nome, iso, local: p.local, primeiraVez: (anteriores.count ?? 0) === 0 });
   const env = await enviarTextoInstancia(vend.instancia_whatsapp, telefone, texto);
   if (!env.ok) console.error("[marcar] confirmação falhou:", env.error);
 
