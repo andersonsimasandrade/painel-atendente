@@ -14,6 +14,8 @@ import {
 } from "@/lib/ig-gratidao";
 import { enviarDM, perfilDe, respostaPrivada, responderComentario, type EventoIG } from "@/lib/instagram";
 import type { HorarioBot } from "@/lib/types";
+import { ehAdminIG, promptAdminIG } from "@/lib/ig-admin";
+import { horariosLivres } from "@/lib/marcar";
 
 // Robô do Instagram: atende o direct e os comentários do perfil, com as mesmas regras do robô do WhatsApp.
 // Chamado pelo webhook (app/api/instagram/webhook). Nunca lança erro para fora: falha = registro no log.
@@ -267,6 +269,26 @@ async function tratarMensagem(e: EventoIG) {
     }
   }
 
+  // Anderson falando pelo perfil pessoal: modo administrador (assistente, sem vender).
+  if (ehAdminIG({ ig_id: id, username: contato.username })) {
+    await sleep(2500);
+    const maisNova = await sb.from("ig_mensagens").select("id").eq("ig_id", id).eq("papel", "user").gt("id", meuId).limit(1);
+    if (maisNova.data?.length) return void (await marcarEvento(e, "agrupada"));
+    const hh = await sb.from("ig_mensagens").select("papel, texto").eq("ig_id", id).order("id", { ascending: false }).limit(12);
+    const hist = ((hh.data ?? []) as { papel: string; texto: string }[])
+      .reverse()
+      .map((m) => ({ role: (m.papel === "user" ? "user" : "assistant") as "user" | "assistant", content: m.texto }));
+    const livres = await horariosLivres(8).catch(() => ({ texto: "" }));
+    const r = await pedirAoModelo(promptAdminIG(livres.texto), hist);
+    if (!r.texto) return void (await marcarEvento(e, "erro_modelo", r.erro));
+    const resposta = separarTags(r.texto).texto;
+    if (!resposta) return void (await marcarEvento(e, "vazio"));
+    const env = await enviarDM(id, resposta);
+    if (!env.ok) return void (await marcarEvento(e, "erro_envio", env.erro));
+    await sb.from("ig_mensagens").insert({ ig_id: id, papel: "assistant", texto: resposta, mid: env.id ?? null, tipo: "admin" });
+    return void (await marcarEvento(e, "respondido_admin"));
+  }
+
   if (contato.estado === "humano") {
     if (contato.humano_ate && new Date(contato.humano_ate).getTime() > Date.now()) return void (await marcarEvento(e, "humano"));
     await sb.from("ig_contatos").update({ estado: "robo", humano_ate: null }).eq("ig_id", id);
@@ -377,6 +399,7 @@ function comentarioMerece(texto: string | null): boolean {
 async function tratarComentario(e: EventoIG) {
   const sb = getClient();
   if ((process.env.INSTAGRAM_ROBO ?? "").trim().toLowerCase() === "desligado") return void (await marcarEvento(e, "robo_desligado"));
+  if (ehAdminIG({ ig_id: e.remetente_id, username: e.remetente_user ?? null })) return void (await marcarEvento(e, "ignorado"));
   const gesto = comentarioSoGesto(e.texto);
   if (!e.comentario_id || (!gesto && !comentarioMerece(e.texto))) return void (await marcarEvento(e, "ignorado"));
 
