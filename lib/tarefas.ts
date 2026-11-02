@@ -4,6 +4,7 @@ import { enviarTextoInstancia } from "@/lib/evolution";
 import { enviarDM } from "@/lib/instagram";
 import { perguntarJSON } from "@/lib/llm";
 import { variantesTelefone } from "@/lib/telefone";
+import { ehNumeroInterno } from "@/lib/numeros-internos";
 import { contatarAgora } from "@/lib/negocios";
 import { GOOGLE_PEDIR_AVALIACAO_URL, SITE_URL } from "@/lib/site";
 
@@ -106,6 +107,7 @@ export async function mensagemPersonalizada(
 
 export async function criarTarefa(t: NovaTarefa): Promise<number | null> {
   const sb = getClient();
+  if (t.telefone && ehNumeroInterno(t.telefone)) return null; // o Anderson e os números de teste não são pacientes
   const canal: CanalTarefa = t.canal ?? (t.telefone ? "whatsapp" : t.ig_id ? "instagram" : "ligacao");
   const nomeTxt = primeiroNome(t.nome);
   if (t.chave) {
