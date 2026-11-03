@@ -51,3 +51,20 @@ Depoimentos só com TCLE assinado.
 - **Regras automáticas na Meta (ligadas):** pausar anúncio com R$ 30 gastos e 0 cliques; aviso se o gasto do dia passar de R$ 60.
 - Ao criar anúncios novos: criativo primeiro, URL depois; não selecionar imagens geradas por IA; deixar os aprimoramentos de IA desligados; nome "Anúncio N | tema | formato" + utm_content=anuncioN.
 - Campo "Número de telefone do WhatsApp" do anúncio: usar o número comercial (+55 48 9973-0494), nunca o pessoal.
+
+---
+## Anúncio 3 — vídeo do avatar (preparado em 02/11/2026, ainda NÃO publicado)
+- **Nome na Meta:** `Anúncio 3 | Apresentação | Vídeo` · utm_content=anuncio3
+- **Vídeo:** HeyGen, avatar do Anderson, português do Brasil, vertical 9:16, ~30 s, legendas ligadas. Roteiro (sem preço nem promessa):
+  "Olá, eu sou o Anderson Andrade, fisioterapeuta, CREFITO-10 89456-F. Atendo em Florianópolis, em Capoeiras e no Centro. Na consulta você é ouvido, examinado e recebe explicações claras sobre o que será feito, em um atendimento individual, com hora marcada. Se quiser marcar, escolha o melhor horário no meu site: andersonandradefisio.com.br. Será um prazer te atender."
+- **Texto principal:** Eu sou o Anderson Andrade, fisioterapeuta. Atendo em Florianópolis, em Capoeiras e no Centro, com hora marcada e atendimento individual. Na consulta você é ouvido, examinado e recebe explicações claras sobre o que será feito. Escolha o melhor horário pelo site. CREFITO-10 89456-F
+- **Título:** Consulta de fisioterapia em Florianópolis
+- **Descrição:** Conheça o fisioterapeuta e agende pelo site
+- **Botão:** Agendar agora
+- **URL:** https://andersonandradefisio.com.br/?utm_source=meta&utm_medium=paid&utm_campaign=avaliacao_nov26&utm_content=anuncio3
+- **Como criar:** no conjunto "Florianópolis 25-65 | Site", criativo primeiro (vídeo), URL depois; aprimoramentos de IA desligados; Pixel "Eventos do site" marcado. O orçamento (R$ 33/dia) é do conjunto: o 3º anúncio divide a verba com os outros dois.
+- **Regras:** sem "cura", sem número de sessões, sem preço, sem "antes e depois", sem frases que sugiram doença na pessoa.
+
+### Descrição do vídeo no YouTube
+Conteúdo informativo, não substitui avaliação individual. Anderson Simas Andrade · CREFITO-10 89456-F
+Agende pelo site: https://andersonandradefisio.com.br/agendar?utm_source=youtube&utm_medium=video&utm_content=apresentacao
