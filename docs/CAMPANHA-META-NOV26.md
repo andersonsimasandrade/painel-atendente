@@ -55,8 +55,9 @@ Depoimentos só com TCLE assinado.
 ---
 ## Anúncio 3 — vídeo do avatar (preparado em 02/11/2026, ainda NÃO publicado)
 - **Nome na Meta:** `Anúncio 3 | Apresentação | Vídeo` · utm_content=anuncio3
-- **Vídeo:** HeyGen, avatar do Anderson, português do Brasil, vertical 9:16, ~30 s, legendas ligadas. Roteiro (sem preço nem promessa):
-  "Olá, eu sou o Anderson Andrade, fisioterapeuta, CREFITO-10 89456-F. Atendo em Florianópolis, em Capoeiras e no Centro. Na consulta você é ouvido, examinado e recebe explicações claras sobre o que será feito, em um atendimento individual, com hora marcada. Se quiser marcar, escolha o melhor horário no meu site: andersonandradefisio.com.br. Será um prazer te atender."
+- **Vídeo PRONTO (03/11/2026):** `D:\Desktop\CLAUDE\whatsapp + Painel (09-2026)nunciosnuncio3-avatar-anderson-1080x1920.mp4` (1080x1920, 27 s, voz clonada do Anderson). O CREFITO NÃO é falado: aparece só escrito em rodapé ("Anderson Simas Andrade · CREFITO-10 nº 89456-F"). Cópia sem rodapé: `avatar-anderson-SEM-rodape.mp4`. Legendas: usar as automáticas da Meta na criação do anúncio.
+- **Roteiro usado** (sem CREFITO, sem preço nem promessa):
+  "Olá, eu sou o Anderson Andrade, fisioterapeuta. Atendo em Florianópolis, em Capoeiras e no Centro. Na consulta você é ouvido, examinado e recebe explicações claras sobre o que será feito, em um atendimento individual, com hora marcada. Se quiser marcar, escolha o melhor horário no meu site: andersonandradefisio.com.br. Será um prazer te atender."
 - **Texto principal:** Eu sou o Anderson Andrade, fisioterapeuta. Atendo em Florianópolis, em Capoeiras e no Centro, com hora marcada e atendimento individual. Na consulta você é ouvido, examinado e recebe explicações claras sobre o que será feito. Escolha o melhor horário pelo site. CREFITO-10 89456-F
 - **Título:** Consulta de fisioterapia em Florianópolis
 - **Descrição:** Conheça o fisioterapeuta e agende pelo site
