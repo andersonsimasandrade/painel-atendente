@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SITE_URL } from "@/lib/site";
+import { useRascunho } from "@/lib/use-rascunho";
+import { CampoDitado } from "./CampoDitado";
 import type { Devolutiva } from "@/lib/devolutivas";
 import type { Evolucao, Exame } from "@/lib/prontuario-tipos";
 import type { Prescricao } from "@/lib/exercicios-tipos";
@@ -57,6 +59,24 @@ export function Devolutivas({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  // O formulário não pode se perder: pausa a atualização automática e guarda um rascunho na aba.
+  useRascunho(
+    `rasc:devolutiva:${telefone}`,
+    aberto,
+    { titulo, relato, achados, plano, observacoes, escolhidos: [...escolhidos], mostrarDor, prescricaoId },
+    (r) => {
+      setTitulo(r.titulo);
+      setRelato(r.relato);
+      setAchados(r.achados);
+      setPlano(r.plano);
+      setObservacoes(r.observacoes);
+      setEscolhidos(new Set(r.escolhidos));
+      setMostrarDor(r.mostrarDor);
+      setPrescricaoId(r.prescricaoId);
+      setAberto(true);
+    },
+  );
 
   function abrir() {
     setErro(null);
@@ -161,7 +181,7 @@ export function Devolutivas({
           </label>
           <label>
             <span className={rotulo}>O que o paciente nos contou</span>
-            <textarea className={`${campo} min-h-[80px]`} value={relato} onChange={(e) => setRelato(e.target.value)} />
+            <CampoDitado valor={relato} onChange={setRelato} minAltura={80} />
           </label>
 
           <div>
@@ -199,15 +219,15 @@ export function Devolutivas({
 
           <label>
             <span className={rotulo}>O que encontramos na avaliação</span>
-            <textarea className={`${campo} min-h-[80px]`} value={achados} onChange={(e) => setAchados(e.target.value)} />
+            <CampoDitado valor={achados} onChange={setAchados} minAltura={80} />
           </label>
           <label>
             <span className={rotulo}>Plano de cuidado (próximos passos, frequência das sessões)</span>
-            <textarea className={`${campo} min-h-[80px]`} value={plano} onChange={(e) => setPlano(e.target.value)} />
+            <CampoDitado valor={plano} onChange={setPlano} minAltura={80} />
           </label>
           <label>
             <span className={rotulo}>Observações (opcional)</span>
-            <textarea className={`${campo} min-h-[60px]`} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+            <CampoDitado valor={observacoes} onChange={setObservacoes} minAltura={60} />
           </label>
 
           <label className="flex items-center gap-2 text-[12.5px] text-ink-muted">

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GravarSessao } from "./GravarSessao";
+import { CampoDitado } from "./CampoDitado";
+import { useRascunho } from "@/lib/use-rascunho";
 import { AnexosWhatsApp } from "./AnexosWhatsApp";
 import type { RascunhoEvolucao } from "@/lib/prontuario-ia";
 import { LIMITE_ARQUIVO_MB, ROTULO_EXAME, type Evolucao, type Exame, type TipoExame } from "@/lib/prontuario-tipos";
@@ -56,6 +58,40 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
   const [transcricao, setTranscricao] = useState("");
   const [resumindoId, setResumindoId] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  // Os formulários não podem se perder: pausam a atualização automática e guardam rascunho na aba.
+  useRascunho(
+    `rasc:evolucao:${telefone}`,
+    aba === "evolucao",
+    { dataSessao, queixa, achados, conduta, plano, dorIni, dorFim, doRascunho, transcricao },
+    (r) => {
+      setDataSessao(r.dataSessao);
+      setQueixa(r.queixa);
+      setAchados(r.achados);
+      setConduta(r.conduta);
+      setPlano(r.plano);
+      setDorIni(r.dorIni);
+      setDorFim(r.dorFim);
+      setDoRascunho(r.doRascunho);
+      setTranscricao(r.transcricao);
+      setAba("evolucao");
+    },
+  );
+  useRascunho(
+    `rasc:exame:${telefone}`,
+    aba === "exame",
+    { titulo, tipo, dataExame, link, laudo, resumo, resumoIA },
+    (r) => {
+      setTitulo(r.titulo);
+      setTipo(r.tipo);
+      setDataExame(r.dataExame);
+      setLink(r.link);
+      setLaudo(r.laudo);
+      setResumo(r.resumo);
+      setResumoIA(r.resumoIA);
+      setAba("exame");
+    },
+  );
 
   const itens = useMemo<Item[]>(() => {
     const a: Item[] = exames.map((e) => ({ tipo: "exame", data: (e.data_exame ?? e.criado_em).slice(0, 10), ord: new Date(e.criado_em).getTime(), exame: e }));
@@ -312,19 +348,19 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
           </div>
           <label>
             <span className={rotulo}>Relato do paciente / queixa</span>
-            <textarea className={`${campo} min-h-[70px]`} value={queixa} onChange={(e) => setQueixa(e.target.value)} />
+            <CampoDitado valor={queixa} onChange={setQueixa} minAltura={70} />
           </label>
           <label>
             <span className={rotulo}>Achados da avaliação</span>
-            <textarea className={`${campo} min-h-[70px]`} value={achados} onChange={(e) => setAchados(e.target.value)} />
+            <CampoDitado valor={achados} onChange={setAchados} minAltura={70} />
           </label>
           <label>
             <span className={rotulo}>Conduta / manobras realizadas</span>
-            <textarea className={`${campo} min-h-[70px]`} value={conduta} onChange={(e) => setConduta(e.target.value)} />
+            <CampoDitado valor={conduta} onChange={setConduta} minAltura={70} />
           </label>
           <label>
             <span className={rotulo}>Plano e orientações (inclui exercícios para casa)</span>
-            <textarea className={`${campo} min-h-[70px]`} value={plano} onChange={(e) => setPlano(e.target.value)} />
+            <CampoDitado valor={plano} onChange={setPlano} minAltura={70} />
           </label>
           {transcricao && (
             <details className="rounded-lg border border-line px-3 py-2 text-[12.5px] text-ink-muted">

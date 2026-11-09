@@ -194,7 +194,7 @@ export interface RascunhoEvolucao {
 }
 
 /** Transcreve o áudio da sessão (Groq Whisper). O áudio NÃO é guardado em lugar nenhum. */
-export async function transcreverSessao(buffer: Buffer, mime: string): Promise<R<{ texto: string }>> {
+export async function transcreverSessao(buffer: Buffer, mime: string, minChars = 20): Promise<R<{ texto: string }>> {
   const key = (process.env.GROQ_API_KEY ?? "").trim();
   if (!key) return { ok: false, error: "A transcrição não está ligada (falta a chave GROQ_API_KEY no painel)." };
   if (buffer.length < 2000) return { ok: false, error: "A gravação ficou vazia." };
@@ -206,6 +206,8 @@ export async function transcreverSessao(buffer: Buffer, mime: string): Promise<R
   f.set("language", "pt");
   f.set("response_format", "json");
   f.set("temperature", "0");
+  // Dica de vocabulário para acertar os termos da fisioterapia.
+  f.set("prompt", "Fisioterapia e terapia manual: cervical, lombar, coluna, hérnia de disco, protrusão, retificação, ciático, dor, ombro, joelho, quadril, osteopatia, quiropraxia, Maitland, Mulligan, Kabat, craniossacral, mobilização, exercícios.");
   try {
     const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
       method: "POST",
@@ -219,7 +221,7 @@ export async function transcreverSessao(buffer: Buffer, mime: string): Promise<R
     }
     const j = (await res.json()) as { text?: string };
     const texto = (j.text ?? "").trim();
-    return texto.length >= 20 ? { ok: true, texto } : { ok: false, error: "Não consegui entender a fala da gravação." };
+    return texto.length >= minChars ? { ok: true, texto } : { ok: false, error: "Não consegui entender a fala da gravação." };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Falha na transcrição." };
   }

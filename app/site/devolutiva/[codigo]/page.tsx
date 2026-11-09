@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { CREFITO, HORARIO_TEXTO, MARCA, PROFISSIONAL, SITE_URL, SLOGAN, whatsappNumero } from "@/lib/site";
+import { CONSULTORIOS, CREFITO, FACEBOOK_URL, HORARIO_TEXTO, INSTAGRAM, INSTAGRAM_URL, MARCA, PROFISSIONAL, SITE_HOST, SITE_URL, SLOGAN, YOUTUBE_URL, whatsappNumero } from "@/lib/site";
+import { formatPhone } from "@/lib/format";
+import { QrSvg } from "@/components/site/QrSvg";
 import { devolutivaPublica, type PontoDor } from "@/lib/devolutivas";
 import { BotaoImprimir } from "@/components/site/BotaoImprimir";
 
@@ -171,16 +173,67 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
         </Secao>
       )}
 
-      <div className="mt-10 border-t border-[#D8E4E1] pt-5 text-[13.5px] leading-relaxed text-[#5E7371]">
-        <p className="font-semibold text-[#354746]">
-          {PROFISSIONAL} · Fisioterapeuta · {CREFITO}
-        </p>
-        <p>{HORARIO_TEXTO}</p>
-        <p className="mt-3">
-          Este documento é informativo, foi feito para o seu caso e não substitui a consulta. Não traz promessa de resultado. Você pode compartilhá-lo com outros profissionais de saúde
-          que cuidam de você.
-        </p>
+      {/* Assinatura */}
+      <div className="mt-12 grid grid-cols-1 gap-8 break-inside-avoid sm:grid-cols-2">
+        <div>
+          <div className="h-12 border-b border-[#354746]" />
+          <p className="mt-1 text-[13px] text-[#5E7371]">Local e data</p>
+        </div>
+        <div>
+          <div className="h-12 border-b border-[#354746]" />
+          <p className="mt-1 text-[13px] font-semibold text-[#354746]">{PROFISSIONAL}</p>
+          <p className="text-[12.5px] text-[#5E7371]">Fisioterapeuta · {CREFITO}</p>
+        </div>
       </div>
+
+      {/* Rodapé: contato, QR codes e consultórios */}
+      <div className="mt-8 break-inside-avoid rounded-2xl border border-[#D8E4E1] bg-[#F5F8F7] p-5">
+        <p className="font-destaque text-[16px] font-bold text-[#354746]">{MARCA}</p>
+        <p className="text-[13px] text-[#5E7371]">
+          {SLOGAN} Terapia manual com osteopatia, quiropraxia, Maitland, Mulligan, Kabat e craniossacral, com hora marcada e atendimento individual.
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-start gap-6">
+          <div className="flex gap-4">
+            <QrSvg url={wa} rotulo="WhatsApp" />
+            <QrSvg url={`${SITE_URL}/agendar`} rotulo="Agendar sessão" />
+          </div>
+          <div className="min-w-[220px] flex-1 space-y-1 text-[13.5px] leading-relaxed text-[#3F5452]">
+            <p>
+              <b className="text-[#354746]">WhatsApp:</b> {formatPhone(whatsappNumero())}
+            </p>
+            <p>
+              <b className="text-[#354746]">Site:</b> {SITE_HOST}
+            </p>
+            <p>
+              <b className="text-[#354746]">Instagram:</b> @{INSTAGRAM}
+            </p>
+            <p className="break-all text-[12px] text-[#5E7371]">{INSTAGRAM_URL}</p>
+            <p>
+              <b className="text-[#354746]">Facebook:</b> /andersonandradefisio
+            </p>
+            <p className="break-all text-[12px] text-[#5E7371]">
+              {FACEBOOK_URL} · {YOUTUBE_URL}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 border-t border-[#D8E4E1] pt-4 text-[13px] leading-relaxed text-[#3F5452] sm:grid-cols-2">
+          {(["capoeiras", "centro"] as const).map((k) => (
+            <div key={k}>
+              <p className="font-semibold text-[#354746]">{CONSULTORIOS[k].nome}</p>
+              <p>{CONSULTORIOS[k].linhaEndereco}</p>
+              <p className="text-[#5E7371]">{CONSULTORIOS[k].complemento}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[12.5px] text-[#5E7371]">{HORARIO_TEXTO}</p>
+      </div>
+
+      <p className="mt-5 text-[12.5px] leading-relaxed text-[#5E7371]">
+        Este documento é informativo, foi feito para o seu caso e não substitui a consulta. Não traz promessa de resultado. Você pode compartilhá-lo com outros profissionais de
+        saúde que cuidam de você.
+      </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3" data-no-print>
         <BotaoImprimir rotulo="Salvar em PDF / imprimir" />

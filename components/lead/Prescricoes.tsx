@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SITE_URL } from "@/lib/site";
+import { useRascunho } from "@/lib/use-rascunho";
+import { CampoDitado } from "./CampoDitado";
 import { MENSAGEM_PRESCRICAO, type Exercicio, type ItemPrescricao, type Prescricao } from "@/lib/exercicios-tipos";
 
 const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" });
@@ -52,6 +54,19 @@ export function Prescricoes({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  useRascunho(
+    `rasc:prescricao:${telefone}`,
+    aberto,
+    { busca, itens, titulo, orientacoes },
+    (r) => {
+      setBusca(r.busca);
+      setItens(r.itens);
+      setTitulo(r.titulo);
+      setOrientacoes(r.orientacoes);
+      setAberto(true);
+    },
+  );
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -246,7 +261,7 @@ export function Prescricoes({
             </label>
             <label>
               <span className={rotulo}>Orientações gerais (aparecem no topo da página do paciente)</span>
-              <textarea className={`${campo} min-h-[70px]`} value={orientacoes} onChange={(e) => setOrientacoes(e.target.value)} placeholder="Ex.: Faça pela manhã e à noite, com calma. Evite dormir de bruços." />
+              <CampoDitado valor={orientacoes} onChange={setOrientacoes} minAltura={70} placeholder="Ex.: Faça pela manhã e à noite, com calma. Evite dormir de bruços." />
             </label>
           </div>
 

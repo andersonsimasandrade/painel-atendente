@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { RascunhoEvolucao } from "@/lib/prontuario-ia";
+import { pausarRefresh } from "@/lib/pausa-refresh";
 
 type Estado = "parado" | "gravando" | "pausado" | "enviando" | "erro";
 
@@ -40,6 +41,12 @@ export function GravarSessao({
       if (baixar) URL.revokeObjectURL(baixar);
     };
   }, [baixar]);
+
+  useEffect(() => {
+    if (estado === "parado") return;
+    pausarRefresh(true);
+    return () => pausarRefresh(false);
+  }, [estado]);
 
   async function manterTelaLigada() {
     try {
