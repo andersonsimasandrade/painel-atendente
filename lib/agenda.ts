@@ -41,16 +41,18 @@ export async function getOcupados(vendedorId: string): Promise<Set<string>> {
 }
 
 // Sessões já marcadas (início, fim e consultório), de ontem em diante: base da regra de deslocamento entre consultórios.
-export async function getCompromissos(vendedorId: string): Promise<Compromisso[]> {
+export async function getCompromissos(vendedorId: string, ignorarId?: string): Promise<Compromisso[]> {
   try {
     const desde = new Date(Date.now() - 86400000).toISOString();
-    const res = await getClient()
+    let q = getClient()
       .from("agendamentos")
       .select("data_hora, duracao_min, local")
       .eq("vendedor_id", vendedorId)
       .neq("status", "cancelado")
       .gte("data_hora", desde)
       .limit(2000);
+    if (ignorarId) q = q.neq("id", ignorarId);
+    const res = await q;
     if (res.error || !res.data) return [];
     return (res.data as { data_hora: string; duracao_min: number | null; local: string | null }[]).map((r) => {
       const inicio = new Date(r.data_hora).getTime();

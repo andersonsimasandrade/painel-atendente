@@ -151,7 +151,7 @@ export function GravarSessao({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line bg-white/[0.02] p-4">
+    <div className="flex w-full basis-full flex-col gap-3 rounded-xl border border-line bg-white/[0.02] p-4">
       <p className="text-[13px] font-semibold text-ink">Gravar a sessão</p>
 
       {estado === "parado" || estado === "erro" ? (

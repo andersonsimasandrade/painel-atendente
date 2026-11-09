@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSessao } from "@/lib/session";
-import { cancelarAgendamento, getVendedorBySlug, remarcarAgendamento } from "@/lib/agenda";
+import { getClient } from "@/lib/db";
+import { cancelarAgendamento, getCompromissos, getVendedorBySlug, remarcarAgendamento } from "@/lib/agenda";
+import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +44,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const iso = new Date(`${data}T${hora}:00-03:00`);
   if (!Number.isFinite(iso.getTime())) return NextResponse.json({ ok: false, error: "Data inválida." }, { status: 400 });
 
+  // Deslocamento entre consultórios: só AVISA (o Anderson decide), nunca bloqueia.
+  let aviso: string | undefined;
+  try {
+    const atual = await getClient().from("agendamentos").select("vendedor_id").eq("id", id).limit(1);
+    const dono = (atual.data?.[0] as { vendedor_id?: string } | undefined)?.vendedor_id;
+    if (dono) {
+      const choque = conflitoDeslocamento(iso.getTime(), local, await getCompromissos(dono, id));
+      aviso = [choque ? avisoDeslocamento(choque, local) : "", local === "centro" ? "Lembre de reservar a sala no Centro." : ""].filter(Boolean).join(" ") || undefined;
+    }
+  } catch {
+    /* o aviso é um extra: não impede remarcar */
+  }
+
   const r = await remarcarAgendamento(id, iso.toISOString(), local, vendedorId);
   if (!r.ok) {
     return NextResponse.json(
@@ -49,5 +64,5 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       { status: r.conflito ? 409 : r.error === "Agendamento não encontrado." ? 404 : 500 },
     );
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, aviso });
 }

@@ -55,6 +55,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
   const [doRascunho, setDoRascunho] = useState(false); // campos preenchidos pela gravação (IA): precisam de revisão
   const [transcricao, setTranscricao] = useState("");
   const [resumindoId, setResumindoId] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const itens = useMemo<Item[]>(() => {
     const a: Item[] = exames.map((e) => ({ tipo: "exame", data: (e.data_exame ?? e.criado_em).slice(0, 10), ord: new Date(e.criado_em).getTime(), exame: e }));
@@ -87,11 +88,12 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
     setResumindoId(ex.id);
     try {
       const r = await fetch(`${base}/resumir`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: ex.id }) });
-      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; aviso?: string | null };
       if (!r.ok || !d.ok) {
         setErro(d.error ?? "Não consegui resumir o arquivo.");
         return;
       }
+      if (d.aviso) setAviso(d.aviso);
       router.refresh();
     } catch {
       setErro("Falha de rede.");
@@ -208,7 +210,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-start gap-2">
         <button type="button" className={botaoPrim} onClick={() => setAba(aba === "evolucao" ? null : "evolucao")}>
           + Evolução da sessão
         </button>
@@ -350,6 +352,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
       )}
 
       {erro && <p className="text-[12.5px] text-amber">{erro}</p>}
+      {aviso && <p className="rounded-lg border border-brand/25 bg-brand/[0.06] px-3 py-2 text-[12.5px] text-ink">{aviso}</p>}
 
       <ol className="flex flex-col gap-3">
         {itens.map((it) =>

@@ -79,7 +79,7 @@ export function AnexosWhatsApp({ telefone }: { telefone: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line bg-white/[0.02] p-4">
+    <div className="flex w-full basis-full flex-col gap-3 rounded-xl border border-line bg-white/[0.02] p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-semibold text-ink">Arquivos que o paciente enviou no WhatsApp</p>
         <div className="flex gap-2">

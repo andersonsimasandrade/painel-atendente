@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Remarcar } from "@/components/Remarcar";
 import type { ResumoPacote, SessaoPaciente } from "@/lib/sessoes-paciente";
 
 const LOCAL: Record<string, string> = { capoeiras: "Capoeiras", centro: "Centro" };
@@ -116,6 +117,9 @@ export function SessoesPaciente({
                   <button type="button" disabled={ocupado === s.id} className={btn} onClick={() => void presenca(s.id, "faltou")}>
                     Faltou
                   </button>
+                )}
+                {(s.status === "agendado" || s.status === "confirmado") && !passou && (
+                  <Remarcar a={{ id: s.id, data_hora: s.data_hora, local: s.local }} visivel onFeito={() => router.refresh()} />
                 )}
                 {s.status === "compareceu" && (
                   <button type="button" disabled={ocupado === s.id} className={btn} onClick={() => void presenca(s.id, "agendado")}>
