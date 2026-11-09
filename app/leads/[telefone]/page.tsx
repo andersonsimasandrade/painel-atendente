@@ -42,6 +42,8 @@ import { getExtraLead, voltouAFalar } from "@/lib/lead-extra";
 import { NegociosLead } from "@/components/lead/NegociosLead";
 import { SessoesPaciente } from "@/components/lead/SessoesPaciente";
 import { listarSessoesPaciente } from "@/lib/sessoes-paciente";
+import { Prontuario } from "@/components/lead/Prontuario";
+import { listarProntuario } from "@/lib/prontuario";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
@@ -103,7 +105,7 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo] = await Promise.all([
+  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo, prontuario] = await Promise.all([
     getLead(telefone),
     getConversa(telefone),
     getNotas(telefone),
@@ -113,6 +115,7 @@ export default async function LeadDetailPage({
     listarNegocios(telefone).catch(() => []),
     getExtraLead(telefone),
     listarSessoesPaciente(telefone).catch(() => ({ sessoes: [], pacote: { comprado: 0, realizadas: 0, marcadas: 0, restantes: 0 } })),
+    listarProntuario(telefone).catch(() => ({ exames: [], evolucoes: [] })),
   ]);
 
   if (!result.ok) {
@@ -422,6 +425,16 @@ export default async function LeadDetailPage({
           delay={90}
         >
           <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} />
+        </Panel>
+
+        {/* Prontuário: exames (com resumo do laudo) e evolução por sessão */}
+        <Panel
+          title="Prontuário e exames"
+          subtitle="Linha do tempo clínica: exames com resumo do laudo e a evolução de cada sessão (dados sensíveis — só você vê)"
+          className="mt-4"
+          delay={95}
+        >
+          <Prontuario telefone={lead.telefone} exames={prontuario.exames} evolucoes={prontuario.evolucoes} />
         </Panel>
 
         {/* Negociações: histórico de cada tentativa de venda/atendimento */}
