@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { CONSULTORIOS, CREFITO, FACEBOOK_URL, HORARIO_TEXTO, INSTAGRAM, INSTAGRAM_URL, MARCA, PROFISSIONAL, SITE_HOST, SITE_URL, SLOGAN, YOUTUBE_URL, whatsappNumero } from "@/lib/site";
+import { CONSULTORIOS, CREFITO, HORARIO_TEXTO, INSTAGRAM, MARCA, PROFISSIONAL, SITE_HOST, SITE_URL, SLOGAN, whatsappNumero } from "@/lib/site";
 import { formatPhone } from "@/lib/format";
 import { QrSvg } from "@/components/site/QrSvg";
+import { IconeFacebook, IconeInstagram, IconeYouTube } from "@/components/site/RedesSociais";
 import { devolutivaPublica, type PontoDor } from "@/lib/devolutivas";
 import { BotaoImprimir } from "@/components/site/BotaoImprimir";
 
@@ -176,7 +177,9 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
       {/* Assinatura */}
       <div className="mt-12 grid grid-cols-1 gap-8 break-inside-avoid sm:grid-cols-2">
         <div>
-          <div className="h-12 border-b border-[#354746]" />
+          <div className="flex h-12 items-end border-b border-[#354746] pb-1 text-[15px] text-[#354746]">
+            {`Florianópolis/SC${d.local ? `, ${CONSULTORIOS[d.local].bairro}` : ""} · ${dataBR(d.data_sessao ?? d.criado_em)}`}
+          </div>
           <p className="mt-1 text-[13px] text-[#5E7371]">Local e data</p>
         </div>
         <div>
@@ -200,20 +203,19 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
           </div>
           <div className="min-w-[220px] flex-1 space-y-1 text-[13.5px] leading-relaxed text-[#3F5452]">
             <p>
-              <b className="text-[#354746]">WhatsApp:</b> {formatPhone(whatsappNumero())}
+              <b className="text-[#354746]">WhatsApp:</b> {formatPhone(whatsappNumero()).replace(/^\+55\s*/, "")}
             </p>
             <p>
               <b className="text-[#354746]">Site:</b> {SITE_HOST}
             </p>
-            <p>
-              <b className="text-[#354746]">Instagram:</b> @{INSTAGRAM}
+            <p className="flex items-center gap-2">
+              <IconeInstagram className="h-[18px] w-[18px] text-[#354746]" /> @{INSTAGRAM}
             </p>
-            <p className="break-all text-[12px] text-[#5E7371]">{INSTAGRAM_URL}</p>
-            <p>
-              <b className="text-[#354746]">Facebook:</b> /andersonandradefisio
+            <p className="flex items-center gap-2">
+              <IconeFacebook className="h-[18px] w-[18px] text-[#354746]" /> /andersonandradefisio
             </p>
-            <p className="break-all text-[12px] text-[#5E7371]">
-              {FACEBOOK_URL} · {YOUTUBE_URL}
+            <p className="flex items-center gap-2">
+              <IconeYouTube className="h-[18px] w-[18px] text-[#354746]" /> @andersonandradefisio
             </p>
           </div>
         </div>

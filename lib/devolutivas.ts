@@ -24,6 +24,8 @@ export interface Devolutiva {
   plano: string | null;
   observacoes: string | null;
   mostrar_dor: boolean;
+  local: "capoeiras" | "centro" | null; // consultório da última sessão realizada
+  data_sessao: string | null; // dia da última sessão realizada (AAAA-MM-DD)
   prescricao_codigo: string | null;
   ativa: boolean;
   criado_em: string;
@@ -77,6 +79,8 @@ async function paraDevolutiva(r: Record<string, unknown>): Promise<Devolutiva> {
     plano: (r.plano as string | null) ?? null,
     observacoes: (r.observacoes as string | null) ?? null,
     mostrar_dor: r.mostrar_dor !== false,
+    local: r.local === "capoeiras" || r.local === "centro" ? (r.local as "capoeiras" | "centro") : null,
+    data_sessao: (r.data_sessao as string | null) ?? null,
     prescricao_codigo: await codigoDaPrescricao((r.prescricao_id as string | null) ?? null),
     ativa: r.ativa !== false,
     criado_em: String(r.criado_em),
@@ -93,7 +97,25 @@ export async function criarDevolutiva(telefone: string, d: Record<string, unknow
   const plano = txt(d.plano, 4000);
   if (!relato && !exames.length && !achados && !plano) return { ok: false, error: "Escreva ao menos uma parte da devolutiva." };
   const codigo = randomBytes(12).toString("base64url");
-  const i = await getClient()
+
+  // Local e data da assinatura: consultório e dia da última sessão realizada (senão, a última evolução registrada; senão, hoje).
+  const sb = getClient();
+  const variantes = variantesTelefone(tel);
+  const hojeSP = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+  let dataSessao: string = hojeSP;
+  let local: "capoeiras" | "centro" | null = null;
+  const ag = await sb.from("agendamentos").select("data_hora, local").in("telefone_lead", variantes).eq("status", "compareceu").order("data_hora", { ascending: false }).limit(1);
+  const ultima = ag.data?.[0] as { data_hora: string; local: string | null } | undefined;
+  if (ultima) {
+    dataSessao = new Date(new Date(ultima.data_hora).getTime() - 3 * 3600000).toISOString().slice(0, 10);
+    local = ultima.local === "capoeiras" || ultima.local === "centro" ? ultima.local : null;
+  } else {
+    const ev = await sb.from("paciente_evolucao").select("data_sessao").in("telefone", variantes).order("data_sessao", { ascending: false }).limit(1);
+    const d = (ev.data?.[0] as { data_sessao?: string } | undefined)?.data_sessao;
+    if (d) dataSessao = d;
+  }
+
+  const i = await sb
     .from("devolutivas")
     .insert({
       telefone: tel,
@@ -105,6 +127,8 @@ export async function criarDevolutiva(telefone: string, d: Record<string, unknow
       plano,
       observacoes: txt(d.observacoes, 3000),
       mostrar_dor: d.mostrar_dor !== false,
+      local,
+      data_sessao: dataSessao,
       prescricao_id: typeof d.prescricao_id === "string" && d.prescricao_id ? d.prescricao_id : null,
     })
     .select("id");
