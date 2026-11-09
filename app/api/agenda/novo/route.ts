@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSessao } from "@/lib/session";
 import { getClient } from "@/lib/db";
-import { criarAgendamento, getVendedorBySlug, listarVendedores, resolverLead } from "@/lib/agenda";
+import { criarAgendamento, getCompromissos, getVendedorBySlug, listarVendedores, resolverLead } from "@/lib/agenda";
+import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { formatarBR } from "@/lib/slots";
 import { apenasDigitos } from "@/lib/format";
@@ -49,6 +50,15 @@ export async function POST(req: Request) {
   if (!slug) slug = (await listarVendedores())[0]?.slug ?? "";
   const vend = slug ? await getVendedorBySlug(slug) : null;
   if (!vend) return NextResponse.json({ ok: false, error: "Nenhum consultor ativo." }, { status: 400 });
+
+  // Deslocamento entre consultórios: só AVISA (o Anderson decide), nunca bloqueia a marcação manual.
+  const choque = conflitoDeslocamento(new Date(iso).getTime(), local, await getCompromissos(vend.id));
+  const aviso = [
+    choque ? avisoDeslocamento(choque, local) : "",
+    local === "centro" ? "Lembre de reservar a sala no Centro." : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const criado = await criarAgendamento({
     vendedorId: vend.id,
@@ -124,5 +134,5 @@ export async function POST(req: Request) {
     console.error("[agenda/novo] log painel:", e);
   }
 
-  return NextResponse.json({ ok: true, id: criado.id, quando, local: cons.bairro, confirmado });
+  return NextResponse.json({ ok: true, id: criado.id, quando, local: cons.bairro, confirmado, aviso: aviso || undefined });
 }

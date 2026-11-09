@@ -1482,7 +1482,25 @@ export async function getRetorno(desde?: string, ate?: string): Promise<RetornoR
     }
     const ticketMedio = fechados > 0 ? receita / fechados : 0;
 
-    return { ok: true, retorno: { fechados, receita, ticketMedio } };
+    // Pacotes: cada venda pode cobrir várias sessões (negocios.sessoes) → ticket por sessão fiel.
+    let sessoes = fechados;
+    try {
+      let nq = supabase.from("negocios").select("sessoes").eq("status", "ganho");
+      if (desde && ate) {
+        const { desdeIso, ateIso } = rangeBoundsIso(desde, ate);
+        nq = nq.gte("fechado_em", desdeIso).lte("fechado_em", ateIso);
+      }
+      const nr = await nq;
+      if (!nr.error && nr.data?.length) {
+        const soma = (nr.data as { sessoes: number | null }[]).reduce((t, x) => t + Math.max(1, Number(x.sessoes) || 1), 0);
+        sessoes = Math.max(soma, fechados);
+      }
+    } catch {
+      /* sem pacote: mantém 1 sessão por venda */
+    }
+    const ticketSessao = sessoes > 0 ? receita / sessoes : 0;
+
+    return { ok: true, retorno: { fechados, receita, ticketMedio, sessoes, ticketSessao } };
   } catch (e) {
     const message =
       e instanceof Error ? e.message : "Erro desconhecido ao consultar o Supabase";

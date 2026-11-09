@@ -14,6 +14,8 @@ export interface Negocio {
   valor: number | null;
   motivo_perda: string | null;
   observacao: string | null;
+  sessoes: number; // quantas sessões a venda cobre (pacote); 1 = sessão avulsa
+  descricao: string | null;
 }
 
 export const ROTULO_TIPO: Record<TipoNegocio, string> = {
@@ -51,6 +53,8 @@ export interface MetricasNegocios {
   criadosNoPeriodo: number;
   concretizados: number;
   receita: number;
+  sessoesVendidas: number; // soma das sessões das vendas concretizadas no período
+  ticketPorSessao: number | null; // receita ÷ sessões vendidas
   perdidos: number;
   reativados: number; // negócios de recompra/reativação abertos no período
   conversao: number | null; // concretizados ÷ (concretizados + perdidos)

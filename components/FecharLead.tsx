@@ -9,6 +9,7 @@ interface FecharLeadProps {
   fechado: boolean;
   valorFechado: number | null;
   dataFechamento: string | null;
+  sessoes?: number; // sessões cobertas pela venda concretizada (pacote)
 }
 
 export function FecharLead({
@@ -16,9 +17,11 @@ export function FecharLead({
   fechado,
   valorFechado,
   dataFechamento,
+  sessoes = 1,
 }: FecharLeadProps) {
   const router = useRouter();
   const [valor, setValor] = useState("");
+  const [nSessoes, setNSessoes] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +56,12 @@ export function FecharLead({
       setError("Informe um valor de fechamento válido.");
       return;
     }
-    void post({ telefone, valor: v });
+    const n = Math.round(Number(nSessoes));
+    if (!Number.isFinite(n) || n < 1 || n > 100) {
+      setError("Informe quantas sessões a venda cobre (de 1 a 100).");
+      return;
+    }
+    void post({ telefone, valor: v, sessoes: n });
   }
 
   return (
@@ -84,6 +92,11 @@ export function FecharLead({
             <div className="tnum font-display text-[26px] font-semibold leading-none tracking-tight text-brand">
               {formatBRL(valorFechado)}
             </div>
+            {sessoes > 1 && (
+              <p className="mt-1.5 text-[12.5px] text-ink-muted">
+                Pacote de <b>{sessoes} sessões</b> · {formatBRL((valorFechado ?? 0) / sessoes)} por sessão
+              </p>
+            )}
             {dataFechamento && (
               <p className="mt-1.5 text-[11.5px] text-ink-faint">
                 Fechado em {formatDateTime(dataFechamento)}
@@ -123,10 +136,20 @@ export function FecharLead({
               onChange={(e) => setValor(e.target.value)}
               inputMode="decimal"
               placeholder="0,00"
-              aria-label="Valor do negócio fechado (R$)"
+              aria-label="Valor total da venda (R$)"
               className="tnum h-9 w-full rounded-lg border border-line bg-base/70 pl-8 pr-3 font-mono text-[14px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/60 focus:shadow-[0_0_0_3px_rgba(53,176,110,0.12)]"
             />
           </div>
+          <label className="flex items-center gap-2 text-[12px] text-ink-muted">
+            Sessões
+            <input
+              value={nSessoes}
+              onChange={(e) => setNSessoes(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              inputMode="numeric"
+              aria-label="Quantas sessões a venda cobre"
+              className="tnum h-9 w-16 rounded-lg border border-line bg-base/70 px-2 text-center font-mono text-[14px] text-ink outline-none focus:border-brand/60"
+            />
+          </label>
           <button
             type="submit"
             disabled={loading || !valor.trim()}
@@ -148,6 +171,12 @@ export function FecharLead({
             Marcar como fechado
           </button>
         </form>
+      )}
+
+      {!fechado && Number(nSessoes) > 1 && parseValorBR(valor) > 0 && (
+        <p className="mt-1.5 text-[11.5px] text-ink-faint">
+          Valor total da venda ÷ {nSessoes} sessões = {formatBRL(parseValorBR(valor) / Number(nSessoes))} por sessão.
+        </p>
       )}
 
       {error && (

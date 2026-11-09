@@ -1,5 +1,6 @@
 import { getClient } from "@/lib/db";
-import { criarAgendamento, getOcupados, getVendedorBySlug, listarVendedores, resolverLead } from "@/lib/agenda";
+import { criarAgendamento, getCompromissos, getOcupados, getVendedorBySlug, listarVendedores, resolverLead } from "@/lib/agenda";
+import { GAP_TROCA_MIN, NOME_LOCAL, conflitoDeslocamento, locaisDoDia, outroLocal, type LocalId } from "@/lib/deslocamento";
 import { destinatariosAlerta } from "@/lib/config";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { textoConfirmacao } from "@/lib/confirmacao";
@@ -19,7 +20,7 @@ async function consultorPadrao() {
 export async function horariosLivres(dias = 8): Promise<{ ok: boolean; dias: SlotDia[]; texto: string; erro?: string }> {
   const vend = await consultorPadrao();
   if (!vend) return { ok: false, dias: [], texto: "", erro: "Nenhum consultor ativo." };
-  const ocupados = await getOcupados(vend.id);
+  const [ocupados, compromissos] = await Promise.all([getOcupados(vend.id), getCompromissos(vend.id)]);
   const lista = gerarSlotsDias(vend.disponibilidade, ocupados, { horizonteDias: Math.min(21, Math.max(1, dias)) });
   // Horário "colado" = logo antes ou logo depois de uma consulta já marcada (otimiza a logística do Anderson): marcado com ★.
   const HORA = 3600 * 1000;
@@ -28,10 +29,34 @@ export async function horariosLivres(dias = 8): Promise<{ ok: boolean; dias: Slo
     return ocupados.has(new Date(t - HORA).toISOString()) || ocupados.has(new Date(t + HORA).toISOString());
   };
   const SEMANA: Record<string, string> = { DOM: "domingo", SEG: "segunda", TER: "terça", QUA: "quarta", QUI: "quinta", SEX: "sexta", "SÁB": "sábado" };
-  const texto = lista
-    .map((d) => `${SEMANA[d.diaSemana] ?? d.diaSemana} ${d.diaMes} (${d.dataIso}): ${d.slots.map((s) => (colado(s.iso) ? `${s.hora}★` : s.hora)).join(", ")}`)
-    .join("\n");
-  return { ok: true, dias: lista, texto };
+  const nl = (l: LocalId) => NOME_LOCAL[l];
+
+  const linhas: string[] = [];
+  for (const d of lista) {
+    const locaisDia = locaisDoDia(d.dataIso, compromissos);
+    const so = locaisDia.size === 1 ? [...locaisDia][0] : null; // dia já "de" um consultório
+    const horas: string[] = [];
+    for (const s of d.slots) {
+      const t = new Date(s.iso).getTime();
+      const cap = !conflitoDeslocamento(t, "capoeiras", compromissos);
+      const cen = !conflitoDeslocamento(t, "centro", compromissos);
+      if (!cap && !cen) continue; // não sobra tempo de deslocamento em nenhum consultório
+      const estrela = colado(s.iso) ? "★" : "";
+      let rotulo = "";
+      if (cap && cen) rotulo = so ? ` (${nl(so)}; ${nl(outroLocal(so))} só com deslocamento)` : "";
+      else rotulo = ` (só ${nl(cap ? "capoeiras" : "centro")})`;
+      horas.push(`${s.hora}${estrela}${rotulo}`);
+    }
+    if (!horas.length) continue;
+    const dia = so ? ` [dia de ${nl(so)}]` : locaisDia.size > 1 ? " [dia nos dois consultórios]" : "";
+    linhas.push(`${SEMANA[d.diaSemana] ?? d.diaSemana} ${d.diaMes} (${d.dataIso})${dia}: ${horas.join(", ")}`);
+  }
+  const regra =
+    `REGRA DE DESLOCAMENTO: entre Capoeiras e Centro são necessários ${GAP_TROCA_MIN} minutos livres. ` +
+    "Quando o horário tiver '(só X)', ele vale apenas naquele consultório. " +
+    "Prefira oferecer o consultório que o paciente pediu em dias que já são desse consultório ([dia de ...]); só ofereça o outro consultório quando o paciente não puder nos demais dias. " +
+    "Ao marcar, use sempre o consultório indicado para aquele horário.";
+  return { ok: true, dias: lista, texto: linhas.length ? [regra, ...linhas].join("\n") : "" };
 }
 
 export interface PedidoMarcacao {
@@ -59,6 +84,20 @@ export async function marcarPeloRobo(p: PedidoMarcacao): Promise<ResultadoMarcac
   const sugestoes = livres.flatMap((d) => d.slots.map((s) => `${d.diaSemana} ${d.diaMes} ${s.hora}`)).slice(0, 4);
   if (!livres.some((d) => d.slots.some((s) => s.iso === iso))) {
     return { ok: false, conflito: true, erro: "Esse horário não está livre (ou fora do atendimento).", alternativas: sugestoes };
+  }
+
+  // Deslocamento: entre consultórios diferentes são necessários ~90 min (o horário continua livre, mas não no consultório pedido).
+  const compromissos = await getCompromissos(vend.id);
+  if (conflitoDeslocamento(new Date(iso).getTime(), p.local, compromissos)) {
+    const outro = outroLocal(p.local);
+    const noOutro = !conflitoDeslocamento(new Date(iso).getTime(), outro, compromissos);
+    const nomeLocal = NOME_LOCAL[p.local];
+    return {
+      ok: false,
+      conflito: true,
+      erro: `Nesse horário não dá tempo de deslocamento para ${nomeLocal} (há sessão em outro consultório perto desse horário).${noOutro ? ` Ele vale apenas em ${NOME_LOCAL[outro]}.` : ""} Ofereça outro horário.`,
+      alternativas: sugestoes,
+    };
   }
 
   const telefone = (await resolverLead(tel)) ?? tel;
@@ -100,7 +139,7 @@ export async function marcarPeloRobo(p: PedidoMarcacao): Promise<ResultadoMarcac
   const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();
   if (instancia) {
     for (const d of destinatariosAlerta()) {
-      if (d.whatsapp) await enviarTextoInstancia(instancia, d.whatsapp, `📅 O robô marcou uma consulta: ${p.nome ?? telefone} · ${quando} · ${cons.bairro}. Já enviei a confirmação ao paciente.`).catch(() => undefined);
+      if (d.whatsapp) await enviarTextoInstancia(instancia, d.whatsapp, `📅 O robô marcou uma consulta: ${p.nome ?? telefone} · ${quando} · ${cons.bairro}. Já enviei a confirmação ao paciente.${p.local === "centro" ? " ⚠ Lembre de reservar a sala no Centro." : ""}`).catch(() => undefined);
     }
   }
   return { ok: true, id: criado.id, quando, local: cons.bairro, confirmacaoEnviada: env.ok };

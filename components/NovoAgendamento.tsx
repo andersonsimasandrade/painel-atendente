@@ -55,21 +55,22 @@ export function NovoAgendamento() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ telefone, nome, data, hora, local, confirmar }),
       });
-      const d = (await res.json()) as { ok: boolean; error?: string; quando?: string; confirmado?: boolean };
+      const d = (await res.json()) as { ok: boolean; error?: string; quando?: string; confirmado?: boolean; aviso?: string };
       if (!res.ok || !d.ok) {
         setErro(d.error ?? "Não consegui marcar.");
         return;
       }
       setOk(
         `Sessão marcada: ${d.quando}.` +
-          (confirmar ? (d.confirmado ? " Confirmação enviada ao paciente." : " (A confirmação por WhatsApp não saiu.)") : ""),
+          (confirmar ? (d.confirmado ? " Confirmação enviada ao paciente." : " (A confirmação por WhatsApp não saiu.)") : "") +
+          (d.aviso ? ` ⚠ ${d.aviso}` : ""),
       );
       setTelefone("");
       setNome("");
       setData("");
       setHora("");
       setLocal("");
-      setTimeout(() => window.location.reload(), 1800);
+      setTimeout(() => window.location.reload(), d.aviso ? 6000 : 1800);
     } catch {
       setErro("Falha de rede. Tente de novo.");
     } finally {

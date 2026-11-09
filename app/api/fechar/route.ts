@@ -21,15 +21,19 @@ export async function POST(req: Request) {
   let telefone = "";
   let valor: number | null = null;
   let desfazer = false;
+  let sessoes = 1;
 
   try {
     const body = (await req.json()) as {
       telefone?: string;
       valor?: unknown;
       desfazer?: unknown;
+      sessoes?: unknown;
     };
     telefone = String(body.telefone ?? "").trim();
     desfazer = body.desfazer === true;
+    const s = Math.round(Number(body.sessoes ?? 1));
+    sessoes = Number.isFinite(s) ? Math.min(100, Math.max(1, s)) : 1;
     if (!desfazer) {
       const v =
         typeof body.valor === "number" ? body.valor : parseValorBR(String(body.valor ?? ""));
@@ -58,6 +62,6 @@ export async function POST(req: Request) {
   }
   // histórico de negócios: concretizado (ou volta a "em andamento" ao desfazer)
   if (desfazer) await desfazerGanho(telefone);
-  else await ganharNegocio(telefone, valor);
+  else await ganharNegocio(telefone, valor, sessoes);
   return NextResponse.json({ ok: true });
 }

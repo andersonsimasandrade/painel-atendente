@@ -40,6 +40,8 @@ import { formatDateTime as fmtDataHora } from "@/lib/format";
 import { listarNegocios } from "@/lib/negocios";
 import { getExtraLead, voltouAFalar } from "@/lib/lead-extra";
 import { NegociosLead } from "@/components/lead/NegociosLead";
+import { SessoesPaciente } from "@/components/lead/SessoesPaciente";
+import { listarSessoesPaciente } from "@/lib/sessoes-paciente";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
@@ -101,7 +103,7 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra] = await Promise.all([
+  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo] = await Promise.all([
     getLead(telefone),
     getConversa(telefone),
     getNotas(telefone),
@@ -110,6 +112,7 @@ export default async function LeadDetailPage({
     instagramDoLead(telefone).catch(() => null),
     listarNegocios(telefone).catch(() => []),
     getExtraLead(telefone),
+    listarSessoesPaciente(telefone).catch(() => ({ sessoes: [], pacote: { comprado: 0, realizadas: 0, marcadas: 0, restantes: 0 } })),
   ]);
 
   if (!result.ok) {
@@ -406,8 +409,19 @@ export default async function LeadDetailPage({
               fechado={lead.fechado === true}
               valorFechado={lead.valor_fechado}
               dataFechamento={lead.data_fechamento}
+              sessoes={negocios.find((n) => n.status === "ganho")?.sessoes ?? 1}
             />
           </div>
+        </Panel>
+
+        {/* Sessões do paciente e saldo do pacote */}
+        <Panel
+          title="Sessões e pacote"
+          subtitle="Histórico das sessões, presença e o que ainda falta agendar"
+          className="mt-4"
+          delay={90}
+        >
+          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} />
         </Panel>
 
         {/* Negociações: histórico de cada tentativa de venda/atendimento */}

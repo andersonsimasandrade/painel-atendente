@@ -87,7 +87,7 @@ export function NegociosLead({
             </div>
             {(n.status === "ganho" && n.valor != null) || n.motivo_perda || n.observacao ? (
               <p className="mt-1 text-[12.5px] text-ink-muted">
-                {n.status === "ganho" && n.valor != null ? `Valor: ${formatBRL(n.valor)}. ` : ""}
+                {n.status === "ganho" && n.valor != null ? `Valor: ${formatBRL(n.valor)}${n.sessoes > 1 ? ` (pacote de ${n.sessoes} sessões · ${formatBRL(n.valor / n.sessoes)} por sessão)` : ""}. ` : ""}
                 {n.motivo_perda ? `Motivo: ${n.motivo_perda}. ` : ""}
                 {n.observacao ?? ""}
               </p>

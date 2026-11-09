@@ -218,7 +218,7 @@ export async function TrafegoRetorno({
 
   const ret = retornoRes.ok
     ? retornoRes.retorno
-    : { fechados: 0, receita: 0, ticketMedio: 0 };
+    : { fechados: 0, receita: 0, ticketMedio: 0, sessoes: 0, ticketSessao: 0 };
 
   const metaOk = meta.ok;
   const investimento = metaOk ? meta.investimento : 0;
@@ -301,7 +301,13 @@ export async function TrafegoRetorno({
         <StatCard
           label="Receita"
           value={formatBRL(ret.receita)}
-          sub={ret.fechados > 0 ? `ticket ${formatBRL(ret.ticketMedio)}` : "nenhum fechado ainda"}
+          sub={
+            ret.fechados > 0
+              ? ret.sessoes > ret.fechados
+                ? `ticket ${formatBRL(ret.ticketMedio)} · ${formatBRL(ret.ticketSessao)} por sessão (${ret.sessoes} sessões)`
+                : `ticket ${formatBRL(ret.ticketMedio)}`
+              : "nenhum fechado ainda"
+          }
           tone="brand"
           delay={340}
           icon={<IconCoins />}

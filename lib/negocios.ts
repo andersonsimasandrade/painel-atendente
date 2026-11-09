@@ -29,6 +29,8 @@ function paraNegocio(r: Record<string, unknown>): Negocio {
     valor: num(r.valor),
     motivo_perda: (r.motivo_perda as string | null) ?? null,
     observacao: (r.observacao as string | null) ?? null,
+    sessoes: Math.max(1, Number(r.sessoes) || 1),
+    descricao: (r.descricao as string | null) ?? null,
   };
 }
 
@@ -86,17 +88,19 @@ export async function perderNegocio(telefone: string, motivo: string, observacao
 }
 
 /** Registra o fechamento no histórico (chamado quando o valor fechado é salvo). */
-export async function ganharNegocio(telefone: string, valor: number | null): Promise<void> {
+export async function ganharNegocio(telefone: string, valor: number | null, sessoes = 1): Promise<void> {
   try {
     const sb = getClient();
     const tel = await telefoneReal(telefone);
     if (!tel) return;
     const agora = new Date().toISOString();
+    const n = Math.min(100, Math.max(1, Math.round(Number(sessoes)) || 1));
+    const descricao = n > 1 ? `Pacote de ${n} sessões` : null;
     const aberto = await negocioAberto(tel);
     if (aberto) {
-      await sb.from("negocios").update({ status: "ganho", fechado_em: agora, valor }).eq("id", aberto.id);
+      await sb.from("negocios").update({ status: "ganho", fechado_em: agora, valor, sessoes: n, descricao }).eq("id", aberto.id);
     } else {
-      await sb.from("negocios").insert({ telefone: tel, tipo: "recompra", status: "ganho", fechado_em: agora, valor });
+      await sb.from("negocios").insert({ telefone: tel, tipo: "recompra", status: "ganho", fechado_em: agora, valor, sessoes: n, descricao });
     }
   } catch (e) {
     console.error("[negocios] ganhar:", e instanceof Error ? e.message : e);
@@ -111,7 +115,7 @@ export async function desfazerGanho(telefone: string): Promise<void> {
     if (!tel || (await negocioAberto(tel))) return;
     const r = await sb.from("negocios").select("id").eq("telefone", tel).eq("status", "ganho").order("fechado_em", { ascending: false }).limit(1);
     const id = (r.data?.[0] as { id?: number } | undefined)?.id;
-    if (id) await sb.from("negocios").update({ status: "aberto", fechado_em: null, valor: null }).eq("id", id);
+    if (id) await sb.from("negocios").update({ status: "aberto", fechado_em: null, valor: null, sessoes: 1, descricao: null }).eq("id", id);
   } catch (e) {
     console.error("[negocios] desfazer ganho:", e instanceof Error ? e.message : e);
   }
@@ -147,11 +151,15 @@ export async function metricasNegocios(desde: string, ate: string): Promise<Metr
   const perdidos = todos.filter((n) => n.status === "perdido" && no(n.fechado_em));
   const motivos = new Map<string, number>();
   for (const p of perdidos) motivos.set(p.motivo_perda ?? "Sem motivo", (motivos.get(p.motivo_perda ?? "Sem motivo") ?? 0) + 1);
+  const receitaTotal = ganhos.reduce((t, n) => t + (n.valor ?? 0), 0);
+  const sessoesVendidas = ganhos.reduce((t, n) => t + n.sessoes, 0);
   return {
     abertos: todos.filter((n) => n.status === "aberto").length,
     criadosNoPeriodo: todos.filter((n) => no(n.criado_em)).length,
     concretizados: ganhos.length,
-    receita: ganhos.reduce((t, n) => t + (n.valor ?? 0), 0),
+    receita: receitaTotal,
+    sessoesVendidas,
+    ticketPorSessao: sessoesVendidas > 0 ? receitaTotal / sessoesVendidas : null,
     perdidos: perdidos.length,
     reativados: todos.filter((n) => n.tipo !== "inicial" && no(n.criado_em)).length,
     conversao: ganhos.length + perdidos.length > 0 ? ganhos.length / (ganhos.length + perdidos.length) : null,

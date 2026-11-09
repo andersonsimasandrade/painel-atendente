@@ -388,6 +388,8 @@ export interface Retorno {
   fechados: number; // contatos com fechado=true
   receita: number; // Σ valor_fechado
   ticketMedio: number; // receita / fechados (0 se fechados==0)
+  sessoes: number; // sessões cobertas pelas vendas do período (pacotes contam várias)
+  ticketSessao: number; // receita / sessões (0 se não houver)
 }
 
 export type RetornoResult =

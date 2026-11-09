@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       fim: fim.toISOString(),
       local: cons ? `${cons.nome} — ${cons.linhaEndereco}` : "",
       descricao: `Paciente: ${a.nome ?? "—"}\nWhatsApp: https://wa.me/${a.telefone}\nConsultório: ${cons ? cons.bairro : "-"}
-Origem: ${a.origem ?? "—"}\nStatus: ${a.status}`,
+Origem: ${a.origem ?? "—"}\nStatus: ${a.status}${a.local === "centro" ? "\n⚠ Reservar a sala no Centro" : ""}`,
     };
   });
   // Tarefas de relacionamento (aprovar/fazer) também entram na agenda, no horário planejado.

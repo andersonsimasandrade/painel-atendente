@@ -1,6 +1,7 @@
 import { getClient } from "./db";
 import { Vendedor } from "./types";
 import { variantesTelefone } from "./telefone";
+import type { Compromisso, LocalId } from "./deslocamento";
 
 export async function getVendedorBySlug(slug: string): Promise<Vendedor | null> {
   try {
@@ -36,6 +37,31 @@ export async function getOcupados(vendedorId: string): Promise<Set<string>> {
     );
   } catch {
     return new Set();
+  }
+}
+
+// Sessões já marcadas (início, fim e consultório), de ontem em diante: base da regra de deslocamento entre consultórios.
+export async function getCompromissos(vendedorId: string): Promise<Compromisso[]> {
+  try {
+    const desde = new Date(Date.now() - 86400000).toISOString();
+    const res = await getClient()
+      .from("agendamentos")
+      .select("data_hora, duracao_min, local")
+      .eq("vendedor_id", vendedorId)
+      .neq("status", "cancelado")
+      .gte("data_hora", desde)
+      .limit(2000);
+    if (res.error || !res.data) return [];
+    return (res.data as { data_hora: string; duracao_min: number | null; local: string | null }[]).map((r) => {
+      const inicio = new Date(r.data_hora).getTime();
+      return {
+        inicio,
+        fim: inicio + (r.duracao_min ?? 60) * 60000,
+        local: r.local === "capoeiras" || r.local === "centro" ? (r.local as LocalId) : null,
+      };
+    });
+  } catch {
+    return [];
   }
 }
 
