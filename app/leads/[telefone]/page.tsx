@@ -44,6 +44,8 @@ import { SessoesPaciente } from "@/components/lead/SessoesPaciente";
 import { listarSessoesPaciente } from "@/lib/sessoes-paciente";
 import { Prontuario } from "@/components/lead/Prontuario";
 import { listarProntuario } from "@/lib/prontuario";
+import { Prescricoes } from "@/components/lead/Prescricoes";
+import { listarExercicios, listarPrescricoes } from "@/lib/exercicios";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
@@ -105,7 +107,7 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo, prontuario] = await Promise.all([
+  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca] = await Promise.all([
     getLead(telefone),
     getConversa(telefone),
     getNotas(telefone),
@@ -116,6 +118,8 @@ export default async function LeadDetailPage({
     getExtraLead(telefone),
     listarSessoesPaciente(telefone).catch(() => ({ sessoes: [], pacote: { comprado: 0, realizadas: 0, marcadas: 0, restantes: 0 } })),
     listarProntuario(telefone).catch(() => ({ exames: [], evolucoes: [] })),
+    listarPrescricoes(telefone).catch(() => []),
+    listarExercicios().catch(() => []),
   ]);
 
   if (!result.ok) {
@@ -435,6 +439,21 @@ export default async function LeadDetailPage({
           delay={95}
         >
           <Prontuario telefone={lead.telefone} exames={prontuario.exames} evolucoes={prontuario.evolucoes} />
+        </Panel>
+
+        {/* Exercícios para casa: plano com vídeos, link privado e retorno do paciente */}
+        <Panel
+          title="Exercícios para casa"
+          subtitle="Monte o plano com a sua biblioteca, envie o link pelo WhatsApp e acompanhe o retorno do paciente"
+          className="mt-4"
+          delay={97}
+        >
+          <Prescricoes
+            telefone={lead.telefone}
+            primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
+            prescricoes={prescricoes}
+            biblioteca={biblioteca}
+          />
         </Panel>
 
         {/* Negociações: histórico de cada tentativa de venda/atendimento */}

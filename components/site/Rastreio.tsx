@@ -47,6 +47,8 @@ export function idVisitante(): string {
 }
 
 function enviar(tipo: string, extra: Record<string, unknown> = {}) {
+  // Páginas privadas do paciente (link com código secreto) não entram em nenhuma medição.
+  if (window.location.pathname.startsWith("/exercicios/")) return;
   try {
     const o = lerOrigem();
     const corpo = JSON.stringify({
