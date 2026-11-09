@@ -32,8 +32,8 @@ export async function anexosJaSalvos(telefone: string): Promise<Set<string>> {
 }
 
 /** Lê um PDF: devolve o texto e os links (anotações clicáveis e endereços escritos no texto). */
-export async function lerPdf(buf: Buffer): Promise<{ texto: string; links: string[] }> {
-  const { getDocumentProxy, extractText } = await import("unpdf");
+export async function lerPdf(buf: Buffer): Promise<{ texto: string; links: string[]; imagens: number; qr: boolean }> {
+  const { getDocumentProxy, extractText, extractImages } = await import("unpdf");
   const pdf = await getDocumentProxy(new Uint8Array(buf));
   const { text } = await extractText(pdf, { mergePages: true });
   const texto = (Array.isArray(text) ? text.join("\n") : text).replace(/[ \t]+\n/g, "\n").trim();
@@ -52,7 +52,34 @@ export async function lerPdf(buf: Buffer): Promise<{ texto: string; links: strin
   } catch {
     /* sem anotações: ficam só os links do texto */
   }
-  return { texto, links: [...achados].slice(0, 5) };
+
+  // Capas de laboratório costumam trazer o acesso ao exame só como QR code (imagem): tenta ler o QR das imagens das 2 primeiras páginas.
+  let imagens = 0;
+  let qr = false;
+  if (!achados.size) {
+    try {
+      const jsQR = (await import("jsqr")).default;
+      for (let p = 1; p <= Math.min(pdf.numPages, 2) && !qr; p++) {
+        const lista = await extractImages(pdf, p);
+        imagens += lista.length;
+        for (const im of lista.slice(0, 12)) {
+          if (im.width < 40 || im.height < 40 || im.width * im.height > 6_000_000) continue;
+          if (im.data.length < im.width * im.height * 4) continue;
+          const rgba = new Uint8ClampedArray(im.data.buffer, im.data.byteOffset, im.width * im.height * 4);
+          const lido = jsQR(rgba, im.width, im.height, { inversionAttempts: "attemptBoth" });
+          const dado = lido?.data?.trim();
+          if (dado && /^https?:\/\//i.test(dado)) {
+            achados.add(limpar(dado));
+            qr = true;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[prontuario] qr:", e instanceof Error ? e.message : e);
+    }
+  }
+  return { texto, links: [...achados].slice(0, 5), imagens, qr };
 }
 
 const SISTEMA_RESUMO =
@@ -112,23 +139,30 @@ export async function resumirArquivoExame(telefone: string, id: string): Promise
 
   let resposta: RespostaResumo | null = null;
   let aviso: string | null = null;
+  let diagnostico = "";
 
   if (mime === "application/pdf") {
-    let pdf: { texto: string; links: string[] } = { texto: "", links: [] };
+    let pdf: { texto: string; links: string[]; imagens: number; qr: boolean } = { texto: "", links: [], imagens: 0, qr: false };
+    let erroLeitura = "";
     try {
       pdf = await lerPdf(buf);
     } catch (e) {
-      console.error("[prontuario] ler pdf:", e instanceof Error ? e.message : e);
+      erroLeitura = e instanceof Error ? e.message : "erro";
+      console.error("[prontuario] ler pdf:", erroLeitura);
     }
-    // o link de acesso ao exame (capa do laboratório) vai para o campo "link do exame"
+    diagnostico = erroLeitura
+      ? `não consegui abrir o PDF (${erroLeitura.slice(0, 80)})`
+      : `PDF com ${pdf.texto.length} caracteres de texto, ${pdf.imagens} imagem(ns), ${pdf.links.length} link(s)`;
+    // o link de acesso ao exame (capa do laboratório, escrito ou em QR code) vai para o campo "link do exame"
     if (pdf.links.length && !row.link_url) {
       await sb.from("paciente_exames").update({ link_url: pdf.links[0] }).eq("id", id);
-      aviso = "Achei o link de acesso ao exame dentro do PDF e coloquei no botão “Abrir link do exame”.";
+      aviso = pdf.qr
+        ? "Li o QR code da capa do exame e coloquei o link no botão “Abrir link do exame”."
+        : "Achei o link de acesso ao exame dentro do PDF e coloquei no botão “Abrir link do exame”.";
     }
     if (pdf.texto.length >= 120) {
       resposta = await perguntarJSON<RespostaResumo>(SISTEMA_RESUMO, `DOCUMENTO:\n${pdf.texto.slice(0, 12000)}`, 700);
-    } else if (buf.length <= 12 * 1024 * 1024) {
-      resposta = await resumirComVisao(`data:application/pdf;base64,${buf.toString("base64")}`);
+      if (!resposta) diagnostico += "; a IA de texto não respondeu";
     }
   } else {
     if (buf.length > 3 * 1024 * 1024) return { ok: false, error: "A imagem é grande demais para a leitura por IA (limite de 3 MB). Cole o texto do laudo." };
@@ -140,7 +174,8 @@ export async function resumirArquivoExame(telefone: string, id: string): Promise
     return { ok: true, resumo: null, aviso: `${aviso ? `${aviso} ` : ""}Este arquivo parece ser só uma capa/guia, sem os achados do exame${resumo ? ` (${resumo})` : ""}. Abra o link do exame para ler o laudo e cole o texto aqui.` };
   }
   if (!resumo) {
-    return aviso ? { ok: true, resumo: null, aviso } : { ok: false, error: "Não consegui ler o arquivo agora. Cole o texto do laudo para resumir." };
+    if (aviso) return { ok: true, resumo: null, aviso: `${aviso} O arquivo em si é só uma capa, sem os achados: leia o laudo pelo link e cole o texto aqui para resumir.` };
+    return { ok: false, error: `Não consegui tirar um resumo deste arquivo${diagnostico ? ` (${diagnostico})` : ""}. Abra o arquivo, copie o texto do laudo e use “+ Exame” para resumir.` };
   }
   const up = await sb.from("paciente_exames").update({ resumo: resumo.slice(0, 4000), resumo_por_ia: true }).eq("id", id);
   if (up.error) return { ok: false, error: up.error.message };

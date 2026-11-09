@@ -160,7 +160,11 @@ export function GravarSessao({
             <input type="checkbox" checked={autorizado} onChange={(e) => setAutorizado(e.target.checked)} className="mt-0.5" />
             <span>
               O paciente foi informado e <b>autorizou a gravação</b> do áudio para o registro do prontuário. O áudio é transformado em texto e descartado; só entra no
-              prontuário o que você revisar e salvar.
+              prontuário o que você revisar e salvar.{" "}
+              <a href="https://andersonandradefisio.com.br/consentimento" target="_blank" rel="noopener noreferrer" className="underline">
+                Termo de consentimento
+              </a>
+              .
             </span>
           </label>
           {estado === "erro" && blobRef.current ? (

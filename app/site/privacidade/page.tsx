@@ -13,7 +13,7 @@ export default function Privacidade() {
       <h1 className="font-destaque font-bold text-[30px] font-semibold leading-tight tracking-tight text-[#354746] sm:text-[40px]">
         Política de privacidade
       </h1>
-      <p className="mt-3 text-[14px] text-[#5E7371]">Atualizada em outubro de 2026.</p>
+      <p className="mt-3 text-[14px] text-[#5E7371]">Atualizada em novembro de 2026.</p>
 
       <div className="mt-8 space-y-7 text-[15.5px] leading-relaxed text-[#3F5452]">
         <div>
@@ -74,6 +74,41 @@ export default function Privacidade() {
             mensagem, o seu nome de usuário e o código que o Instagram atribui à sua conta são recebidos pelo nosso sistema
             de atendimento, usados apenas para responder a você e mantidos com acesso restrito. Não pedimos sintomas,
             diagnósticos nem exames nesse canal: para isso, o atendimento segue pelo WhatsApp ou na sessão.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-[18px] font-semibold text-[#354746]">Prontuário e dados de saúde (no atendimento)</h2>
+          <p className="mt-2">
+            Quando você é atendido, o fisioterapeuta registra o seu prontuário: queixa, exames que você trouxer (com o resumo do laudo), avaliação, técnicas
+            realizadas, evolução e orientações. São dados de saúde, tratados para a tutela da saúde e para cumprir as obrigações do exercício da profissão
+            (LGPD, art. 11, II). Ficam em sistema protegido, com acesso restrito ao profissional, e os arquivos dos exames ficam em área privada. O prazo de
+            guarda segue o definido pelo conselho profissional. Os dados de saúde ficam só no atendimento: não aparecem neste site.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-[18px] font-semibold text-[#354746]">Gravação da sessão e inteligência artificial</h2>
+          <p className="mt-2">
+            A sessão só é gravada se você autorizar, e você pode recusar sem qualquer prejuízo ao atendimento. O áudio é transformado em texto para ajudar o
+            fisioterapeuta a redigir o prontuário e é descartado em seguida; o que entra no prontuário é o texto que o profissional revisa e aprova. Para isso,
+            e para resumir laudos e organizar o atendimento, usamos serviços de inteligência artificial de empresas como Groq e OpenAI, que podem processar o
+            conteúdo em servidores fora do Brasil (transferência internacional, LGPD, art. 33). Procuramos não enviar o seu nome nem documentos de
+            identificação. A IA apenas redige rascunhos: o diagnóstico fisioterapêutico e as decisões do tratamento são sempre do profissional.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-[18px] font-semibold text-[#354746]">Planos de exercícios e devolutiva por link</h2>
+          <p className="mt-2">
+            O plano de exercícios e a devolutiva do seu caso são enviados por WhatsApp em um link privado, com código aleatório e longo. A página mostra só o
+            seu primeiro nome, não aparece em buscadores nem em ferramentas de medição, e pode ser encerrada a qualquer momento a seu pedido. Qualquer pessoa
+            que receba o link consegue abri-lo, então compartilhe somente com quem você quiser. Se você contar como foi a semana pelo link, essa resposta fica
+            no seu prontuário. O termo que você assina na primeira sessão está em{" "}
+            <a href="/consentimento" className="font-bold text-[#0F7F70] underline-offset-2 hover:underline">
+              termo de consentimento
+            </a>
+            .
           </p>
         </div>
 

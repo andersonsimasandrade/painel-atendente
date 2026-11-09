@@ -46,6 +46,8 @@ import { Prontuario } from "@/components/lead/Prontuario";
 import { listarProntuario } from "@/lib/prontuario";
 import { Prescricoes } from "@/components/lead/Prescricoes";
 import { listarExercicios, listarPrescricoes } from "@/lib/exercicios";
+import { Devolutivas } from "@/components/lead/Devolutivas";
+import { listarDevolutivas } from "@/lib/devolutivas";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
@@ -107,7 +109,7 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca] = await Promise.all([
+  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas] = await Promise.all([
     getLead(telefone),
     getConversa(telefone),
     getNotas(telefone),
@@ -120,6 +122,7 @@ export default async function LeadDetailPage({
     listarProntuario(telefone).catch(() => ({ exames: [], evolucoes: [] })),
     listarPrescricoes(telefone).catch(() => []),
     listarExercicios().catch(() => []),
+    listarDevolutivas(telefone).catch(() => []),
   ]);
 
   if (!result.ok) {
@@ -453,6 +456,23 @@ export default async function LeadDetailPage({
             primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
             prescricoes={prescricoes}
             biblioteca={biblioteca}
+          />
+        </Panel>
+
+        {/* Devolutiva do caso: documento com papel timbrado em link privado */}
+        <Panel
+          title="Devolutiva do caso"
+          subtitle="Documento para o paciente: o que o exame descreve, o que você encontrou e o plano de cuidado (link privado, dá para salvar em PDF)"
+          className="mt-4"
+          delay={98}
+        >
+          <Devolutivas
+            telefone={lead.telefone}
+            primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
+            devolutivas={devolutivas}
+            exames={prontuario.exames}
+            evolucoes={prontuario.evolucoes}
+            prescricoes={prescricoes}
           />
         </Panel>
 

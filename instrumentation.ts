@@ -7,5 +7,7 @@ export async function register() {
     iniciarRelogioDeTarefas();
     const { iniciarRelogioDeConversoes } = await import("./lib/conversoes-relogio");
     iniciarRelogioDeConversoes();
+    const { iniciarRelogioCheckinExercicios } = await import("./lib/exercicios-checkin");
+    iniciarRelogioCheckinExercicios();
   }
 }

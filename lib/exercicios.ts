@@ -3,6 +3,8 @@
 import { randomBytes } from "node:crypto";
 import { getClient } from "./db";
 import { variantesTelefone } from "./telefone";
+import { destinatariosAlerta } from "./config";
+import { enviarTextoInstancia } from "./evolution";
 import type { CheckinPrescricao, Exercicio, ItemPrescricao, Prescricao } from "./exercicios-tipos";
 
 type R<T = object> = ({ ok: true } & T) | { ok: false; error: string };
@@ -239,5 +241,18 @@ export async function registrarCheckin(codigo: string, d: { dias_feitos?: unknow
   if (t && Date.now() - new Date(t).getTime() < 2 * 60 * 1000) return { ok: false, error: "Recebemos agora há pouco. Obrigado!" };
   const i = await sb.from("prescricao_checkins").insert({ prescricao_id: plano.id, dias_feitos: dias, dor, comentario });
   if (i.error) return { ok: false, error: "Não consegui registrar agora. Tente de novo." };
+
+  // Avisa o Anderson quando o retorno pede atenção: dor alta, poucos dias feitos ou um recado do paciente.
+  if ((dor != null && dor >= 7) || (dias != null && dias <= 1) || comentario) {
+    try {
+      const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();
+      if (instancia) {
+        const msg = `📋 Retorno dos exercícios de ${plano.primeiroNome ?? "um paciente"}: ${dias != null ? `fez ${dias} dia(s)` : "dias não informados"}${dor != null ? ` · dor ${dor}/10` : ""}${comentario ? ` · “${comentario.slice(0, 200)}”` : ""}. Veja na ficha do paciente.`;
+        for (const d of destinatariosAlerta()) if (d.whatsapp) await enviarTextoInstancia(instancia, d.whatsapp, msg).catch(() => undefined);
+      }
+    } catch {
+      /* o aviso é um extra: o retorno já foi gravado */
+    }
+  }
   return { ok: true };
 }
