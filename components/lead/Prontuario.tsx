@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { GravarSessao } from "./GravarSessao";
+import { AnexosWhatsApp } from "./AnexosWhatsApp";
+import type { RascunhoEvolucao } from "@/lib/prontuario-ia";
 import { LIMITE_ARQUIVO_MB, ROTULO_EXAME, type Evolucao, type Exame, type TipoExame } from "@/lib/prontuario-tipos";
 
 const dataBR = (iso: string) => {
@@ -49,6 +52,9 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
   const [plano, setPlano] = useState("");
   const [dorIni, setDorIni] = useState("");
   const [dorFim, setDorFim] = useState("");
+  const [doRascunho, setDoRascunho] = useState(false); // campos preenchidos pela gravação (IA): precisam de revisão
+  const [transcricao, setTranscricao] = useState("");
+  const [resumindoId, setResumindoId] = useState<string | null>(null);
 
   const itens = useMemo<Item[]>(() => {
     const a: Item[] = exames.map((e) => ({ tipo: "exame", data: (e.data_exame ?? e.criado_em).slice(0, 10), ord: new Date(e.criado_em).getTime(), exame: e }));
@@ -59,6 +65,39 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
   function fechar() {
     setAba(null);
     setErro(null);
+  }
+
+  // A gravação da sessão devolve um RASCUNHO: abre o formulário da evolução já preenchido para o Anderson revisar.
+  function receberRascunho(r: RascunhoEvolucao | null, texto: string) {
+    setTranscricao(texto);
+    setDoRascunho(true);
+    setDataSessao(hojeSP());
+    setQueixa(r?.queixa ?? "");
+    setAchados(r?.achados ?? "");
+    setConduta(r?.conduta ?? "");
+    setPlano(r?.plano ?? "");
+    setDorIni(r?.dor_inicio != null ? String(r.dor_inicio) : "");
+    setDorFim(r?.dor_fim != null ? String(r.dor_fim) : "");
+    if (!r) setErro("A transcrição saiu, mas não consegui montar o rascunho. O texto está abaixo para você copiar.");
+    setAba("evolucao");
+  }
+
+  async function resumirArquivo(ex: Exame) {
+    setErro(null);
+    setResumindoId(ex.id);
+    try {
+      const r = await fetch(`${base}/resumir`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: ex.id }) });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !d.ok) {
+        setErro(d.error ?? "Não consegui resumir o arquivo.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setErro("Falha de rede.");
+    } finally {
+      setResumindoId(null);
+    }
   }
 
   async function resumirComIA() {
@@ -128,7 +167,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
       const r = await fetch(`${base}/evolucao`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data_sessao: dataSessao, queixa, achados, conduta, plano, dor_inicio: dorIni, dor_fim: dorFim }),
+        body: JSON.stringify({ data_sessao: dataSessao, queixa, achados, conduta, plano, dor_inicio: dorIni, dor_fim: dorFim, gravacao_autorizada: doRascunho, rascunho_ia: doRascunho }),
       });
       const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!r.ok || !d.ok) {
@@ -141,6 +180,8 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
       setPlano("");
       setDorIni("");
       setDorFim("");
+      setDoRascunho(false);
+      setTranscricao("");
       fechar();
       router.refresh();
     } catch {
@@ -174,6 +215,8 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
         <button type="button" className={botao} onClick={() => setAba(aba === "exame" ? null : "exame")}>
           + Exame
         </button>
+        <GravarSessao telefone={telefone} onRascunho={receberRascunho} />
+        <AnexosWhatsApp telefone={telefone} />
       </div>
 
       {aba === "exame" && (
@@ -246,6 +289,11 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
 
       {aba === "evolucao" && (
         <form onSubmit={salvarEvolucao} className="flex flex-col gap-3 rounded-xl border border-line bg-white/[0.02] p-4">
+          {doRascunho && (
+            <p className="rounded-lg border border-amber/30 bg-amber/10 px-3 py-2 text-[12.5px] text-ink">
+              <b>Rascunho gerado pela IA a partir da gravação.</b> Leia, corrija o que for preciso e só então salve: o registro é seu.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <label>
               <span className={rotulo}>Data da sessão</span>
@@ -276,11 +324,25 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
             <span className={rotulo}>Plano e orientações (inclui exercícios para casa)</span>
             <textarea className={`${campo} min-h-[70px]`} value={plano} onChange={(e) => setPlano(e.target.value)} />
           </label>
+          {transcricao && (
+            <details className="rounded-lg border border-line px-3 py-2 text-[12.5px] text-ink-muted">
+              <summary className="cursor-pointer font-semibold text-ink">Texto da gravação (não fica salvo)</summary>
+              <p className="mt-2 whitespace-pre-wrap leading-relaxed">{transcricao}</p>
+            </details>
+          )}
           <div className="flex gap-2">
             <button type="submit" className={botaoPrim} disabled={salvando}>
               {salvando ? "Salvando…" : "Salvar evolução"}
             </button>
-            <button type="button" className={botao} onClick={fechar}>
+            <button
+              type="button"
+              className={botao}
+              onClick={() => {
+                setDoRascunho(false);
+                setTranscricao("");
+                fechar();
+              }}
+            >
               Cancelar
             </button>
           </div>
@@ -316,6 +378,11 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
                   <a href={it.exame.link_url} target="_blank" rel="noopener noreferrer" className={botao}>
                     Abrir link do exame
                   </a>
+                )}
+                {it.exame.tem_arquivo && (
+                  <button type="button" className={botao} disabled={resumindoId === it.exame.id} onClick={() => void resumirArquivo(it.exame)}>
+                    {resumindoId === it.exame.id ? "Lendo o arquivo…" : "Resumir o arquivo com IA"}
+                  </button>
                 )}
                 <button type="button" className={botao} onClick={() => void editarResumo(it.exame)}>
                   Editar resumo

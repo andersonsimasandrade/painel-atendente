@@ -80,6 +80,7 @@ export interface DadosExame {
   laudo_texto?: unknown;
   resumo?: unknown;
   resumo_por_ia?: unknown;
+  origem_msg_id?: unknown; // id da mensagem do WhatsApp de onde o arquivo veio (evita salvar duas vezes)
 }
 
 /** Guarda um exame. `arquivo` (PDF/imagem) vai para o bucket privado; o link do exame pode vir junto ou sozinho. */
@@ -128,10 +129,12 @@ export async function salvarExame(
       laudo_texto: txt(d.laudo_texto, 20000),
       resumo: txt(d.resumo, 4000),
       resumo_por_ia: d.resumo_por_ia === true,
+      origem_msg_id: txt(d.origem_msg_id, 200),
     })
     .select("id");
   if (ins.error) {
     if (arquivoPath) await getClient().storage.from(BUCKET).remove([arquivoPath]).catch(() => undefined);
+    if (/duplicate key|unique/i.test(ins.error.message)) return { ok: false, error: "Este anexo já foi salvo no prontuário." };
     return { ok: false, error: ins.error.message };
   }
   return { ok: true, id: String((ins.data?.[0] as { id: string }).id) };
@@ -185,6 +188,8 @@ export async function salvarEvolucao(
     plano: txt(d.plano, 4000),
     dor_inicio: dor(d.dor_inicio),
     dor_fim: dor(d.dor_fim),
+    gravacao_autorizada: d.gravacao_autorizada === true,
+    rascunho_ia: d.rascunho_ia === true,
   };
   if (!linha.queixa && !linha.achados && !linha.conduta && !linha.plano) {
     return { ok: false, error: "Escreva ao menos um campo da evolução." };
