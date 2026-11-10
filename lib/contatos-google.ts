@@ -42,7 +42,8 @@ export async function listarContatosParaGoogle(): Promise<ContatoGoogle[]> {
     const nome = nomeValido(c.nome);
     const k = chave(c.telefone);
     const tel = e164(c.telefone);
-    if (!nome || !k || !tel || ehNumeroInterno(c.telefone) || vistos.has(k)) continue;
+    // só pacientes com celular brasileiro: números de fora (códigos de verificação, serviços) não são pacientes
+    if (!nome || !k || !tel || !tel.startsWith("+55") || ehNumeroInterno(c.telefone) || vistos.has(k)) continue;
     vistos.add(k);
     saida.push({ id: k, nome, telefone: tel });
   }
