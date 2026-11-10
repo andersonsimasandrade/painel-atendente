@@ -24,6 +24,25 @@ export async function PaginaConsultorio({ id }: { id: ConsultorioId }) {
         marcada, para dor na coluna, no pescoço e nas articulações, com terapia manual, osteopatia e quiropraxia.
       </p>
 
+      {c.fotos.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="sr-only">Fotos do consultório</h2>
+          <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {c.fotos.map((f, i) => (
+              <li key={f.src} className={i === 0 ? "col-span-2 sm:col-span-2 sm:row-span-2" : ""}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={f.src}
+                  alt={f.alt}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  className="aspect-square h-full w-full rounded-xl object-cover"
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="mt-8 rounded-2xl border border-[#DCE8E5] bg-white p-6">
         <h2 className="text-[17px] font-semibold text-[#354746]">Endereço</h2>
         <p className="mt-2 text-[16px] leading-relaxed text-[#3F5452]">{c.linhaEndereco}</p>

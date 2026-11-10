@@ -53,6 +53,8 @@ export interface Consultorio {
   comoChegar: string[];
   /** Bairros vizinhos, para quem procura fisioterapia perto de casa (SEO local). */
   perto: string;
+  /** Fotos reais do espaço (public/img/<id>/), autorizadas pelo espaço. Vazio = a galeria não aparece. */
+  fotos: { src: string; alt: string }[];
 }
 
 export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
@@ -70,6 +72,14 @@ export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
     ],
     perto:
       "no Continente de Florianópolis, perto do Estreito, de Coqueiros, do Abraão e do Jardim Atlântico, e a poucos minutos de Kobrasol e Campinas, em São José",
+    fotos: [
+      { src: "/img/capoeiras/fachada-dia-1.webp", alt: "Fachada do prédio na Rua Joaquim Carneiro, 207, em Capoeiras" },
+      { src: "/img/capoeiras/recepcao-4.webp", alt: "Recepção com parede verde e balcão de atendimento" },
+      { src: "/img/capoeiras/recepcao-1.webp", alt: "Recepção iluminada, com poltrona e balcão" },
+      { src: "/img/capoeiras/recepcao-3.webp", alt: "Sala de espera com escada e parede verde" },
+      { src: "/img/capoeiras/sala-de-espera-2.webp", alt: "Poltronas da sala de espera" },
+      { src: "/img/capoeiras/sala-maca-2.webp", alt: "Sala de atendimento com maca" },
+    ],
   },
   centro: {
     id: "centro",
@@ -86,6 +96,7 @@ export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
     ],
     perto:
       "no Centro de Florianópolis, perto da Avenida Beira-Mar Norte, da Agronômica, da Trindade e de Santa Mônica",
+    fotos: [],
   },
 };
 
