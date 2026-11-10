@@ -2,9 +2,10 @@ import { CONSULTORIOS, CREFITO, ORIENTACAO_ESTACIONAMENTO_CENTRO } from "@/lib/s
 import { formatarBR } from "@/lib/slots";
 
 // Mensagem de confirmação de consulta enviada pelo painel.
-// Primeira vez: se apresenta, traz os detalhes (dia, horário de início e fim, endereço, duração, o que levar) e termina
+// Primeira vez: se apresenta, traz os detalhes (dia, horário de início e fim, local completo, duração, o que levar) e termina
 // com uma chamada para a ação (responder CONFIRMO + uma pergunta aberta), para a conversa começar aquecida.
 // Quem já é paciente: versão curta, também com a chamada para confirmar.
+// Em todas as versões o local já vai completo: nome do espaço, endereço e link do Google Maps (evita o "mas onde é?").
 
 const p2 = (n: number) => String(n).padStart(2, "0");
 
@@ -28,39 +29,36 @@ export function textoConfirmacao(o: {
   const quando = formatarBR(o.iso);
   const faixa = `das ${hora(o.iso)} às ${hora(o.iso, dur)}`;
   const estac = o.local === "centro" ? `${ORIENTACAO_ESTACIONAMENTO_CENTRO}\n` : "";
+  const lugar =
+    `📍 *${cons.nome}* (${cons.complemento})\n` +
+    `${cons.linhaEndereco}\n` +
+    `🗺 Google Maps: ${cons.mapaUrl}\n`;
 
   if (o.remarcada) {
     return (
-      `${ola} Pronto, a sua consulta foi remarcada! 😊
-
-` +
-      `📅 *Nova data:* *${quando}* (${faixa})
-` +
-      `📍 *${cons.nome}*
-` +
-      `${cons.linhaEndereco}
-` +
+      `${ola} Pronto, a sua consulta foi remarcada! 😊\n\n` +
+      `📅 *Nova data:* *${quando}* (${faixa})\n` +
+      lugar +
       estac +
-      `
-` +
+      `\n` +
       `✅ Responda *CONFIRMO* para garantir o novo horário. No dia da consulta, eu te mando um lembrete. Se precisar mudar de novo, é só me avisar com 48 horas de antecedência.`
     );
   }
   if (!o.primeiraVez) {
     return (
-      `${ola} Sua próxima consulta está agendada para *${quando}* (${faixa}), no ${cons.nome}.\n` +
-      `📍 ${cons.linhaEndereco}\n` +
+      `${ola} Sua consulta está agendada! 😊\n\n` +
+      `📅 *${quando}* (${faixa})\n` +
+      lugar +
       estac +
       `\n` +
-      `✅ Responda *CONFIRMO* para garantir o seu horário. Se precisar remarcar, é só me avisar com 48 horas de antecedência. 😊`
+      `✅ Responda *CONFIRMO* para garantir o seu horário. Se precisar remarcar, é só me avisar com 48 horas de antecedência.`
     );
   }
   return (
     `${ola} Aqui é o Anderson Andrade, fisioterapeuta (${CREFITO}), em Florianópolis. 😊\n` +
     `Reservei a sua consulta:\n\n` +
     `📅 *${quando}* (${faixa})\n` +
-    `📍 *${cons.nome}*\n` +
-    `${cons.linhaEndereco}\n` +
+    lugar +
     estac +
     `\n` +
     `A sessão dura ${dur} minutos, é individual e reúne a avaliação do seu quadro e as técnicas manuais na mesma hora. ` +

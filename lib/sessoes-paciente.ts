@@ -13,6 +13,7 @@ export interface SessaoPaciente {
   status: "agendado" | "confirmado" | "compareceu" | "faltou" | "cancelado" | string;
   local: "capoeiras" | "centro" | null;
   duracao_min: number;
+  remarcacoes: number; // quantas vezes esta consulta foi remarcada
 }
 
 export interface ResumoPacote {
@@ -34,12 +35,19 @@ export async function listarSessoesPaciente(telefone: string): Promise<{ sessoes
       .limit(100),
     sb.from("negocios").select("sessoes").in("telefone", variantes).eq("status", "ganho"),
   ]);
+  const ids = ((ag.data ?? []) as { id: string }[]).map((r) => String(r.id));
+  const remarc = new Map<string, number>();
+  if (ids.length) {
+    const h = await sb.from("agendamento_historico").select("agendamento_id").eq("tipo", "remarcado").in("agendamento_id", ids).limit(2000);
+    for (const x of (h.data ?? []) as { agendamento_id: string }[]) remarc.set(x.agendamento_id, (remarc.get(x.agendamento_id) ?? 0) + 1);
+  }
   const sessoes = ((ag.data ?? []) as Record<string, unknown>[]).map((r) => ({
     id: String(r.id),
     data_hora: String(r.data_hora),
     status: String(r.status),
     local: r.local === "capoeiras" || r.local === "centro" ? (r.local as "capoeiras" | "centro") : null,
     duracao_min: Number(r.duracao_min) || 60,
+    remarcacoes: remarc.get(String(r.id)) ?? 0,
   }));
   const comprado = ((neg.data ?? []) as { sessoes: number | null }[]).reduce((t, n) => t + Math.max(1, Number(n.sessoes) || 1), 0);
   const realizadas = sessoes.filter((s) => s.status === "compareceu").length;

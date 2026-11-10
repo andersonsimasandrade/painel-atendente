@@ -102,6 +102,7 @@ export async function POST(req: Request) {
   const quando = formatarBR(iso);
   const cons = CONSULTORIOS[local];
   let confirmado = false;
+  let textoEnviado: string | null = null; // o que de fato foi ao paciente (aparece na conversa do painel)
   if (confirmar) {
     // Primeira vez = sem consulta anterior (fora a que acabou de ser marcada) e sem conversa registrada.
     const variantes = variantesTelefone(telefone);
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
     const texto = textoConfirmacao({ nome, iso, local, primeiraVez: (anteriores.count ?? 0) === 0 && msgs === 0 });
     const env = await enviarTextoInstancia(vend.instancia_whatsapp, telefone, texto);
     confirmado = env.ok;
+    if (env.ok) textoEnviado = texto;
     if (!env.ok) console.error("[agenda/novo] confirmação falhou:", env.error);
   }
 
@@ -123,7 +125,7 @@ export async function POST(req: Request) {
         session_id: telefone,
         message: {
           type: "ai",
-          content: `📅 Consulta agendada: ${quando} (${cons.bairro}).`,
+          content: textoEnviado ?? `📅 Consulta agendada: ${quando} (${cons.bairro}).`,
           tool_calls: [],
           additional_kwargs: { via: "sistema" },
           response_metadata: {},

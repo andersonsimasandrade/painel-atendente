@@ -5,7 +5,7 @@ import { enviarTextoInstancia } from "@/lib/evolution";
 import { textoConfirmacao } from "@/lib/confirmacao";
 import { formatarBR } from "@/lib/slots";
 import { CONSULTORIOS } from "@/lib/site";
-import { cancelarAgendamento, getCompromissos, getVendedorBySlug, remarcarAgendamento } from "@/lib/agenda";
+import { cancelarAgendamento, getCompromissos, getVendedorBySlug, marcarAvisoNoHistorico, remarcarAgendamento } from "@/lib/agenda";
 import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
 
 export const runtime = "nodejs";
@@ -110,5 +110,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       console.error("[agenda/remarcar] avisos ao paciente:", e instanceof Error ? e.message : e);
     }
   }
+  if (avisos) await marcarAvisoNoHistorico(id, avisos.cancelamento && avisos.confirmacao);
   return NextResponse.json({ ok: true, aviso, avisos });
 }

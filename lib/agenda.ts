@@ -220,6 +220,67 @@ export async function listarAgendamentos(slug?: string): Promise<AgendamentoView
   }
 }
 
+// ── Histórico de cada consulta (marcada, remarcada, cancelada, realizada, faltou) ──────────────
+export type TipoHistorico = "criado" | "remarcado" | "cancelado" | "compareceu" | "faltou" | "desfeito";
+export interface EntradaHistorico {
+  id: string;
+  tipo: TipoHistorico;
+  de_data_hora: string | null;
+  de_local: string | null;
+  para_data_hora: string | null;
+  para_local: string | null;
+  paciente_avisado: boolean | null;
+  origem: string | null;
+  criado_em: string;
+}
+
+/** Registra um fato na vida da consulta. Nunca derruba a operação principal. */
+export async function registrarHistorico(e: {
+  agendamentoId: string;
+  telefone?: string | null;
+  tipo: TipoHistorico;
+  de?: { data_hora: string; local: string | null } | null;
+  para?: { data_hora: string; local: string | null } | null;
+  origem?: string | null;
+}): Promise<void> {
+  try {
+    await getClient().from("agendamento_historico").insert({
+      agendamento_id: e.agendamentoId,
+      telefone: e.telefone ?? null,
+      tipo: e.tipo,
+      de_data_hora: e.de?.data_hora ?? null,
+      de_local: e.de?.local ?? null,
+      para_data_hora: e.para?.data_hora ?? null,
+      para_local: e.para?.local ?? null,
+      origem: e.origem ?? "painel",
+    });
+  } catch (err) {
+    console.error("[agenda] historico:", err instanceof Error ? err.message : err);
+  }
+}
+
+/** Marca se o paciente foi avisado da última remarcação (depois de tentar enviar os WhatsApp). */
+export async function marcarAvisoNoHistorico(agendamentoId: string, avisado: boolean): Promise<void> {
+  try {
+    const sb = getClient();
+    const r = await sb.from("agendamento_historico").select("id").eq("agendamento_id", agendamentoId).eq("tipo", "remarcado").order("criado_em", { ascending: false }).limit(1);
+    const id = (r.data?.[0] as { id?: string } | undefined)?.id;
+    if (id) await sb.from("agendamento_historico").update({ paciente_avisado: avisado }).eq("id", id);
+  } catch {
+    /* extra */
+  }
+}
+
+export async function listarHistorico(agendamentoId: string): Promise<EntradaHistorico[]> {
+  const r = await getClient().from("agendamento_historico").select("id, tipo, de_data_hora, de_local, para_data_hora, para_local, paciente_avisado, origem, criado_em").eq("agendamento_id", agendamentoId).order("criado_em", { ascending: true }).limit(100);
+  return (r.data ?? []) as EntradaHistorico[];
+}
+
+async function lerConsulta(id: string): Promise<{ telefone_lead: string; data_hora: string; local: string | null; status: string } | null> {
+  const r = await getClient().from("agendamentos").select("telefone_lead, data_hora, local, status").eq("id", id).limit(1);
+  return (r.data?.[0] as { telefone_lead: string; data_hora: string; local: string | null; status: string } | undefined) ?? null;
+}
+
 const PRESENCAS = new Set(["compareceu", "faltou", "agendado"]); // 'agendado' = desfazer
 // vendedorId (opcional) restringe o UPDATE ao dono — evita IDOR (vendedor marcar
 // presença de consulta de outro). Admin não passa e mexe em qualquer uma.
@@ -230,11 +291,20 @@ export async function marcarPresenca(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!id || !PRESENCAS.has(status)) return { ok: false, error: "Dados inválidos." };
   try {
+    const antes = await lerConsulta(id);
     let q = getClient().from("agendamentos").update({ status }).eq("id", id);
     if (vendedorId) q = q.eq("vendedor_id", vendedorId);
     const res = await q.select("id");
     if (res.error) return { ok: false, error: res.error.message };
     if (!res.data?.length) return { ok: false, error: "Agendamento não encontrado." };
+    if (antes) {
+      await registrarHistorico({
+        agendamentoId: id,
+        telefone: antes.telefone_lead,
+        tipo: status === "compareceu" ? "compareceu" : status === "faltou" ? "faltou" : "desfeito",
+        para: { data_hora: antes.data_hora, local: antes.local },
+      });
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao marcar." };
@@ -316,7 +386,9 @@ export async function criarAgendamento(a: {
       const conflito = /duplicate key|unique/i.test(res.error.message);
       return { ok: false, conflito, error: res.error.message };
     }
-    return { ok: true, id: (res.data?.[0] as { id: string })?.id ?? "" };
+    const novoId = (res.data?.[0] as { id: string })?.id ?? "";
+    if (novoId) await registrarHistorico({ agendamentoId: novoId, telefone: a.telefone, tipo: "criado", para: { data_hora: a.dataHora, local: a.local ?? null }, origem: a.origem });
+    return { ok: true, id: novoId };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao gravar." };
   }
@@ -380,6 +452,7 @@ export async function remarcarAgendamento(
   vendedorId?: string,
 ): Promise<{ ok: true } | { ok: false; conflito?: boolean; error: string }> {
   try {
+    const antes = await lerConsulta(id);
     let q = getClient()
       .from("agendamentos")
       .update({ data_hora: dataHoraIso, local, lembrete_enviado_em: null, status: "agendado" })
@@ -391,6 +464,15 @@ export async function remarcarAgendamento(
       return { ok: false, conflito, error: res.error.message };
     }
     if (!res.data?.length) return { ok: false, error: "Agendamento não encontrado." };
+    if (antes) {
+      await registrarHistorico({
+        agendamentoId: id,
+        telefone: antes.telefone_lead,
+        tipo: "remarcado",
+        de: { data_hora: antes.data_hora, local: antes.local },
+        para: { data_hora: dataHoraIso, local },
+      });
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao remarcar." };
@@ -401,12 +483,14 @@ export async function remarcarAgendamento(
 export async function cancelarAgendamento(id: string, vendedorId?: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const sb = getClient();
+    const antes = await lerConsulta(id);
     let q = sb.from("agendamentos").update({ status: "cancelado" }).eq("id", id);
     if (vendedorId) q = q.eq("vendedor_id", vendedorId);
     const res = await q.select("id");
     if (res.error) return { ok: false, error: res.error.message };
     if (!res.data?.length) return { ok: false, error: "Agendamento não encontrado." };
     await sb.from("conversoes").update({ status: "ignorado", resposta: "agendamento cancelado" }).eq("agendamento_id", id).eq("status", "pendente");
+    if (antes) await registrarHistorico({ agendamentoId: id, telefone: antes.telefone_lead, tipo: "cancelado", de: { data_hora: antes.data_hora, local: antes.local } });
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao cancelar." };

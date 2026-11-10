@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HistoricoAgendamento } from "@/components/HistoricoAgendamento";
 
 export function Remarcar({ a, onFeito, visivel = false }: { a: { id: string; data_hora: string; local: string | null }; onFeito: () => void; visivel?: boolean }) {
   const [aberto, setAberto] = useState(false);
@@ -81,6 +82,7 @@ export function Remarcar({ a, onFeito, visivel = false }: { a: { id: string; dat
         fechar
       </button>
       {msg && <span className="w-full text-[11.5px] text-ink-muted">{msg}</span>}
+      <HistoricoAgendamento id={a.id} rotulo="ver histórico desta consulta" />
     </span>
   );
 }

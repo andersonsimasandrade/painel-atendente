@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Remarcar } from "@/components/Remarcar";
+import { HistoricoAgendamento } from "@/components/HistoricoAgendamento";
 import type { ResumoPacote, SessaoPaciente } from "@/lib/sessoes-paciente";
 
 const LOCAL: Record<string, string> = { capoeiras: "Capoeiras", centro: "Centro" };
@@ -106,6 +107,11 @@ export function SessoesPaciente({
               </span>
               <span className="text-[12.5px] font-medium text-ink">{quando(s.data_hora)}</span>
               {s.local && <span className="text-[12px] text-ink-muted">· {LOCAL[s.local]}</span>}
+              {s.remarcacoes > 0 && (
+                <span className="rounded-full bg-amber/15 px-2 py-0.5 text-[11px] font-semibold text-amber" title="Quantas vezes esta consulta foi remarcada">
+                  remarcada {s.remarcacoes}×
+                </span>
+              )}
               <span className="ml-auto flex flex-wrap items-center gap-1.5">
                 {aConfirmar && <span className="text-[11.5px] text-amber">Já passou: o paciente compareceu?</span>}
                 {(aConfirmar || s.status === "faltou") && (
@@ -127,6 +133,7 @@ export function SessoesPaciente({
                   </button>
                 )}
               </span>
+              <HistoricoAgendamento id={s.id} />
             </li>
           );
         })}
