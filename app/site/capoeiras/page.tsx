@@ -8,7 +8,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/capoeiras" },
 };
 
-export const revalidate = 3600;
+// Dinâmica como as páginas de serviço: no build (Docker) o banco não está disponível e a lista de tratamentos sairia vazia.
+export const dynamic = "force-dynamic";
 
 export default function Page() {
   return <PaginaConsultorio id="capoeiras" />;
