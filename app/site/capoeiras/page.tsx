@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/capoeiras" },
 };
 
+export const revalidate = 3600;
+
 export default function Page() {
   return <PaginaConsultorio id="capoeiras" />;
 }

@@ -34,7 +34,7 @@ const comfortaa = localFont({
 
 const TITULO = "Fisioterapia e Terapia Manual em Florianópolis | Anderson Andrade";
 const DESCRICAO =
-  "Fisioterapia para dores na coluna, cervical e lombar em Florianópolis. Atendimento individualizado com terapia manual: avaliação e tratamento na mesma sessão, em Capoeiras e no Centro. Agende sua sessão.";
+  "Fisioterapia e terapia manual para dor na coluna, pescoço e lombar em Florianópolis. Avaliação e tratamento na mesma sessão, em Capoeiras e no Centro.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

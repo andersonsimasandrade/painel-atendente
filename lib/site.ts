@@ -51,6 +51,8 @@ export interface Consultorio {
   complemento: string;
   mapaUrl: string;
   comoChegar: string[];
+  /** Bairros vizinhos, para quem procura fisioterapia perto de casa (SEO local). */
+  perto: string;
 }
 
 export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
@@ -66,6 +68,8 @@ export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
       "Fica dentro da Estética Arlete, na Rua Joaquim Carneiro, 207.",
       "Atendimento com hora marcada: combine o horário antes pelo WhatsApp.",
     ],
+    perto:
+      "no Continente de Florianópolis, perto do Estreito, de Coqueiros, do Abraão e do Jardim Atlântico, e a poucos minutos de Kobrasol e Campinas, em São José",
   },
   centro: {
     id: "centro",
@@ -80,6 +84,8 @@ export const CONSULTORIOS: Record<ConsultorioId, Consultorio> = {
       "Espaço Beira Mar, Sala 06, na R. Altamiro Guimarães, 190, ao lado do Beiramar Shopping.",
       "Atendimento com hora marcada: combine o horário antes pelo WhatsApp.",
     ],
+    perto:
+      "no Centro de Florianópolis, perto da Avenida Beira-Mar Norte, da Agronômica, da Trindade e de Santa Mônica",
   },
 };
 
