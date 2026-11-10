@@ -33,6 +33,7 @@ const LINKS: {
     label: "Leads",
     match: (p) => p === "/leads" || p.startsWith("/leads/"),
   },
+  { href: "/tratamento", label: "Em tratamento", match: (p) => p.startsWith("/tratamento"), admin: true },
   { href: "/funil", label: "Funil", match: (p) => p.startsWith("/funil") },
   { href: "/agenda", label: "Agenda", match: (p) => p === "/agenda" || p.startsWith("/agenda/") },
   { href: "/atendimento", label: "Atendimento", match: (p) => p.startsWith("/atendimento") },
