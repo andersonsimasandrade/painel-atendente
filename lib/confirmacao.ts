@@ -19,6 +19,7 @@ export function textoConfirmacao(o: {
   local: "capoeiras" | "centro";
   primeiraVez: boolean;
   duracaoMin?: number;
+  remarcada?: boolean; // consulta trocada de dia/horário: texto de "nova data"
 }): string {
   const dur = o.duracaoMin && o.duracaoMin > 0 ? o.duracaoMin : 60;
   const cons = CONSULTORIOS[o.local];
@@ -28,6 +29,23 @@ export function textoConfirmacao(o: {
   const faixa = `das ${hora(o.iso)} às ${hora(o.iso, dur)}`;
   const estac = o.local === "centro" ? `${ORIENTACAO_ESTACIONAMENTO_CENTRO}\n` : "";
 
+  if (o.remarcada) {
+    return (
+      `${ola} Pronto, a sua consulta foi remarcada! 😊
+
+` +
+      `📅 *Nova data:* *${quando}* (${faixa})
+` +
+      `📍 *${cons.nome}*
+` +
+      `${cons.linhaEndereco}
+` +
+      estac +
+      `
+` +
+      `✅ Responda *CONFIRMO* para garantir o novo horário. No dia da consulta, eu te mando um lembrete. Se precisar mudar de novo, é só me avisar com 48 horas de antecedência.`
+    );
+  }
   if (!o.primeiraVez) {
     return (
       `${ola} Sua próxima consulta está agendada para *${quando}* (${faixa}), no ${cons.nome}.\n` +
