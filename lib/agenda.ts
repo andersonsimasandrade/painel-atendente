@@ -260,10 +260,10 @@ export async function registrarHistorico(e: {
 }
 
 /** Marca se o paciente foi avisado da última remarcação (depois de tentar enviar os WhatsApp). */
-export async function marcarAvisoNoHistorico(agendamentoId: string, avisado: boolean): Promise<void> {
+export async function marcarAvisoNoHistorico(agendamentoId: string, avisado: boolean, tipo: TipoHistorico = "remarcado"): Promise<void> {
   try {
     const sb = getClient();
-    const r = await sb.from("agendamento_historico").select("id").eq("agendamento_id", agendamentoId).eq("tipo", "remarcado").order("criado_em", { ascending: false }).limit(1);
+    const r = await sb.from("agendamento_historico").select("id").eq("agendamento_id", agendamentoId).eq("tipo", tipo).order("criado_em", { ascending: false }).limit(1);
     const id = (r.data?.[0] as { id?: string } | undefined)?.id;
     if (id) await sb.from("agendamento_historico").update({ paciente_avisado: avisado }).eq("id", id);
   } catch {

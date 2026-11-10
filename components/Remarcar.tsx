@@ -18,18 +18,21 @@ export function Remarcar({ a, onFeito, visivel = false }: { a: { id: string; dat
     setMsg(null);
     try {
       const r = await fetch(`/api/agenda/${encodeURIComponent(a.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
-      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; aviso?: string; avisos?: { cancelamento: boolean; confirmacao: boolean } };
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; aviso?: string; avisos?: { cancelamento: boolean; confirmacao?: boolean } };
       if (!r.ok || !j.ok) {
         setMsg(j.error ?? "Não consegui salvar.");
         return;
       }
+      const completo = j.avisos ? j.avisos.cancelamento && (j.avisos.confirmacao === undefined || j.avisos.confirmacao) : false;
       const paciente = j.avisos
-        ? j.avisos.cancelamento && j.avisos.confirmacao
-          ? " Paciente avisado pelo WhatsApp (cancelamento do horário antigo e confirmação do novo)."
+        ? completo
+          ? j.avisos.confirmacao === undefined
+            ? " Paciente avisado pelo WhatsApp (consulta desmarcada)."
+            : " Paciente avisado pelo WhatsApp (cancelamento do horário antigo e confirmação do novo)."
           : " ⚠ Não consegui avisar o paciente por WhatsApp: avise por conversa."
         : "";
       setMsg(`${texto}${paciente}${j.aviso ? ` ⚠ ${j.aviso}` : ""}`);
-      setTimeout(onFeito, j.aviso || (j.avisos && !(j.avisos.cancelamento && j.avisos.confirmacao)) ? 6000 : 1500);
+      setTimeout(onFeito, j.aviso || (j.avisos && !completo) ? 6000 : 1500);
     } catch {
       setMsg("Falha de rede.");
     } finally {
@@ -63,7 +66,7 @@ export function Remarcar({ a, onFeito, visivel = false }: { a: { id: string; dat
       </select>
       <label className="flex w-full items-center gap-2 text-[11.5px] text-ink-muted">
         <input type="checkbox" checked={avisar} onChange={(e) => setAvisar(e.target.checked)} />
-        Avisar o paciente pelo WhatsApp: cancelamento do horário antigo e confirmação da nova data
+        Avisar o paciente pelo WhatsApp (remarcar: cancelamento do horário antigo + confirmação da nova data · cancelar: aviso de desmarcação)
       </label>
       <button type="button" disabled={salvando} onClick={() => void enviar({ data, hora, local, avisar }, "Remarcada. O Google Agenda atualiza em poucos minutos.")} className="rounded-lg bg-brand px-2.5 py-1 text-[12px] font-semibold text-[#04140d] disabled:opacity-50">
         Remarcar
@@ -72,7 +75,7 @@ export function Remarcar({ a, onFeito, visivel = false }: { a: { id: string; dat
         type="button"
         disabled={salvando}
         onClick={() => {
-          if (window.confirm("Cancelar esta consulta? O evento sai do Google Agenda.")) void enviar({ cancelar: true }, "Cancelada.");
+          if (window.confirm(`Cancelar esta consulta? O evento sai do Google Agenda.${avisar ? " O paciente será avisado pelo WhatsApp." : ""}`)) void enviar({ cancelar: true, avisar }, "Cancelada.");
         }}
         className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[12px] font-semibold text-red-300 disabled:opacity-50"
       >

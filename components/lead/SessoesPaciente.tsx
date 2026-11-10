@@ -42,15 +42,18 @@ export function SessoesPaciente({
   nome,
   sessoes,
   pacote,
+  temPlanoAtivo = false,
 }: {
   telefone: string;
   nome: string | null;
   sessoes: SessaoPaciente[];
   pacote: ResumoPacote;
+  temPlanoAtivo?: boolean;
 }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [passos, setPassos] = useState(false); // mostra os "próximos passos" depois de registrar uma sessão realizada
   const agora = Date.now();
 
   async function presenca(id: string, valor: "compareceu" | "faltou" | "agendado") {
@@ -67,6 +70,8 @@ export function SessoesPaciente({
         setErro(d.error ?? "Não consegui salvar.");
         return;
       }
+      if (valor === "compareceu") setPassos(true);
+      else if (valor === "agendado") setPassos(false);
       router.refresh();
     } catch {
       setErro("Falha de rede.");
@@ -78,8 +83,54 @@ export function SessoesPaciente({
   const novo = `/agenda?novo=1&telefone=${encodeURIComponent(telefone)}&nome=${encodeURIComponent(nome ?? "")}`;
   const btn = "rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-ink-muted transition hover:border-line-strong hover:text-ink disabled:opacity-50";
 
+  const temProxima = sessoes.some((s) => (s.status === "agendado" || s.status === "confirmado") && new Date(s.data_hora).getTime() > agora);
+
   return (
     <div className="flex flex-col gap-3">
+      {passos && (
+        <div className="rounded-xl border border-brand/40 bg-brand/[0.08] px-4 py-3">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[13.5px] font-semibold text-ink">✔ Sessão registrada. Próximos passos:</p>
+            <button type="button" onClick={() => setPassos(false)} className="text-[12px] text-ink-faint hover:text-ink-muted" aria-label="Fechar">
+              ✕
+            </button>
+          </div>
+          <ul className="mt-2 flex flex-col gap-2 text-[12.5px] text-ink-muted">
+            <li className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1">
+                {temProxima ? "✓ Próxima sessão já marcada." : pacote.restantes > 0 ? `Marcar a próxima sessão (${pacote.restantes} do pacote ainda sem data).` : "Marcar a próxima sessão."}
+              </span>
+              {!temProxima && (
+                <Link href={novo} className="rounded-lg bg-brand px-3 py-1.5 text-[12px] font-semibold text-[#04140d] hover:bg-brand-bright">
+                  + Agendar próxima sessão
+                </Link>
+              )}
+            </li>
+            <li className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1">Registrar a evolução desta sessão (relato, achados, manobras, dor).</span>
+              <a href="#prontuario" className={btn}>
+                Ir para o prontuário
+              </a>
+            </li>
+            <li className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1">{temPlanoAtivo ? "✓ Há plano de exercícios ativo para casa." : "Prescrever os exercícios para casa e enviar o link."}</span>
+              {!temPlanoAtivo && (
+                <a href="#exercicios" className={btn}>
+                  Ir para exercícios
+                </a>
+              )}
+            </li>
+            <li>
+              O cuidado do dia seguinte (“como você está depois da sessão?”) aparece sugerido em{" "}
+              <Link href="/tarefas" className="underline">
+                Tarefas
+              </Link>{" "}
+              amanhã às 9h, para você aprovar.
+            </li>
+          </ul>
+        </div>
+      )}
+
       {pacote.comprado > 0 && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-brand/25 bg-brand/[0.06] px-3.5 py-2.5 text-[12.5px] text-ink">
           <span>

@@ -35,8 +35,38 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const id = String(params.id ?? "").trim();
 
   if (b.cancelar === true) {
+    const antes = await getClient().from("agendamentos").select("telefone_lead, nome_lead, data_hora, local, status, vendedor_id").eq("id", id).limit(1);
+    const era = antes.data?.[0] as { telefone_lead: string; nome_lead: string | null; data_hora: string; local: string | null; status: string; vendedor_id: string } | undefined;
     const r = await cancelarAgendamento(id, vendedorId);
-    return NextResponse.json(r, { status: r.ok ? 200 : r.error === "Agendamento não encontrado." ? 404 : 500 });
+    if (!r.ok) return NextResponse.json(r, { status: r.error === "Agendamento não encontrado." ? 404 : 500 });
+
+    // Aviso de desmarcação ao paciente: deixa registrado e evita mal-entendidos.
+    let avisos: { cancelamento: boolean } | undefined;
+    if (b.avisar !== false && era && (era.status === "agendado" || era.status === "confirmado")) {
+      avisos = { cancelamento: false };
+      try {
+        const v = await getClient().from("vendedores").select("instancia_whatsapp").eq("id", era.vendedor_id).limit(1);
+        const instancia = ((v.data?.[0] as { instancia_whatsapp?: string } | undefined)?.instancia_whatsapp ?? process.env.EVOLUTION_INSTANCE ?? "").trim();
+        if (instancia) {
+          const primeiro = era.nome_lead ? era.nome_lead.trim().split(/\s+/)[0] : "";
+          const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+          const onde = era.local === "capoeiras" || era.local === "centro" ? ` (${CONSULTORIOS[era.local].bairro})` : "";
+          const msg = `${ola} Passando para avisar que a sua consulta de *${formatarBR(era.data_hora)}*${onde} foi desmarcada. 😊\nQuando quiser marcar um novo horário, é só me avisar por aqui.`;
+          const e = await enviarTextoInstancia(instancia, era.telefone_lead, msg);
+          avisos.cancelamento = e.ok;
+          if (e.ok) {
+            await getClient()
+              .from("n8n_chat_histories")
+              .insert({ session_id: era.telefone_lead, message: { type: "ai", content: msg, tool_calls: [], additional_kwargs: { via: "sistema" }, response_metadata: {}, invalid_tool_calls: [] } })
+              .then(undefined, () => undefined);
+          }
+        }
+      } catch (e) {
+        console.error("[agenda/cancelar] aviso ao paciente:", e instanceof Error ? e.message : e);
+      }
+      await marcarAvisoNoHistorico(id, avisos.cancelamento, "cancelado");
+    }
+    return NextResponse.json({ ok: true, avisos });
   }
 
   const data = String(b.data ?? "");

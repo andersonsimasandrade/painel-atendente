@@ -431,9 +431,10 @@ export default async function LeadDetailPage({
           className="mt-4"
           delay={90}
         >
-          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} />
+          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} temPlanoAtivo={prescricoes.some((p) => p.ativa)} />
         </Panel>
 
+        <div id="prontuario" className="scroll-mt-24">
         {/* Prontuário: exames (com resumo do laudo) e evolução por sessão */}
         <Panel
           title="Prontuário e exames"
@@ -443,7 +444,9 @@ export default async function LeadDetailPage({
         >
           <Prontuario telefone={lead.telefone} exames={prontuario.exames} evolucoes={prontuario.evolucoes} />
         </Panel>
+        </div>
 
+        <div id="exercicios" className="scroll-mt-24">
         {/* Exercícios para casa: plano com vídeos, link privado e retorno do paciente */}
         <Panel
           title="Exercícios para casa"
@@ -458,6 +461,7 @@ export default async function LeadDetailPage({
             biblioteca={biblioteca}
           />
         </Panel>
+        </div>
 
         {/* Devolutiva do caso: documento com papel timbrado em link privado */}
         <Panel
