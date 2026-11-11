@@ -34,6 +34,7 @@ export interface Evolucao {
   achados: string | null;
   conduta: string | null;
   plano: string | null;
+  observacoes: string | null;
   dor_inicio: number | null;
   dor_fim: number | null;
   criado_em: string;

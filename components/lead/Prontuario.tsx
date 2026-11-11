@@ -52,6 +52,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
   const [achados, setAchados] = useState("");
   const [conduta, setConduta] = useState("");
   const [plano, setPlano] = useState("");
+  const [observacoes, setObservacoes] = useState("");
   const [dorIni, setDorIni] = useState("");
   const [dorFim, setDorFim] = useState("");
   const [doRascunho, setDoRascunho] = useState(false); // campos preenchidos pela gravação (IA): precisam de revisão
@@ -63,13 +64,14 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
   useRascunho(
     `rasc:evolucao:${telefone}`,
     aba === "evolucao",
-    { dataSessao, queixa, achados, conduta, plano, dorIni, dorFim, doRascunho, transcricao },
+    { dataSessao, queixa, achados, conduta, plano, observacoes, dorIni, dorFim, doRascunho, transcricao },
     (r) => {
       setDataSessao(r.dataSessao);
       setQueixa(r.queixa);
       setAchados(r.achados);
       setConduta(r.conduta);
       setPlano(r.plano);
+      setObservacoes(r.observacoes ?? "");
       setDorIni(r.dorIni);
       setDorFim(r.dorFim);
       setDoRascunho(r.doRascunho);
@@ -205,7 +207,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
       const r = await fetch(`${base}/evolucao`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data_sessao: dataSessao, queixa, achados, conduta, plano, dor_inicio: dorIni, dor_fim: dorFim, gravacao_autorizada: doRascunho, rascunho_ia: doRascunho }),
+        body: JSON.stringify({ data_sessao: dataSessao, queixa, achados, conduta, plano, observacoes, dor_inicio: dorIni, dor_fim: dorFim, gravacao_autorizada: doRascunho, rascunho_ia: doRascunho }),
       });
       const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!r.ok || !d.ok) {
@@ -216,6 +218,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
       setAchados("");
       setConduta("");
       setPlano("");
+      setObservacoes("");
       setDorIni("");
       setDorFim("");
       setDoRascunho(false);
@@ -362,6 +365,10 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
             <span className={rotulo}>Plano e orientações (inclui exercícios para casa)</span>
             <CampoDitado valor={plano} onChange={setPlano} minAltura={70} />
           </label>
+          <label>
+            <span className={rotulo}>Observações da sessão</span>
+            <CampoDitado valor={observacoes} onChange={setObservacoes} minAltura={70} />
+          </label>
           {transcricao && (
             <details className="rounded-lg border border-line px-3 py-2 text-[12.5px] text-ink-muted">
               <summary className="cursor-pointer font-semibold text-ink">Texto da gravação (não fica salvo)</summary>
@@ -443,7 +450,7 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
                 )}
               </div>
               <dl className="mt-2 flex flex-col gap-1.5 text-[13px] text-ink-muted">
-                {([["Relato", it.evolucao.queixa], ["Achados", it.evolucao.achados], ["Conduta", it.evolucao.conduta], ["Plano", it.evolucao.plano]] as const).map(
+                {([["Relato", it.evolucao.queixa], ["Achados", it.evolucao.achados], ["Conduta", it.evolucao.conduta], ["Plano", it.evolucao.plano], ["Observações", it.evolucao.observacoes]] as const).map(
                   ([r, v]) =>
                     v ? (
                       <div key={r}>

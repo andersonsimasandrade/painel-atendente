@@ -125,7 +125,7 @@ export function EditarEndereco({ telefone, inicial }: { telefone: string; inicia
           className={campo}
         />
       </label>
-      <span className="col-span-3 flex items-end pb-1.5 text-[11.5px] text-ink-muted sm:col-span-4">{buscando ? "Buscando o endereço…" : "Digite o CEP e o endereço é preenchido sozinho."}</span>
+      <span className="col-span-3 flex items-end pb-1.5 text-[11.5px] text-ink-muted sm:col-span-4">{buscando ? "Buscando o endereço…" : "Digite o CEP e o endereço, a cidade e o estado são preenchidos sozinhos. Sem o CEP, preencha só a cidade e a UF."}</span>
       <label className="col-span-6 flex flex-col gap-1 text-[11px] text-ink-faint sm:col-span-4">
         Rua / avenida
         <input value={v.logradouro} onChange={(e) => setV({ ...v, logradouro: e.target.value })} maxLength={120} className={campo} />

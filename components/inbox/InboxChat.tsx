@@ -20,6 +20,7 @@ import { MudarEstagio } from "../MudarEstagio";
 import { MarcarAvaliacaoRapido } from "../MarcarAvaliacaoRapido";
 import { EditarNome } from "../EditarNome";
 import { useAudioRecorder } from "./useAudioRecorder";
+import { pausarRefresh } from "@/lib/pausa-refresh";
 import { Sigilo } from "../Sigilo";
 
 /**
@@ -401,6 +402,38 @@ export function InboxChat({
   const [loadErro, setLoadErro] = useState<string | null>(null);
 
   const [draft, setDraft] = useState("");
+
+  // RASCUNHO: o que está sendo escrito fica guardado neste navegador (uma caixa por conversa) e volta depois de uma
+  // atualização da página, de uma troca de conversa ou de horas de pausa. Só some ao enviar ou ao apagar o texto.
+  const chaveRascunho = `rascunho:msg:${telefone}`;
+  const rascunhoPronto = useRef(false);
+  useEffect(() => {
+    rascunhoPronto.current = false;
+    try {
+      const salvo = window.localStorage.getItem(chaveRascunho);
+      if (salvo) setDraft(salvo);
+    } catch {
+      /* sem armazenamento: segue sem rascunho */
+    }
+    rascunhoPronto.current = true;
+  }, [chaveRascunho]);
+  useEffect(() => {
+    if (!rascunhoPronto.current) return;
+    try {
+      if (draft) window.localStorage.setItem(chaveRascunho, draft);
+      else window.localStorage.removeItem(chaveRascunho);
+    } catch {
+      /* sem armazenamento */
+    }
+  }, [draft, chaveRascunho]);
+  // Há texto na caixa: a atualização automática da página (a cada 60 s) fica pausada.
+  const temRascunho = draft.trim().length > 0;
+  useEffect(() => {
+    if (!temRascunho) return;
+    pausarRefresh(true);
+    return () => pausarRefresh(false);
+  }, [temRascunho]);
+
   const [sending, setSending] = useState(false);
   const [sendErro, setSendErro] = useState<string | null>(null);
   const [sendAviso, setSendAviso] = useState<string | null>(null);

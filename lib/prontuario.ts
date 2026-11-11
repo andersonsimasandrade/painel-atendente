@@ -53,6 +53,7 @@ function paraEvolucao(r: Record<string, unknown>): Evolucao {
     achados: (r.achados as string | null) ?? null,
     conduta: (r.conduta as string | null) ?? null,
     plano: (r.plano as string | null) ?? null,
+    observacoes: (r.observacoes as string | null) ?? null,
     dor_inicio: n(r.dor_inicio),
     dor_fim: n(r.dor_fim),
     criado_em: String(r.criado_em),
@@ -186,12 +187,13 @@ export async function salvarEvolucao(
     achados: txt(d.achados, 4000),
     conduta: txt(d.conduta, 4000),
     plano: txt(d.plano, 4000),
+    observacoes: txt(d.observacoes, 4000),
     dor_inicio: dor(d.dor_inicio),
     dor_fim: dor(d.dor_fim),
     gravacao_autorizada: d.gravacao_autorizada === true,
     rascunho_ia: d.rascunho_ia === true,
   };
-  if (!linha.queixa && !linha.achados && !linha.conduta && !linha.plano) {
+  if (!linha.queixa && !linha.achados && !linha.conduta && !linha.plano && !linha.observacoes) {
     return { ok: false, error: "Escreva ao menos um campo da evolução." };
   }
   const ins = await getClient().from("paciente_evolucao").insert(linha).select("id");
@@ -220,4 +222,31 @@ export async function resumirLaudo(texto: string): Promise<string | null> {
   const r = await perguntarJSON<{ resumo?: string }>(sistema, `LAUDO:\n${base}`, 700);
   const s = r?.resumo?.trim();
   return s ? s.slice(0, 4000) : null;
+}
+
+/**
+ * Anotação da sessão → evolução: acrescenta o texto ao campo "observações" da evolução dessa sessão
+ * (a da consulta ligada, ou a do mesmo dia). Se ainda não existe evolução, cria uma.
+ */
+export async function registrarObservacaoNaEvolucao(
+  telefone: string,
+  agendamentoId: string | null,
+  dataSessao: string,
+  texto: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const tel = await telefoneReal(telefone);
+  if (!tel) return { ok: false, error: "Paciente não encontrado." };
+  const sb = getClient();
+  const t = texto.trim().slice(0, 4000);
+  let q = sb.from("paciente_evolucao").select("id, observacoes").in("telefone", variantesTelefone(tel)).order("criado_em", { ascending: false }).limit(1);
+  q = agendamentoId ? q.eq("agendamento_id", agendamentoId) : q.eq("data_sessao", dataSessao);
+  const r = await q;
+  const atual = r.data?.[0] as { id: string; observacoes: string | null } | undefined;
+  if (atual) {
+    const junto = [atual.observacoes, t].filter(Boolean).join("\n\n").slice(0, 4000);
+    const u = await sb.from("paciente_evolucao").update({ observacoes: junto }).eq("id", atual.id);
+    return u.error ? { ok: false, error: u.error.message } : { ok: true };
+  }
+  const i = await sb.from("paciente_evolucao").insert({ telefone: tel, agendamento_id: agendamentoId, data_sessao: dataSessao, observacoes: t });
+  return i.error ? { ok: false, error: i.error.message } : { ok: true };
 }

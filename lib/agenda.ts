@@ -109,6 +109,29 @@ export async function getNomeLead(telefone: string): Promise<string | null> {
   }
 }
 
+// Nome do paciente: o do CADASTRO (ff_contatos) vale em toda parte. O nome gravado na consulta é só o do momento da marcação.
+const chave8 = (t: string | null | undefined) => String(t ?? "").replace(/\D/g, "").slice(-8);
+
+async function nomesDosContatos(): Promise<Map<string, string>> {
+  const m = new Map<string, string>();
+  try {
+    const r = await getClient().from("ff_contatos").select("telefone, nome").not("nome", "is", null).limit(10000);
+    for (const c of (r.data ?? []) as { telefone: string; nome: string | null }[]) {
+      const n = (c.nome ?? "").trim();
+      if (n && chave8(c.telefone).length === 8) m.set(chave8(c.telefone), n);
+    }
+  } catch {
+    /* sem nomes do cadastro: ficam os da consulta */
+  }
+  return m;
+}
+
+export async function nomeAtualDe(telefone: string, fallback: string | null): Promise<string | null> {
+  const r = await getClient().from("ff_contatos").select("nome").in("telefone", variantesTelefone(telefone)).limit(1);
+  const n = ((r.data?.[0] as { nome?: string | null } | undefined)?.nome ?? "").trim();
+  return n || fallback;
+}
+
 // ── Fase 2: listagem interna, presença e lembretes ─────────────────────────
 
 export type AgendamentoView = {
@@ -197,12 +220,13 @@ export async function listarAgendamentos(slug?: string): Promise<AgendamentoView
       getVendedoresMap(),
     ]);
     if (res.error || !res.data) return [];
+    const nomes = await nomesDosContatos();
     const out = (res.data as unknown as AgRow[]).map((r) => {
       const v = vmap.get(r.vendedor_id);
       return {
         id: r.id,
         telefone_lead: r.telefone_lead,
-        nome_lead: r.nome_lead,
+        nome_lead: nomes.get(chave8(r.telefone_lead)) ?? r.nome_lead,
         data_hora: r.data_hora,
         status: r.status,
         origem: r.origem,
@@ -328,13 +352,14 @@ export async function getAgendamentosParaLembrete(): Promise<AgendamentoLembrete
       getVendedoresMap(),
     ]);
     if (res.error || !res.data) return [];
+    const nomes = await nomesDosContatos();
     return (res.data as unknown as AgRow[])
       .map((r) => {
         const v = vmap.get(r.vendedor_id);
         return {
           id: r.id,
           telefone_lead: r.telefone_lead,
-          nome_lead: r.nome_lead,
+          nome_lead: nomes.get(chave8(r.telefone_lead)) ?? r.nome_lead,
           data_hora: r.data_hora,
           instancia: v?.instancia_whatsapp ?? "",
           vendedor_nome: v?.nome ?? "",
@@ -419,6 +444,7 @@ export async function listarParaSync(): Promise<AgendamentoSync[]> {
       .order("data_hora", { ascending: true })
       .limit(1000);
     if (res.error || !res.data) return [];
+    const nomes = await nomesDosContatos();
     return (res.data as unknown as {
       id: string;
       telefone_lead: string;
@@ -431,7 +457,7 @@ export async function listarParaSync(): Promise<AgendamentoSync[]> {
     }[]).map((r) => ({
       id: r.id,
       telefone: r.telefone_lead,
-      nome: r.nome_lead,
+      nome: nomes.get(chave8(r.telefone_lead)) ?? r.nome_lead,
       data_hora: r.data_hora,
       duracao_min: r.duracao_min ?? 60,
       local: r.local,

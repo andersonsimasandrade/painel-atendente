@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getSessao } from "@/lib/session";
 import { getClient } from "@/lib/db";
 import { enviarTextoInstancia } from "@/lib/evolution";
-import { textoConfirmacao } from "@/lib/confirmacao";
+import { partesConfirmacao } from "@/lib/confirmacao";
+import { enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
 import { formatarBR } from "@/lib/slots";
 import { CONSULTORIOS } from "@/lib/site";
-import { cancelarAgendamento, getCompromissos, getVendedorBySlug, marcarAvisoNoHistorico, remarcarAgendamento } from "@/lib/agenda";
+import { cancelarAgendamento, getCompromissos, getVendedorBySlug, marcarAvisoNoHistorico, nomeAtualDe, remarcarAgendamento } from "@/lib/agenda";
 import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
 
 export const runtime = "nodejs";
@@ -48,7 +49,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const v = await getClient().from("vendedores").select("instancia_whatsapp").eq("id", era.vendedor_id).limit(1);
         const instancia = ((v.data?.[0] as { instancia_whatsapp?: string } | undefined)?.instancia_whatsapp ?? process.env.EVOLUTION_INSTANCE ?? "").trim();
         if (instancia) {
-          const primeiro = era.nome_lead ? era.nome_lead.trim().split(/\s+/)[0] : "";
+          const nomeCerto = await nomeAtualDe(era.telefone_lead, era.nome_lead);
+          const primeiro = nomeCerto ? nomeCerto.trim().split(/\s+/)[0] : "";
           const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
           const onde = era.local === "capoeiras" || era.local === "centro" ? ` (${CONSULTORIOS[era.local].bairro})` : "";
           const msg = `${ola} Passando para avisar que a sua consulta de *${formatarBR(era.data_hora)}*${onde} foi desmarcada. 😊\nQuando quiser marcar um novo horário, é só me avisar por aqui.`;
@@ -117,24 +119,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       const v = await getClient().from("vendedores").select("instancia_whatsapp").eq("id", velho.vendedor_id).limit(1);
       const instancia = ((v.data?.[0] as { instancia_whatsapp?: string } | undefined)?.instancia_whatsapp ?? process.env.EVOLUTION_INSTANCE ?? "").trim();
       if (instancia) {
-        const primeiro = velho.nome_lead ? velho.nome_lead.trim().split(/\s+/)[0] : "";
+        const nomeCerto = await nomeAtualDe(velho.telefone_lead, velho.nome_lead);
+        const primeiro = nomeCerto ? nomeCerto.trim().split(/\s+/)[0] : "";
         const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
         const velhoLocal = velho.local === "capoeiras" || velho.local === "centro" ? ` (${CONSULTORIOS[velho.local].bairro})` : "";
         const msgCancela = `${ola} Passando para avisar que a sua consulta de *${formatarBR(velho.data_hora)}*${velhoLocal} foi cancelada, porque o horário foi alterado. Já te envio a confirmação do novo horário. 😊`;
-        const msgNova = textoConfirmacao({ nome: velho.nome_lead, iso: iso.toISOString(), local, primeiraVez: false, remarcada: true });
         const e1 = await enviarTextoInstancia(instancia, velho.telefone_lead, msgCancela);
         avisos.cancelamento = e1.ok;
-        if (e1.ok) await new Promise((res) => setTimeout(res, 1500)); // mantém a ordem das duas mensagens
-        const e2 = await enviarTextoInstancia(instancia, velho.telefone_lead, msgNova);
-        avisos.confirmacao = e2.ok;
-        // memória da conversa (o robô sabe o que foi dito ao paciente)
-        for (const [ok, texto] of [[e1.ok, msgCancela], [e2.ok, msgNova]] as const) {
-          if (!ok) continue;
-          await getClient()
-            .from("n8n_chat_histories")
-            .insert({ session_id: velho.telefone_lead, message: { type: "ai", content: texto, tool_calls: [], additional_kwargs: { via: "sistema" }, response_metadata: {}, invalid_tool_calls: [] } })
-            .then(undefined, () => undefined);
-        }
+        if (e1.ok) await new Promise((res) => setTimeout(res, 1500)); // mantém a ordem das mensagens
+        const nova = await enviarPartes(instancia, velho.telefone_lead, partesConfirmacao({ nome: nomeCerto, iso: iso.toISOString(), local, primeiraVez: false, remarcada: true }));
+        avisos.confirmacao = nova.ok;
+        // conversa do painel e memória do robô: o texto real de cada mensagem enviada
+        await registrarNaConversa(velho.telefone_lead, [...(e1.ok ? [msgCancela] : []), ...nova.enviadas]);
       }
     } catch (e) {
       console.error("[agenda/remarcar] avisos ao paciente:", e instanceof Error ? e.message : e);

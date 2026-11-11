@@ -308,6 +308,8 @@ export interface Nota {
   autor: string | null;
   texto: string;
   criado_em: string; // ISO
+  agendamento_id?: string | null; // sessão a que a anotação está ligada
+  data_sessao?: string | null; // dia dessa sessão (AAAA-MM-DD)
 }
 
 // ── Indicadores de atendimento humano (/atendimento) ───────────────────────

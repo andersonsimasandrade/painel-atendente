@@ -3,7 +3,8 @@ import { criarAgendamento, getCompromissos, getOcupados, getVendedorBySlug, list
 import { GAP_TROCA_MIN, NOME_LOCAL, conflitoDeslocamento, locaisDoDia, outroLocal, type LocalId } from "@/lib/deslocamento";
 import { destinatariosAlerta } from "@/lib/config";
 import { enviarTextoInstancia } from "@/lib/evolution";
-import { textoConfirmacao } from "@/lib/confirmacao";
+import { partesConfirmacao } from "@/lib/confirmacao";
+import { enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
 import { CONSULTORIOS } from "@/lib/site";
 import { formatarBR, gerarSlotsDias } from "@/lib/slots";
 import { variantesTelefone } from "@/lib/telefone";
@@ -121,19 +122,14 @@ export async function marcarPeloRobo(p: PedidoMarcacao): Promise<ResultadoMarcac
     sb.from("agendamentos").select("id", { count: "exact", head: true }).in("telefone_lead", variantes).neq("status", "cancelado").neq("id", criado.id),
   ]);
   // O paciente acabou de conversar com o robô, então "primeira vez" aqui = nenhuma consulta anterior (as mensagens da conversa não contam).
-  const texto = textoConfirmacao({ nome: p.nome, iso, local: p.local, primeiraVez: (anteriores.count ?? 0) === 0 });
-  const env = await enviarTextoInstancia(vend.instancia_whatsapp, telefone, texto);
-  if (!env.ok) console.error("[marcar] confirmação falhou:", env.error);
+  const partes = partesConfirmacao({ nome: p.nome, iso, local: p.local, primeiraVez: (anteriores.count ?? 0) === 0 });
+  const env = await enviarPartes(vend.instancia_whatsapp, telefone, partes);
+  if (!env.ok) console.error("[marcar] confirmação falhou:", env.erro);
 
   const quando = formatarBR(iso);
   const cons = CONSULTORIOS[p.local];
-  await sb
-    .from("n8n_chat_histories")
-    .insert({
-      session_id: telefone,
-      message: { type: "ai", content: env.ok ? texto : `📅 Consulta agendada: ${quando} (${cons.bairro}).`, tool_calls: [], additional_kwargs: { via: "robo-agenda" }, response_metadata: {}, invalid_tool_calls: [] },
-    })
-    .then(undefined, () => undefined);
+  // Conversa do painel: o texto REAL enviado (se nada saiu, só o resumo).
+  await registrarNaConversa(telefone, env.enviadas.length ? env.enviadas : [`📅 Consulta agendada: ${quando} (${cons.bairro}).`], "robo-agenda");
 
   // Aviso ao Anderson (ele continua responsável por tudo).
   const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();

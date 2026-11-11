@@ -1597,6 +1597,10 @@ export async function setNomeLead(
       .select("telefone");
     if (res.error) return { ok: false, error: res.error.message };
     if (!res.data?.length) return { ok: false, error: "Lead não encontrado." };
+    // O nome do cadastro vale em toda parte: a agenda também passa a mostrar o nome novo.
+    if (limpo) {
+      await getClient().from("agendamentos").update({ nome_lead: limpo }).in("telefone_lead", variantesTelefone(telefone));
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Erro ao renomear." };
@@ -1978,17 +1982,19 @@ export async function getNotas(telefone: string): Promise<Nota[]> {
   try {
     const res = await getClient()
       .from("ff_notas")
-      .select("id, autor, texto, criado_em")
+      .select("id, autor, texto, criado_em, agendamento_id, data_sessao")
       .in("telefone", variantesTelefone(telefone))
       .order("criado_em", { ascending: false })
       .limit(100);
     if (res.error) throw new Error(res.error.message);
-    return ((res.data ?? []) as { id: unknown; autor: string | null; texto: string | null; criado_em: string | null }[])
+    return ((res.data ?? []) as { id: unknown; autor: string | null; texto: string | null; criado_em: string | null; agendamento_id: string | null; data_sessao: string | null }[])
       .map((n) => ({
         id: num(n.id),
         autor: strOrNull(n.autor),
         texto: String(n.texto ?? ""),
         criado_em: toIso(n.criado_em) ?? "",
+        agendamento_id: n.agendamento_id ?? null,
+        data_sessao: n.data_sessao ?? null,
       }))
       .filter((n) => n.texto.trim() !== "");
   } catch (e) {
@@ -2001,6 +2007,7 @@ export async function addNota(
   telefone: string,
   autor: string,
   texto: string,
+  sessao?: { agendamentoId: string | null; dataSessao: string | null },
 ): Promise<{ ok: boolean; error?: string }> {
   const t = String(texto ?? "").trim().slice(0, 2000);
   if (!t) return { ok: false, error: "Escreva a anotação." };
@@ -2015,7 +2022,7 @@ export async function addNota(
       (alvoRes.data?.[0] as { telefone?: string } | undefined)?.telefone ?? telefone;
     const res = await getClient()
       .from("ff_notas")
-      .insert({ telefone: alvo, autor: String(autor ?? "").trim().slice(0, 60) || null, texto: t });
+      .insert({ telefone: alvo, autor: String(autor ?? "").trim().slice(0, 60) || null, texto: t, agendamento_id: sessao?.agendamentoId ?? null, data_sessao: sessao?.dataSessao ?? null });
     if (res.error) return { ok: false, error: res.error.message };
     return { ok: true };
   } catch (e) {

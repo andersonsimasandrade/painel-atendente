@@ -6,7 +6,8 @@ import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { formatarBR } from "@/lib/slots";
 import { apenasDigitos } from "@/lib/format";
-import { textoConfirmacao } from "@/lib/confirmacao";
+import { partesConfirmacao } from "@/lib/confirmacao";
+import { enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
 import { variantesTelefone } from "@/lib/telefone";
 import { CONSULTORIOS, ORIENTACAO_ESTACIONAMENTO_CENTRO } from "@/lib/site";
 
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
   const quando = formatarBR(iso);
   const cons = CONSULTORIOS[local];
   let confirmado = false;
-  let textoEnviado: string | null = null; // o que de fato foi ao paciente (aparece na conversa do painel)
+  let enviadas: string[] = []; // o que de fato foi ao paciente (aparece na conversa do painel)
   if (confirmar) {
     // Primeira vez = sem consulta anterior (fora a que acabou de ser marcada) e sem conversa registrada.
     const variantes = variantesTelefone(telefone);
@@ -111,30 +112,14 @@ export async function POST(req: Request) {
       getClient().from("ff_contatos").select("total_mensagens").in("telefone", variantes).limit(1),
     ]);
     const msgs = Number((cadastro.data?.[0] as { total_mensagens: number | null } | undefined)?.total_mensagens ?? 0);
-    const texto = textoConfirmacao({ nome, iso, local, primeiraVez: (anteriores.count ?? 0) === 0 && msgs === 0 });
-    const env = await enviarTextoInstancia(vend.instancia_whatsapp, telefone, texto);
+    const partes = partesConfirmacao({ nome, iso, local, primeiraVez: (anteriores.count ?? 0) === 0 && msgs === 0 });
+    const env = await enviarPartes(vend.instancia_whatsapp, telefone, partes);
     confirmado = env.ok;
-    if (env.ok) textoEnviado = texto;
-    if (!env.ok) console.error("[agenda/novo] confirmação falhou:", env.error);
+    enviadas = env.enviadas;
+    if (!env.ok) console.error("[agenda/novo] confirmação falhou:", env.erro);
   }
 
-  try {
-    await getClient()
-      .from("n8n_chat_histories")
-      .insert({
-        session_id: telefone,
-        message: {
-          type: "ai",
-          content: textoEnviado ?? `📅 Consulta agendada: ${quando} (${cons.bairro}).`,
-          tool_calls: [],
-          additional_kwargs: { via: "sistema" },
-          response_metadata: {},
-          invalid_tool_calls: [],
-        },
-      });
-  } catch (e) {
-    console.error("[agenda/novo] log painel:", e);
-  }
+  await registrarNaConversa(telefone, enviadas.length ? enviadas : [`📅 Consulta agendada: ${quando} (${cons.bairro}).`]);
 
   return NextResponse.json({ ok: true, id: criado.id, quando, local: cons.bairro, confirmado, aviso: aviso || undefined });
 }

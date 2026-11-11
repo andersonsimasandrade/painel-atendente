@@ -236,13 +236,6 @@ export default async function LeadDetailPage({
               <Field label="Categoria">
                 <PerfilBadge perfil={lead.perfil} size="sm" />
               </Field>
-              <Field label="Cidade / UF">
-                <EditarLocal
-                  telefone={lead.telefone}
-                  cidade={lead.cidade}
-                  uf={lead.uf}
-                />
-              </Field>
               <Field label="CPF / CNPJ">
                 <EditarCampo
                   key={`cnpj:${lead.cnpj_numero ?? ""}`}
@@ -353,7 +346,7 @@ export default async function LeadDetailPage({
                   {extra.email ? <Sigilo>{extra.email}</Sigilo> : <Dash />}
                 </EditarCampo>
               </Field>
-              <Field label="Endereço (busca pelo CEP)" className="col-span-2 sm:col-span-3 lg:col-span-4">
+              <Field label="Endereço e cidade (busca pelo CEP)" className="col-span-2 sm:col-span-3 lg:col-span-4">
                 <Sigilo>
                   <EditarEndereco
                     key={`end:${extra.cep ?? ""}:${extra.logradouro ?? ""}:${extra.numero ?? ""}:${extra.cidade ?? ""}`}
@@ -545,7 +538,7 @@ export default async function LeadDetailPage({
               subtitle="Notas internas do time — o lead não vê"
               delay={140}
             >
-              <NotasLead telefone={lead.telefone} initial={notas} />
+              <NotasLead telefone={lead.telefone} initial={notas} sessoes={sessoesInfo.sessoes.map((x) => ({ id: x.id, data_hora: x.data_hora, status: x.status, local: x.local }))} />
             </Panel>
 
             <Panel
