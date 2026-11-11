@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { CONSULTORIOS, CREFITO, HORARIO_TEXTO, INSTAGRAM, MARCA, PROFISSIONAL, SITE_HOST, SITE_URL, SLOGAN, whatsappNumero } from "@/lib/site";
 import { formatPhone } from "@/lib/format";
 import { QrSvg } from "@/components/site/QrSvg";
 import { IconeFacebook, IconeInstagram, IconeYouTube } from "@/components/site/RedesSociais";
-import { devolutivaPublica, type PontoDor } from "@/lib/devolutivas";
+import { assinaturaProfissional, dadosDeAcesso, devolutivaPublica, type PontoDor } from "@/lib/devolutivas";
+import { cookieDevolutiva, tokenValido } from "@/lib/devolutiva-acesso";
+import { AcessoDevolutiva } from "@/components/site/AcessoDevolutiva";
+import { IlustracaoDevolutiva } from "@/components/site/IlustracaoDevolutiva";
 import { BotaoImprimir } from "@/components/site/BotaoImprimir";
 
 export const dynamic = "force-dynamic";
@@ -59,35 +63,83 @@ function GraficoDor({ pontos }: { pontos: PontoDor[] }) {
   );
 }
 
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Secao({ titulo, children, quebra = false }: { titulo: string; children: React.ReactNode; quebra?: boolean }) {
   return (
-    <div className="mt-7 break-inside-avoid">
+    <div className={`mt-7 break-inside-avoid${quebra ? " quebra-antes" : ""}`}>
       <h2 className="border-b border-[#D8E4E1] pb-1.5 text-[17px] font-semibold text-[#354746]">{titulo}</h2>
       <div className="mt-3">{children}</div>
     </div>
   );
 }
 
+function Inativo({ wa }: { wa: string }) {
+  return (
+    <section className="mx-auto max-w-2xl px-4 pb-10 pt-12 sm:px-6 sm:pt-20">
+      <h1 className="font-destaque text-[28px] font-bold leading-tight text-[#354746]">Este link não está mais ativo</h1>
+      <p className="mt-4 text-[16px] leading-relaxed text-[#3F5452]">O documento foi encerrado ou o endereço está incompleto. Fale com o Anderson pelo WhatsApp para receber o link atualizado.</p>
+      <a href={wa} className="mt-6 inline-flex items-center rounded-full bg-[#1EB49F] px-6 py-3 text-[15px] font-semibold text-white">
+        Falar pelo WhatsApp
+      </a>
+    </section>
+  );
+}
+
 export default async function Devolutiva({ params }: { params: { codigo: string } }) {
-  const d = await devolutivaPublica(params.codigo);
   const wa = `https://wa.me/${whatsappNumero()}`;
 
-  if (!d) {
+  // Documento de saúde: o código do link não basta. O paciente confirma a data de nascimento (cookie assinado, 12 h).
+  const liberado = tokenValido(params.codigo, cookies().get(cookieDevolutiva(params.codigo))?.value);
+  if (!liberado) {
+    const info = await dadosDeAcesso(params.codigo);
+    if (!info) return <Inativo wa={wa} />;
     return (
       <section className="mx-auto max-w-2xl px-4 pb-10 pt-12 sm:px-6 sm:pt-20">
-        <h1 className="font-destaque text-[28px] font-bold leading-tight text-[#354746]">Este link não está mais ativo</h1>
-        <p className="mt-4 text-[16px] leading-relaxed text-[#3F5452]">O documento foi encerrado ou o endereço está incompleto. Fale com o Anderson pelo WhatsApp para receber o link atualizado.</p>
-        <a href={wa} className="mt-6 inline-flex items-center rounded-full bg-[#1EB49F] px-6 py-3 text-[15px] font-semibold text-white">
-          Falar pelo WhatsApp
-        </a>
+        <IlustracaoDevolutiva className="h-24 w-auto" />
+        <h1 className="font-destaque mt-4 text-[28px] font-bold leading-tight text-[#354746]">Devolutiva do seu caso</h1>
+        {info.nascimento ? (
+          <>
+            <p className="mt-3 text-[16px] leading-relaxed text-[#3F5452]">Este documento traz informações de saúde e é só seu. Para abrir, confirme a sua data de nascimento.</p>
+            <AcessoDevolutiva codigo={params.codigo} />
+          </>
+        ) : (
+          <>
+            <p className="mt-3 text-[16px] leading-relaxed text-[#3F5452]">Este documento ainda não foi liberado para abertura. Fale com o Anderson pelo WhatsApp.</p>
+            <a href={wa} className="mt-6 inline-flex items-center rounded-full bg-[#1EB49F] px-6 py-3 text-[15px] font-semibold text-white">
+              Falar pelo WhatsApp
+            </a>
+          </>
+        )}
+        <p className="mt-8 text-[12.5px] leading-relaxed text-[#5E7371]">Protegemos o seu documento conforme a Lei Geral de Proteção de Dados (LGPD).</p>
       </section>
     );
   }
 
+  const d = await devolutivaPublica(params.codigo);
+  if (!d) return <Inativo wa={wa} />;
+  const assinatura = await assinaturaProfissional();
+
   const texto = "whitespace-pre-wrap text-[15.5px] leading-relaxed text-[#3F5452]";
   return (
-    <section className="mx-auto max-w-3xl px-4 pb-10 pt-8 sm:px-6 sm:pt-12">
-      <style>{`@media print{header,footer,[data-no-print]{display:none!important}body{background:#fff!important}}`}</style>
+    <section className="folha-raiz mx-auto max-w-3xl px-4 pb-10 pt-8 sm:px-6 sm:pt-12">
+      <table className="folha">
+        <thead>
+          <tr>
+            <td>
+              <div className="esp" />
+            </td>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <td>
+              <div className="esp" />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <tr>
+            <td>
+      <style>{`@page{size:A4;margin:0}.folha{width:100%;table-layout:fixed;border-collapse:collapse}.folha>thead,.folha>tfoot{display:none}.folha td{padding:0}@media print{header,footer,[data-no-print]{display:none!important}body{background:#fff!important}.folha-raiz{max-width:none!important;padding:0!important}.folha>thead,.folha>tfoot{display:table-header-group}.folha>tfoot{display:table-footer-group}.folha .esp{height:14mm}.folha>tbody>tr>td{padding:0 15mm}.quebra-antes{break-before:page;margin-top:0!important}}`}</style>
 
       {/* Papel timbrado */}
       <div className="flex items-center gap-4 border-b-2 border-[#1EB49F] pb-4">
@@ -99,11 +151,16 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
         </div>
       </div>
 
-      <h1 className="font-destaque mt-6 text-[26px] font-bold leading-tight tracking-tight text-[#354746] sm:text-[34px]">{d.titulo}</h1>
-      <p className="mt-1 text-[14px] text-[#5E7371]">
-        {d.primeiroNome ? `Para ${d.primeiroNome} · ` : ""}
-        {dataBR(d.criado_em)} · {PROFISSIONAL} · {CREFITO}
-      </p>
+      <div className="mt-6 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="font-destaque text-[26px] font-bold leading-tight tracking-tight text-[#354746] sm:text-[34px]">{d.titulo}</h1>
+          <p className="mt-1 text-[14px] text-[#5E7371]">
+            {d.primeiroNome ? `Para ${d.primeiroNome} · ` : ""}
+            {dataBR(d.criado_em)} · {PROFISSIONAL} · {CREFITO}
+          </p>
+        </div>
+        <IlustracaoDevolutiva className="h-24 w-auto shrink-0 sm:h-28" />
+      </div>
 
       {d.relato && (
         <Secao titulo="O que você nos contou">
@@ -135,7 +192,7 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
       )}
 
       {d.plano && (
-        <Secao titulo="Plano de cuidado">
+        <Secao titulo="Plano de cuidado" quebra>
           <p className={texto}>{d.plano}</p>
         </Secao>
       )}
@@ -177,13 +234,18 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
       {/* Assinatura */}
       <div className="mt-12 grid grid-cols-1 gap-8 break-inside-avoid sm:grid-cols-2">
         <div>
-          <div className="flex h-12 items-end border-b border-[#354746] pb-1 text-[15px] text-[#354746]">
+          <div className="flex h-14 items-end border-b border-[#354746] pb-1 text-[15px] text-[#354746]">
             {`Florianópolis/SC${d.local ? `, ${CONSULTORIOS[d.local].bairro}` : ""} · ${dataBR(d.data_sessao ?? d.criado_em)}`}
           </div>
           <p className="mt-1 text-[13px] text-[#5E7371]">Local e data</p>
         </div>
         <div>
-          <div className="h-12 border-b border-[#354746]" />
+          <div className="relative h-14 border-b border-[#354746]">
+            {assinatura && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={`data:image/png;base64,${assinatura}`} alt="Assinatura" className="absolute bottom-0.5 left-1 h-[50px] w-auto" />
+            )}
+          </div>
           <p className="mt-1 text-[13px] font-semibold text-[#354746]">{PROFISSIONAL}</p>
           <p className="text-[12.5px] text-[#5E7371]">Fisioterapeuta · {CREFITO}</p>
         </div>
@@ -243,6 +305,10 @@ export default async function Devolutiva({ params }: { params: { codigo: string 
           Falar com o Anderson no WhatsApp
         </a>
       </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
   );
 }

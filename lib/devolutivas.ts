@@ -4,6 +4,7 @@
 import { randomBytes } from "node:crypto";
 import { getClient } from "./db";
 import { variantesTelefone } from "./telefone";
+import { nascimentoIso } from "./devolutiva-acesso";
 
 type R<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -26,6 +27,7 @@ export interface Devolutiva {
   mostrar_dor: boolean;
   local: "capoeiras" | "centro" | null; // consultório da última sessão realizada
   data_sessao: string | null; // dia da última sessão realizada (AAAA-MM-DD)
+  sessao_em: string | null; // data e hora da última sessão realizada
   prescricao_codigo: string | null;
   ativa: boolean;
   criado_em: string;
@@ -81,6 +83,7 @@ async function paraDevolutiva(r: Record<string, unknown>): Promise<Devolutiva> {
     mostrar_dor: r.mostrar_dor !== false,
     local: r.local === "capoeiras" || r.local === "centro" ? (r.local as "capoeiras" | "centro") : null,
     data_sessao: (r.data_sessao as string | null) ?? null,
+    sessao_em: (r.sessao_em as string | null) ?? null,
     prescricao_codigo: await codigoDaPrescricao((r.prescricao_id as string | null) ?? null),
     ativa: r.ativa !== false,
     criado_em: String(r.criado_em),
@@ -96,6 +99,10 @@ export async function criarDevolutiva(telefone: string, d: Record<string, unknow
   const achados = txt(d.achados, 4000);
   const plano = txt(d.plano, 4000);
   if (!relato && !exames.length && !achados && !plano) return { ok: false, error: "Escreva ao menos uma parte da devolutiva." };
+  // A data de nascimento é a "senha" do link: precisa existir (informada agora ou já cadastrada).
+  const nascInformado = nascimentoIso(String(d.data_nascimento ?? ""));
+  if (nascInformado) await salvarNascimento(tel, nascInformado);
+  else if (!(await nascimentoDoPaciente(tel))) return { ok: false, error: "Informe a data de nascimento do paciente: é a senha para abrir o link." };
   const codigo = randomBytes(12).toString("base64url");
 
   // Local e data da assinatura: consultório e dia da última sessão realizada (senão, a última evolução registrada; senão, hoje).
@@ -104,9 +111,11 @@ export async function criarDevolutiva(telefone: string, d: Record<string, unknow
   const hojeSP = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
   let dataSessao: string = hojeSP;
   let local: "capoeiras" | "centro" | null = null;
+  let sessaoEm: string | null = null;
   const ag = await sb.from("agendamentos").select("data_hora, local").in("telefone_lead", variantes).eq("status", "compareceu").order("data_hora", { ascending: false }).limit(1);
   const ultima = ag.data?.[0] as { data_hora: string; local: string | null } | undefined;
   if (ultima) {
+    sessaoEm = ultima.data_hora;
     dataSessao = new Date(new Date(ultima.data_hora).getTime() - 3 * 3600000).toISOString().slice(0, 10);
     local = ultima.local === "capoeiras" || ultima.local === "centro" ? ultima.local : null;
   } else {
@@ -129,6 +138,7 @@ export async function criarDevolutiva(telefone: string, d: Record<string, unknow
       mostrar_dor: d.mostrar_dor !== false,
       local,
       data_sessao: dataSessao,
+      sessao_em: sessaoEm,
       prescricao_id: typeof d.prescricao_id === "string" && d.prescricao_id ? d.prescricao_id : null,
     })
     .select("id");
@@ -177,4 +187,36 @@ export async function devolutivaPublica(codigo: string): Promise<DevolutivaPubli
     .map((e) => ({ data: e.data_sessao, inicio: e.dor_inicio, fim: e.dor_fim }));
   const base = await paraDevolutiva(row);
   return { ...base, primeiroNome: nome ? nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase() : null, dor };
+}
+
+// ── Data de nascimento (senha do link) e assinatura do profissional ────────────────────────────────────────
+
+export async function nascimentoDoPaciente(telefone: string): Promise<string | null> {
+  const r = await getClient().from("ff_contatos").select("data_nascimento").in("telefone", variantesTelefone(telefone)).limit(1);
+  return ((r.data?.[0] as { data_nascimento?: string | null } | undefined)?.data_nascimento ?? null) || null;
+}
+
+export async function salvarNascimento(telefone: string, iso: string): Promise<void> {
+  await getClient().from("ff_contatos").update({ data_nascimento: iso }).in("telefone", variantesTelefone(telefone));
+}
+
+/** Para a "porta" da devolutiva: o documento existe e está ativo? Qual a data de nascimento esperada? */
+export async function dadosDeAcesso(codigo: string): Promise<{ nascimento: string | null } | null> {
+  if (!/^[A-Za-z0-9_-]{12,40}$/.test(codigo)) return null;
+  const sb = getClient();
+  const r = await sb.from("devolutivas").select("telefone, ativa").eq("codigo", codigo).limit(1);
+  const row = r.data?.[0] as { telefone?: string; ativa?: boolean } | undefined;
+  if (!row || row.ativa === false || !row.telefone) return null;
+  return { nascimento: await nascimentoDoPaciente(row.telefone) };
+}
+
+let assinaturaCache: { b64: string | null; em: number } | null = null;
+/** Assinatura do profissional (PNG em base64, guardada no banco privado). Só é entregue depois que o paciente abre o documento. */
+export async function assinaturaProfissional(): Promise<string | null> {
+  if (assinaturaCache && Date.now() - assinaturaCache.em < 10 * 60 * 1000) return assinaturaCache.b64;
+  const r = await getClient().from("profissional_assinatura").select("png_base64").eq("id", 1).limit(1);
+  const b64 = ((r.data?.[0] as { png_base64?: string } | undefined)?.png_base64 ?? "").trim();
+  const ok = /^[A-Za-z0-9+/=]+$/.test(b64) ? b64 : null;
+  assinaturaCache = { b64: ok, em: Date.now() };
+  return ok;
 }

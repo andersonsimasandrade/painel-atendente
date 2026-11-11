@@ -17,10 +17,7 @@ const rotulo = "text-[11px] uppercase tracking-wider text-ink-faint";
 const botao = "inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-semibold text-ink-muted transition hover:border-line-strong hover:text-ink disabled:opacity-50";
 const botaoPrim = "inline-flex items-center rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-[#04140d] transition hover:bg-brand-bright disabled:opacity-50";
 
-const mensagem = (nome: string | null, link: string) =>
-  `Olá${nome ? `, ${nome}` : ""}! Preparei a devolutiva do seu caso:\n${link}\n\n` +
-  "Nela explico, de forma simples, o que o seu exame descreve, o que encontrei na avaliação e o plano de cuidado. " +
-  "Dá para salvar em PDF ou mostrar a outro profissional que cuide de você. Qualquer dúvida, me chame por aqui. 🙂";
+const nascBR = (iso: string | null) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "");
 
 /**
  * Devolutiva do caso: o Anderson revisa o texto (já preenchido com o prontuário), escolhe os exames e gera um documento
@@ -28,14 +25,15 @@ const mensagem = (nome: string | null, link: string) =>
  */
 export function Devolutivas({
   telefone,
-  primeiroNome,
+  dataNascimento,
   devolutivas,
   exames,
   evolucoes,
   prescricoes,
 }: {
   telefone: string;
-  primeiroNome: string | null;
+  primeiroNome?: string | null;
+  dataNascimento: string | null;
   devolutivas: Devolutiva[];
   exames: Exame[];
   evolucoes: Evolucao[];
@@ -49,6 +47,7 @@ export function Devolutivas({
 
   const [aberto, setAberto] = useState(false);
   const [titulo, setTitulo] = useState("Devolutiva do seu caso");
+  const [nascimento, setNascimento] = useState(nascBR(dataNascimento));
   const [relato, setRelato] = useState("");
   const [achados, setAchados] = useState("");
   const [plano, setPlano] = useState("");
@@ -80,6 +79,7 @@ export function Devolutivas({
 
   function abrir() {
     setErro(null);
+    setNascimento(nascBR(dataNascimento));
     setRelato(String(recente("queixa") ?? ""));
     setAchados(String(recente("achados") ?? ""));
     setPlano(String(recente("plano") || recente("conduta") || ""));
@@ -100,7 +100,7 @@ export function Devolutivas({
       const r = await fetch(base, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titulo, relato, exames: lista, achados, plano, observacoes, mostrar_dor: mostrarDor, prescricao_id: prescricaoId || null }),
+        body: JSON.stringify({ titulo, data_nascimento: nascimento, relato, exames: lista, achados, plano, observacoes, mostrar_dor: mostrarDor, prescricao_id: prescricaoId || null }),
       });
       const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!r.ok || !d.ok) {
@@ -117,23 +117,27 @@ export function Devolutivas({
     }
   }
 
-  async function enviar(d: Devolutiva) {
+  async function enviar(d: Devolutiva, nascimentoManual?: string) {
     setErro(null);
     setAviso(null);
-    if (!window.confirm("Enviar o link da devolutiva por WhatsApp para este paciente agora?")) return;
+    if (!nascimentoManual && !window.confirm("Enviar agora pelo WhatsApp DUAS mensagens ao paciente?\n\n1) Dados da sessão e o link do documento\n2) Passo a passo para salvar em PDF ou imprimir")) return;
     try {
-      const r = await fetch(`/api/conversa/${encodeURIComponent(telefone)}/enviar`, {
+      const r = await fetch(`${base}/enviar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: mensagem(primeiroNome, linkDo(d.codigo)) }),
+        body: JSON.stringify({ id: d.id, nascimento: nascimentoManual }),
       });
-      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; precisaNascimento?: boolean };
+      if (j.precisaNascimento) {
+        const n = window.prompt("Digite a data de nascimento do paciente (dd/mm/aaaa).\nEla é a senha para abrir o link.");
+        if (n) await enviar(d, n);
+        return;
+      }
       if (!r.ok || !j.ok) {
         setErro(j.error ?? "Não consegui enviar pelo WhatsApp.");
         return;
       }
-      await fetch(base, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: d.id, enviada: true }) });
-      setAviso("Link enviado pelo WhatsApp.");
+      setAviso("Duas mensagens enviadas pelo WhatsApp (dados da sessão com o link, e o passo a passo).");
       router.refresh();
     } catch {
       setErro("Falha de rede.");
@@ -178,6 +182,10 @@ export function Devolutivas({
           <label>
             <span className={rotulo}>Título</span>
             <input className={campo} value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+          </label>
+          <label>
+            <span className={rotulo}>Data de nascimento do paciente (é a senha para abrir o link)</span>
+            <input className={campo} inputMode="numeric" placeholder="dd/mm/aaaa" value={nascimento} onChange={(e) => setNascimento(e.target.value)} />
           </label>
           <label>
             <span className={rotulo}>O que o paciente nos contou</span>
@@ -262,6 +270,7 @@ export function Devolutivas({
 
       {!aberto && erro && <p className="text-[12.5px] text-amber">{erro}</p>}
       {aviso && <p className="rounded-lg border border-brand/25 bg-brand/[0.06] px-3 py-2 text-[12.5px] text-ink">{aviso}</p>}
+      <p className="text-[12px] text-ink-faint">Proteção (LGPD): para abrir o link, o paciente precisa digitar a data de nascimento. Depois de 5 erros, o link trava por 15 minutos.</p>
 
       <ul className="flex flex-col gap-3">
         {devolutivas.map((d) => (
@@ -278,7 +287,7 @@ export function Devolutivas({
               {d.ativa && (
                 <>
                   <button type="button" className={botaoPrim} onClick={() => void enviar(d)}>
-                    Enviar no WhatsApp
+                    Enviar no WhatsApp (2 mensagens)
                   </button>
                   <button type="button" className={botao} onClick={() => void copiar(d)}>
                     Copiar link

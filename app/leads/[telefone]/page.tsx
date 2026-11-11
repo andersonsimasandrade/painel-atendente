@@ -48,7 +48,7 @@ import { listarProntuario } from "@/lib/prontuario";
 import { Prescricoes } from "@/components/lead/Prescricoes";
 import { listarExercicios, listarPrescricoes } from "@/lib/exercicios";
 import { Devolutivas } from "@/components/lead/Devolutivas";
-import { listarDevolutivas } from "@/lib/devolutivas";
+import { listarDevolutivas, nascimentoDoPaciente } from "@/lib/devolutivas";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
@@ -110,7 +110,7 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, notas, etapas, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas] = await Promise.all([
+  const [result, notas, etapas, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas, nascimento] = await Promise.all([
     getLead(telefone),
     getNotas(telefone),
     getEtapas(),
@@ -122,6 +122,7 @@ export default async function LeadDetailPage({
     listarPrescricoes(telefone).catch(() => []),
     listarExercicios().catch(() => []),
     listarDevolutivas(telefone).catch(() => []),
+    nascimentoDoPaciente(telefone).catch(() => null),
   ]);
 
   if (!result.ok) {
@@ -553,6 +554,7 @@ export default async function LeadDetailPage({
           <Devolutivas
             telefone={lead.telefone}
             primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
+            dataNascimento={nascimento}
             devolutivas={devolutivas}
             exames={prontuario.exames}
             evolucoes={prontuario.evolucoes}
