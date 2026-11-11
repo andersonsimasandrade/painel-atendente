@@ -9,7 +9,7 @@ import "@/components/site/gtm-tipos";
 // A escolha fica no navegador (localStorage "site-consent-v1").
 export function GoogleTagManager() {
   // Páginas privadas do paciente (/exercicios/<código>) não carregam o Tag Manager: o código secreto não pode ir para ferramentas de medição.
-  const js = `if(location.pathname.indexOf('/exercicios/')!==0&&location.pathname.indexOf('/devolutiva/')!==0){window.dataLayer=window.dataLayer||[];
+  const js = `if(location.pathname.indexOf('/exercicios/')!==0&&location.pathname.indexOf('/devolutiva/')!==0&&location.pathname.indexOf('/cadastro/')!==0){window.dataLayer=window.dataLayer||[];
 function gtag(){dataLayer.push(arguments);}
 window.gtag=gtag;
 gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});

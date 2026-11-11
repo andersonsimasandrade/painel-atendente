@@ -10,7 +10,7 @@ export function GET(req: Request) {
     .toLowerCase();
   const ehSite = host === SITE_HOST;
   const corpo = ehSite
-    ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /exercicios/\nDisallow: /devolutiva/\nDisallow: /consentimento\n\nSitemap: ${SITE_URL}/sitemap.xml\n`
+    ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /exercicios/\nDisallow: /devolutiva/\nDisallow: /cadastro/\nDisallow: /consentimento\n\nSitemap: ${SITE_URL}/sitemap.xml\n`
     : "User-agent: *\nDisallow: /\n";
   return new Response(corpo, {
     headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" },

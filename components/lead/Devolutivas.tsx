@@ -144,6 +144,24 @@ export function Devolutivas({
     }
   }
 
+  async function enviarPdf(d: Devolutiva) {
+    setErro(null);
+    setAviso(null);
+    if (!window.confirm("Enviar agora o documento em PDF pelo WhatsApp para o paciente (sem link e sem senha)?")) return;
+    try {
+      const r = await fetch(`${base}/enviar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: d.id, modo: "pdf" }) });
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) {
+        setErro(j.error ?? "Não consegui enviar o PDF.");
+        return;
+      }
+      setAviso("PDF enviado pelo WhatsApp.");
+      router.refresh();
+    } catch {
+      setErro("Falha de rede.");
+    }
+  }
+
   async function copiar(d: Devolutiva) {
     try {
       await navigator.clipboard.writeText(linkDo(d.codigo));
@@ -284,17 +302,23 @@ export function Devolutivas({
               </span>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
+              <a className={botaoPrim} href={`/devolutiva-painel/${d.id}`}>
+                Ver documento
+              </a>
+              <a className={botao} href={`${base}/pdf?id=${encodeURIComponent(d.id)}`}>
+                Baixar PDF
+              </a>
+              <button type="button" className={botao} onClick={() => void enviarPdf(d)}>
+                Enviar o PDF no WhatsApp
+              </button>
               {d.ativa && (
                 <>
-                  <button type="button" className={botaoPrim} onClick={() => void enviar(d)}>
-                    Enviar no WhatsApp (2 mensagens)
+                  <button type="button" className={botao} onClick={() => void enviar(d)}>
+                    Enviar o link (2 mensagens)
                   </button>
                   <button type="button" className={botao} onClick={() => void copiar(d)}>
                     Copiar link
                   </button>
-                  <a className={botao} href={linkDo(d.codigo)} target="_blank" rel="noopener noreferrer">
-                    Ver como o paciente vê (e salvar em PDF)
-                  </a>
                 </>
               )}
               <button type="button" className={botao} onClick={() => void ativar(d, !d.ativa)}>

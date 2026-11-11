@@ -167,13 +167,8 @@ export async function excluirDevolutiva(telefone: string, id: string): Promise<R
   return r.data?.length ? { ok: true } : { ok: false, error: "Devolutiva não encontrada." };
 }
 
-/** Devolutiva pelo código secreto do link (ativa). Devolve só o primeiro nome do paciente; nunca telefone. */
-export async function devolutivaPublica(codigo: string): Promise<DevolutivaPublica | null> {
-  if (!/^[A-Za-z0-9_-]{12,40}$/.test(codigo)) return null;
+async function montarPublica(row: Record<string, unknown>): Promise<DevolutivaPublica> {
   const sb = getClient();
-  const r = await sb.from("devolutivas").select("*").eq("codigo", codigo).eq("ativa", true).limit(1);
-  const row = r.data?.[0] as Record<string, unknown> | undefined;
-  if (!row) return null;
   const tel = String(row.telefone);
   const [c, ev] = await Promise.all([
     sb.from("ff_contatos").select("nome").eq("telefone", tel).limit(1),
@@ -187,6 +182,22 @@ export async function devolutivaPublica(codigo: string): Promise<DevolutivaPubli
     .map((e) => ({ data: e.data_sessao, inicio: e.dor_inicio, fim: e.dor_fim }));
   const base = await paraDevolutiva(row);
   return { ...base, primeiroNome: nome ? nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase() : null, dor };
+}
+
+/** Devolutiva pelo código secreto do link (ativa). Devolve só o primeiro nome do paciente; nunca telefone. */
+export async function devolutivaPublica(codigo: string): Promise<DevolutivaPublica | null> {
+  if (!/^[A-Za-z0-9_-]{12,40}$/.test(codigo)) return null;
+  const r = await getClient().from("devolutivas").select("*").eq("codigo", codigo).eq("ativa", true).limit(1);
+  const row = r.data?.[0] as Record<string, unknown> | undefined;
+  return row ? montarPublica(row) : null;
+}
+
+/** Para o painel (quem confecciona vê sem senha): a devolutiva pelo id, com o telefone do paciente para checar o escopo. */
+export async function devolutivaDoPainel(id: string): Promise<{ doc: DevolutivaPublica; telefone: string } | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const r = await getClient().from("devolutivas").select("*").eq("id", id).limit(1);
+  const row = r.data?.[0] as Record<string, unknown> | undefined;
+  return row ? { doc: await montarPublica(row), telefone: String(row.telefone) } : null;
 }
 
 // ── Data de nascimento (senha do link) e assinatura do profissional ────────────────────────────────────────

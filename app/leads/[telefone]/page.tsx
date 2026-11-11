@@ -50,6 +50,8 @@ import { listarExercicios, listarPrescricoes } from "@/lib/exercicios";
 import { Devolutivas } from "@/components/lead/Devolutivas";
 import { listarDevolutivas, nascimentoDoPaciente } from "@/lib/devolutivas";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
+import { CadastroPaciente } from "@/components/lead/CadastroPaciente";
+import { statusCadastro } from "@/lib/cadastro";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
 export const dynamic = "force-dynamic";
@@ -110,7 +112,7 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, notas, etapas, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas, nascimento] = await Promise.all([
+  const [result, notas, etapas, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas, nascimento, cadastroStatus] = await Promise.all([
     getLead(telefone),
     getNotas(telefone),
     getEtapas(),
@@ -123,6 +125,7 @@ export default async function LeadDetailPage({
     listarExercicios().catch(() => []),
     listarDevolutivas(telefone).catch(() => []),
     nascimentoDoPaciente(telefone).catch(() => null),
+    statusCadastro(telefone).catch(() => ({ nascimento: null, recebidoEm: null, conferidoEm: null, conviteEnviadoEm: null })),
   ]);
 
   if (!result.ok) {
@@ -369,6 +372,9 @@ export default async function LeadDetailPage({
                     }}
                   />
                 </Sigilo>
+              </Field>
+              <Field label="Cadastro do paciente (nome completo, CPF, nascimento, endereço)" className="col-span-2 sm:col-span-3 lg:col-span-4">
+                <CadastroPaciente key={`cad:${cadastroStatus.recebidoEm ?? ""}:${cadastroStatus.conferidoEm ?? ""}:${cadastroStatus.nascimento ?? ""}:${cadastroStatus.conviteEnviadoEm ?? ""}`} telefone={lead.telefone} status={cadastroStatus} />
               </Field>
 
               <Field label="Primeira interação">
