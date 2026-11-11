@@ -241,3 +241,46 @@ export async function rascunhoDaSessao(transcricao: string): Promise<RascunhoEvo
   const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 4000) : null);
   return { queixa: s(r.queixa), achados: s(r.achados), conduta: s(r.conduta), plano: s(r.plano), dor_inicio: dor(r.dor_inicio), dor_fim: dor(r.dor_fim) };
 }
+
+// ── Ajuste do texto ditado ou digitado (organizar, clarear, gramática e ortografia) ──────────────────────────
+
+const CONTEXTOS_AJUSTE: Record<string, string> = {
+  relato: "relato do paciente (queixa: onde dói, desde quando, o que piora e melhora), para o prontuário",
+  achados: "achados da avaliação do fisioterapeuta (o que foi observado e testado), para o prontuário",
+  conduta: "conduta: técnicas e manobras realizadas na sessão, para o prontuário",
+  plano: "plano de cuidado e orientações ao paciente (próximos passos, frequência, exercícios para casa)",
+  observacoes: "observações gerais da sessão, para o prontuário",
+  anotacao: "anotação do fisioterapeuta sobre a sessão",
+  orientacoes: "orientações gerais do plano de exercícios que o paciente vai ler em casa",
+  devolutiva_relato: "trecho de um documento entregue ao paciente: o que ele nos contou",
+  devolutiva_achados: "trecho de um documento entregue ao paciente: o que foi encontrado na avaliação",
+  devolutiva_plano: "trecho de um documento entregue ao paciente: plano de cuidado",
+  devolutiva_observacoes: "trecho de um documento entregue ao paciente: observações",
+};
+
+/**
+ * Organiza o texto do fisioterapeuta: clareza, objetividade, gramática e ortografia. NÃO acrescenta informação clínica,
+ * não faz diagnóstico, não promete resultado. O fisioterapeuta revisa e pode voltar ao texto original.
+ */
+export async function ajustarTexto(texto: string, contexto: string): Promise<R<{ texto: string }>> {
+  const base = texto.trim().slice(0, 6000);
+  if (base.length < 10) return { ok: false, error: "Escreva ou dite um pouco mais antes de pedir o ajuste." };
+  const onde = CONTEXTOS_AJUSTE[contexto] ?? "texto de um fisioterapeuta";
+  const paciente = contexto.startsWith("devolutiva_") || contexto === "orientacoes";
+  const sistema =
+    "Você é um revisor de textos de fisioterapia em português do Brasil. Receba um texto ditado ou digitado às pressas e devolva a MESMA informação, melhor escrita. " +
+    `Tipo de texto: ${onde}. ` +
+    "O que fazer: corrigir ortografia, pontuação e concordância; tirar repetições, vícios de fala e frases truncadas; organizar em frases claras e objetivas, na ordem lógica; " +
+    "usar tópicos curtos (linhas começando com '• ') quando houver vários itens separados, e parágrafos curtos nos demais casos. " +
+    (paciente
+      ? "O texto será lido pelo paciente e por outros profissionais: linguagem clara e respeitosa, sem exagero técnico, mas mantenha os termos técnicos que o fisioterapeuta usou. "
+      : "O texto é um registro profissional: linguagem técnica objetiva, mantendo os termos que o fisioterapeuta usou. ") +
+    "REGRAS: não invente nada; não acrescente diagnóstico, prognóstico, promessa de resultado ou orientação que não esteja no texto; não retire nenhuma informação importante; " +
+    "preserve números, escalas, datas, nomes de técnicas e de regiões do corpo; mantenha a pessoa gramatical do original (se está na 1ª pessoa, continue na 1ª pessoa). " +
+    'Responda só JSON: {"texto": "..."} com o texto final, sem comentários.';
+  const r = await perguntarJSON<{ texto?: string }>(sistema, `TEXTO ORIGINAL:\n${base}`, 1500);
+  const novo = r?.texto?.trim();
+  if (!novo) return { ok: false, error: "Não consegui ajustar agora. Tente de novo em instantes." };
+  if (novo.length > base.length * 1.8 + 120) return { ok: false, error: "O ajuste ficou muito maior que o original. Tente de novo ou edite à mão." };
+  return { ok: true, texto: novo.slice(0, 6000) };
+}

@@ -181,7 +181,7 @@ export function Devolutivas({
           </label>
           <label>
             <span className={rotulo}>O que o paciente nos contou</span>
-            <CampoDitado valor={relato} onChange={setRelato} minAltura={80} />
+            <CampoDitado valor={relato} onChange={setRelato} minAltura={80} contexto="devolutiva_relato" />
           </label>
 
           <div>
@@ -219,15 +219,15 @@ export function Devolutivas({
 
           <label>
             <span className={rotulo}>O que encontramos na avaliação</span>
-            <CampoDitado valor={achados} onChange={setAchados} minAltura={80} />
+            <CampoDitado valor={achados} onChange={setAchados} minAltura={80} contexto="devolutiva_achados" />
           </label>
           <label>
             <span className={rotulo}>Plano de cuidado (próximos passos, frequência das sessões)</span>
-            <CampoDitado valor={plano} onChange={setPlano} minAltura={80} />
+            <CampoDitado valor={plano} onChange={setPlano} minAltura={80} contexto="devolutiva_plano" />
           </label>
           <label>
             <span className={rotulo}>Observações (opcional)</span>
-            <CampoDitado valor={observacoes} onChange={setObservacoes} minAltura={60} />
+            <CampoDitado valor={observacoes} onChange={setObservacoes} minAltura={60} contexto="devolutiva_observacoes" />
           </label>
 
           <label className="flex items-center gap-2 text-[12.5px] text-ink-muted">

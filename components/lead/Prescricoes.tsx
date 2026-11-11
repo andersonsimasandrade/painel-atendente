@@ -261,7 +261,7 @@ export function Prescricoes({
             </label>
             <label>
               <span className={rotulo}>Orientações gerais (aparecem no topo da página do paciente)</span>
-              <CampoDitado valor={orientacoes} onChange={setOrientacoes} minAltura={70} placeholder="Ex.: Faça pela manhã e à noite, com calma. Evite dormir de bruços." />
+              <CampoDitado valor={orientacoes} onChange={setOrientacoes} minAltura={70} contexto="orientacoes" placeholder="Ex.: Faça pela manhã e à noite, com calma. Evite dormir de bruços." />
             </label>
           </div>
 

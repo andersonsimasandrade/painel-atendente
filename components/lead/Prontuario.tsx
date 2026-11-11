@@ -351,23 +351,23 @@ export function Prontuario({ telefone, exames, evolucoes }: { telefone: string; 
           </div>
           <label>
             <span className={rotulo}>Relato do paciente / queixa</span>
-            <CampoDitado valor={queixa} onChange={setQueixa} minAltura={70} />
+            <CampoDitado valor={queixa} onChange={setQueixa} minAltura={70} contexto="relato" />
           </label>
           <label>
             <span className={rotulo}>Achados da avaliação</span>
-            <CampoDitado valor={achados} onChange={setAchados} minAltura={70} />
+            <CampoDitado valor={achados} onChange={setAchados} minAltura={70} contexto="achados" />
           </label>
           <label>
             <span className={rotulo}>Conduta / manobras realizadas</span>
-            <CampoDitado valor={conduta} onChange={setConduta} minAltura={70} />
+            <CampoDitado valor={conduta} onChange={setConduta} minAltura={70} contexto="conduta" />
           </label>
           <label>
             <span className={rotulo}>Plano e orientações (inclui exercícios para casa)</span>
-            <CampoDitado valor={plano} onChange={setPlano} minAltura={70} />
+            <CampoDitado valor={plano} onChange={setPlano} minAltura={70} contexto="plano" />
           </label>
           <label>
             <span className={rotulo}>Observações da sessão</span>
-            <CampoDitado valor={observacoes} onChange={setObservacoes} minAltura={70} />
+            <CampoDitado valor={observacoes} onChange={setObservacoes} minAltura={70} contexto="observacoes" />
           </label>
           {transcricao && (
             <details className="rounded-lg border border-line px-3 py-2 text-[12.5px] text-ink-muted">

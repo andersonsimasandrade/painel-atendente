@@ -149,7 +149,7 @@ export function NotasLead({
             </select>
           </label>
         )}
-        <CampoDitado valor={texto} onChange={setTexto} minAltura={70} placeholder="Anotação sobre esta sessão (use 🎙 Ditar para falar em vez de digitar)…" />
+        <CampoDitado valor={texto} onChange={setTexto} minAltura={70} contexto="anotacao" placeholder="Anotação sobre esta sessão (use 🎙 Ditar para falar em vez de digitar)…" />
         {sessaoId && (
           <label className="flex items-center gap-2 text-[12px] text-ink-muted">
             <input type="checkbox" checked={naEvolucao} onChange={(e) => setNaEvolucao(e.target.checked)} />
