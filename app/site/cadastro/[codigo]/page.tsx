@@ -24,13 +24,21 @@ export default async function Cadastro({ params }: { params: { codigo: string } 
       </section>
     );
   }
+  if (!c.faltam.length) {
+    return (
+      <section className="mx-auto max-w-2xl px-4 pb-10 pt-12 sm:px-6 sm:pt-20">
+        <h1 className="font-destaque text-[28px] font-bold leading-tight text-[#354746]">Seu cadastro já está completo</h1>
+        <p className="mt-4 text-[16px] leading-relaxed text-[#3F5452]">Não precisa preencher mais nada. Obrigado!</p>
+      </section>
+    );
+  }
   return (
     <section className="mx-auto max-w-2xl px-4 pb-14 pt-10 sm:px-6 sm:pt-16">
       <h1 className="font-destaque text-[28px] font-bold leading-tight tracking-tight text-[#354746] sm:text-[34px]">Seu cadastro</h1>
       <p className="mt-3 text-[16px] leading-relaxed text-[#3F5452]">
-        Leva uns 2 minutos. Com estes dados eu preparo os seus documentos e recibos. Eles ficam só comigo, protegidos pela LGPD.
+        {c.faltam.length >= 4 ? "Leva uns 2 minutos." : "Falta pouco."} Com estes dados eu confirmo o seu agendamento e preparo os seus documentos. Eles ficam só comigo, protegidos pela LGPD.
       </p>
-      <FormCadastro codigo={params.codigo} finalTelefone={c.finalTelefone} />
+      <FormCadastro codigo={params.codigo} finalTelefone={c.finalTelefone} faltam={c.faltam} />
     </section>
   );
 }

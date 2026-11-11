@@ -4,6 +4,7 @@ import { getClient } from "@/lib/db";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { partesConfirmacao } from "@/lib/confirmacao";
 import { enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
+import { cancelarCobranca, moverVencimento } from "@/lib/asaas";
 import { formatarBR } from "@/lib/slots";
 import { CONSULTORIOS } from "@/lib/site";
 import { cancelarAgendamento, getCompromissos, getVendedorBySlug, marcarAvisoNoHistorico, nomeAtualDe, remarcarAgendamento } from "@/lib/agenda";
@@ -40,6 +41,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const era = antes.data?.[0] as { telefone_lead: string; nome_lead: string | null; data_hora: string; local: string | null; status: string; vendedor_id: string } | undefined;
     const r = await cancelarAgendamento(id, vendedorId);
     if (!r.ok) return NextResponse.json(r, { status: r.error === "Agendamento não encontrado." ? 404 : 500 });
+    await cancelarCobranca(id).catch(() => undefined); // sessão desmarcada: a cobrança aberta também sai
 
     // Aviso de desmarcação ao paciente: deixa registrado e evita mal-entendidos.
     let avisos: { cancelamento: boolean } | undefined;
@@ -108,6 +110,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       { status: r.conflito ? 409 : r.error === "Agendamento não encontrado." ? 404 : 500 },
     );
   }
+
+  await moverVencimento(id, iso.toISOString()).catch(() => undefined); // o vencimento acompanha o novo dia
 
   // Avisos ao paciente pelo WhatsApp: (1) o horário antigo foi cancelado; (2) confirmação da nova data, com local e horário.
   // O lembrete do dia da consulta (3h antes) já é reprogramado pela remarcação para o novo horário.

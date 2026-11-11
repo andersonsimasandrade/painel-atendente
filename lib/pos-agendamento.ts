@@ -1,6 +1,5 @@
 // FLUXO DEPOIS DE MARCAR A SESSÃO (robô ou painel):
-//   1) o paciente recebe o passo a passo (cadastro → confirmação com local e orientações → sessão → devolutiva e acompanhamento)
-//      junto com o link do cadastro;
+//   1) se falta algo no cadastro, o paciente recebe UMA mensagem curta pedindo só o que falta, com o link do cadastro;
 //   2) a confirmação com local e orientações segue assim que ele preenche o cadastro (ou, no máximo, depois de 30 minutos;
 //      se a sessão é em menos de 24 h, segue na hora, para ninguém ficar sem o endereço);
 //   3) quem já tem cadastro completo recebe a confirmação direto, como antes. Server-only.
@@ -9,36 +8,18 @@ import { variantesTelefone } from "./telefone";
 import { canalDaConversa } from "./consultores";
 import { enviarPartes, registrarNaConversa } from "./confirmacao-envio";
 import { partesConfirmacao } from "./confirmacao";
-import { criarConvite } from "./cadastro";
+import { camposFaltando, criarConvite, textoPedidoDados, type CampoCad } from "./cadastro";
 import { SITE_URL } from "./site";
-import { formatarBR } from "./slots";
+import { cobrancaAutomatica, cobrarSessao } from "./asaas";
+import { destinatariosAlerta } from "./config";
+import { enviarTextoInstancia } from "./evolution";
 
 const ESPERA_MIN = 30;
 const SEM_ESPERA_MS = 24 * 3600 * 1000;
 
-/** Cadastro completo = CPF, data de nascimento e e-mail preenchidos (pelo paciente ou à mão). */
-export async function cadastroCompleto(telefone: string): Promise<boolean> {
-  const r = await getClient().from("ff_contatos").select("cnpj_numero, data_nascimento, email").in("telefone", variantesTelefone(telefone)).limit(1);
-  const c = r.data?.[0] as { cnpj_numero: string | null; data_nascimento: string | null; email: string | null } | undefined;
-  return !!c && String(c.cnpj_numero ?? "").replace(/\D/g, "").length === 11 && !!c.data_nascimento && !!(c.email ?? "").trim();
-}
-
-export function mensagemPassoAPasso(o: { nome: string | null; iso: string; link: string }): string {
+export function mensagemPedidoDados(o: { nome: string | null; falta: CampoCad[]; link: string }): string {
   const primeiro = (o.nome ?? "").trim().split(/\s+/)[0];
-  return [
-    `Perfeito${primeiro ? `, ${primeiro}` : ""}! Localizei o seu horário: *${formatarBR(o.iso)}*. 😊`,
-    "",
-    "Veja como funciona daqui para frente:",
-    "",
-    "1️⃣ Agora preciso dos seus dados cadastrais (nome completo, e-mail, data de nascimento, CPF e endereço). Preencha por este link, leva uns 2 minutos:",
-    o.link,
-    "",
-    "2️⃣ Assim que eu receber, te envio a confirmação do horário, com o local e as orientações.",
-    "3️⃣ No dia e horário marcados, você vem e fazemos a sessão.",
-    "4️⃣ Depois da sessão, preparo a devolutiva do seu caso e entro em contato para saber como está a sua evolução.",
-    "",
-    "Os seus dados ficam só comigo, protegidos pela LGPD.",
-  ].join("\n");
+  return `Perfeito${primeiro ? `, ${primeiro}` : ""}! Para confirmar o seu agendamento e finalizar o cadastro, preciso ${textoPedidoDados(o.falta)}. Leva 2 minutos:\n${o.link}`;
 }
 
 interface Pedido {
@@ -58,11 +39,44 @@ export interface ResultadoFluxo {
   erro?: string;
 }
 
+async function alertarAnderson(texto: string): Promise<void> {
+  const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();
+  if (!instancia) return;
+  for (const d of destinatariosAlerta()) if (d.whatsapp) await enviarTextoInstancia(instancia, d.whatsapp, texto).catch(() => undefined);
+}
+
+/** Link de pagamento da sessão (Asaas), enviado junto com a confirmação. Só se a cobrança automática estiver ligada. */
+async function enviarCobranca(o: { agendamentoId: string; telefone: string; iso: string; instancia: string; nome: string | null }): Promise<string | null> {
+  if (!cobrancaAutomatica()) return null;
+  const c = await cobrarSessao({ agendamentoId: o.agendamentoId, telefone: o.telefone, iso: o.iso });
+  if (!c.ok) {
+    await alertarAnderson(`⚠ Não consegui gerar a cobrança da sessão de ${o.nome ?? o.telefone}: ${c.error}`);
+    return null;
+  }
+  if (c.cobranca.jaExistia) return null;
+  const [, mm, dd] = c.cobranca.vencimento.split("-");
+  const valor = c.cobranca.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const texto = `Para deixar tudo alinhado, segue o link de pagamento da sessão (${valor}), por PIX ou cartão, com vencimento no dia da sessão (${dd}/${mm}):\n${c.cobranca.link}`;
+  const env = await enviarPartes(o.instancia, o.telefone, [texto]);
+  return env.ok ? texto : null;
+}
+
 export async function iniciarFluxoPosAgendamento(o: Pedido): Promise<ResultadoFluxo> {
+  const r = await fluxoBase(o);
+  if (r.confirmado) {
+    const instancia = o.instancia || (await canalDaConversa(o.telefone)).instancia;
+    const cobranca = await enviarCobranca({ agendamentoId: o.agendamentoId, telefone: o.telefone, iso: o.iso, instancia, nome: o.nome }).catch(() => null);
+    if (cobranca) r.enviadas = [...r.enviadas, cobranca];
+  }
+  return r;
+}
+
+async function fluxoBase(o: Pedido): Promise<ResultadoFluxo> {
   const canal = { instancia: o.instancia || (await canalDaConversa(o.telefone)).instancia };
   const confirmacao = () => partesConfirmacao({ nome: o.nome, iso: o.iso, local: o.local, primeiraVez: o.primeiraVez });
 
-  if (await cadastroCompleto(o.telefone)) {
+  const falta = await camposFaltando(o.telefone);
+  if (!falta.length) {
     const env = await enviarPartes(canal.instancia, o.telefone, confirmacao());
     return { confirmado: env.ok, aguardandoCadastro: false, enviadas: env.enviadas, erro: env.erro };
   }
@@ -73,7 +87,7 @@ export async function iniciarFluxoPosAgendamento(o: Pedido): Promise<ResultadoFl
     const env = await enviarPartes(canal.instancia, o.telefone, confirmacao());
     return { confirmado: env.ok, aguardandoCadastro: false, enviadas: env.enviadas, erro: env.erro };
   }
-  const passo = mensagemPassoAPasso({ nome: o.nome, iso: o.iso, link: `${SITE_URL}/cadastro/${convite.codigo}` });
+  const passo = mensagemPedidoDados({ nome: o.nome, falta, link: `${SITE_URL}/cadastro/${convite.codigo}` });
   const urgente = new Date(o.iso).getTime() - Date.now() < SEM_ESPERA_MS;
   const env1 = await enviarPartes(canal.instancia, o.telefone, [passo]);
   if (!env1.ok) {
@@ -115,6 +129,10 @@ async function enviarConfirmacaoPendente(a: Pendente): Promise<boolean> {
   const canal = await canalDaConversa(a.telefone_lead);
   const env = await enviarPartes(canal.instancia, a.telefone_lead, partesConfirmacao({ nome, iso: a.data_hora, local, primeiraVez: (anteriores.count ?? 0) === 0 }));
   if (env.enviadas.length) await registrarNaConversa(a.telefone_lead, env.enviadas, "robo-agenda");
+  if (env.ok) {
+    const cobranca = await enviarCobranca({ agendamentoId: a.id, telefone: a.telefone_lead, iso: a.data_hora, instancia: canal.instancia, nome }).catch(() => null);
+    if (cobranca) await registrarNaConversa(a.telefone_lead, [cobranca], "robo-agenda");
+  }
   if (!env.ok) {
     // Não saiu: devolve a marca para o relógio tentar de novo.
     await sb.from("agendamentos").update({ confirmacao_pendente_ate: new Date().toISOString() }).eq("id", a.id);

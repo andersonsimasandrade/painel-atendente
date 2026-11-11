@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { CampoCad } from "@/lib/cadastro";
 
 const campo = "mt-1.5 w-full rounded-xl border border-[#C9D9D5] bg-white px-4 py-3 text-[16px] text-[#354746] outline-none focus:border-[#1EB49F]";
 const rotulo = "block text-[14px] font-semibold text-[#354746]";
@@ -22,7 +23,9 @@ const mascara = {
 };
 
 /** Cadastro do paciente (link privado): os dados entram direto na ficha; o Anderson só confere. */
-export function FormCadastro({ codigo, finalTelefone }: { codigo: string; finalTelefone: string }) {
+export function FormCadastro({ codigo, finalTelefone, faltam }: { codigo: string; finalTelefone: string; faltam: CampoCad[] }) {
+  const pede = (k: CampoCad) => faltam.includes(k);
+  const pedeTelefone = faltam.length >= 4; // paciente novo: confirma o número; quem já tem cadastro só completa o que falta
   const [f, setF] = useState({ nome: "", email: "", nascimento: "", cpf: "", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", telefoneOutro: "" });
   const [telefoneOk, setTelefoneOk] = useState(true);
   const [aceite, setAceite] = useState(false);
@@ -84,15 +87,20 @@ export function FormCadastro({ codigo, finalTelefone }: { codigo: string; finalT
 
   return (
     <form onSubmit={enviar} className="mt-6 grid max-w-xl grid-cols-1 gap-4">
-      <label>
-        <span className={rotulo}>Nome completo</span>
-        <input className={campo} autoComplete="name" value={f.nome} onChange={(e) => set("nome", e.target.value)} />
-      </label>
-      <label>
-        <span className={rotulo}>E-mail</span>
-        <input className={campo} type="email" autoComplete="email" value={f.email} onChange={(e) => set("email", e.target.value)} />
-      </label>
+      {pede("nome") && (
+        <label>
+          <span className={rotulo}>Nome completo</span>
+          <input className={campo} autoComplete="name" value={f.nome} onChange={(e) => set("nome", e.target.value)} />
+        </label>
+      )}
+      {pede("email") && (
+        <label>
+          <span className={rotulo}>E-mail</span>
+          <input className={campo} type="email" autoComplete="email" value={f.email} onChange={(e) => set("email", e.target.value)} />
+        </label>
+      )}
 
+      {pedeTelefone && (
       <fieldset className="rounded-xl border border-[#D8E4E1] p-4">
         <legend className="px-1 text-[14px] font-semibold text-[#354746]">O seu WhatsApp termina em {finalTelefone}. Está correto?</legend>
         <div className="flex gap-5 text-[15px] text-[#3F5452]">
@@ -107,18 +115,26 @@ export function FormCadastro({ codigo, finalTelefone }: { codigo: string; finalT
           <input className={campo} inputMode="tel" placeholder="Telefone com DDD" value={f.telefoneOutro} onChange={(e) => set("telefoneOutro", e.target.value)} />
         )}
       </fieldset>
+      )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label>
-          <span className={rotulo}>Data de nascimento</span>
-          <input className={campo} inputMode="numeric" autoComplete="bday" placeholder="dd/mm/aaaa" value={f.nascimento} onChange={(e) => set("nascimento", mascara.data(e.target.value))} />
-        </label>
-        <label>
-          <span className={rotulo}>CPF</span>
-          <input className={campo} inputMode="numeric" placeholder="000.000.000-00" value={f.cpf} onChange={(e) => set("cpf", mascara.cpf(e.target.value))} />
-        </label>
-      </div>
+      {(pede("nascimento") || pede("cpf")) && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {pede("nascimento") && (
+            <label>
+              <span className={rotulo}>Data de nascimento</span>
+              <input className={campo} inputMode="numeric" autoComplete="bday" placeholder="dd/mm/aaaa" value={f.nascimento} onChange={(e) => set("nascimento", mascara.data(e.target.value))} />
+            </label>
+          )}
+          {pede("cpf") && (
+            <label>
+              <span className={rotulo}>CPF</span>
+              <input className={campo} inputMode="numeric" placeholder="000.000.000-00" value={f.cpf} onChange={(e) => set("cpf", mascara.cpf(e.target.value))} />
+            </label>
+          )}
+        </div>
+      )}
 
+      {pede("endereco") && (<>
       <label>
         <span className={rotulo}>CEP</span>
         <input
@@ -163,6 +179,7 @@ export function FormCadastro({ codigo, finalTelefone }: { codigo: string; finalT
           <input className={campo} maxLength={2} value={f.uf} onChange={(e) => set("uf", e.target.value.toUpperCase())} />
         </label>
       </div>
+      </>)}
 
       <label className="flex items-start gap-3 text-[14px] leading-relaxed text-[#3F5452]">
         <input type="checkbox" className="mt-1 h-4 w-4" checked={aceite} onChange={(e) => setAceite(e.target.checked)} />
