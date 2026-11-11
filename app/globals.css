@@ -261,3 +261,7 @@
    isso a correção é uma regra em .text-brand e não uma troca do token. */
 [data-theme="light"] .text-brand { color: #1e7a47; }
 [data-theme="light"] .hover\:text-brand:hover { color: #1e7a47; }
+
+/* Barra lateral do painel: aberta (padrão) ou recolhida; a escolha é aplicada antes da pintura (script do layout). */
+:root { --sb-w: 240px; }
+html[data-sb="min"] { --sb-w: 72px; }

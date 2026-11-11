@@ -383,6 +383,7 @@ export function InboxChat({
   etapas,
   admin = false,
   onBack,
+  embutido = false,
 }: {
   telefone: string;
   nome: string | null;
@@ -396,6 +397,8 @@ export function InboxChat({
    *  consultor um link que o middleware bloqueia. */
   admin?: boolean;
   onBack?: () => void;
+  /** Dentro da ficha do paciente: não mostra o atalho para abrir a própria ficha. */
+  embutido?: boolean;
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1297,6 +1300,7 @@ export function InboxChat({
             <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
             {assumido === true ? "Devolver" : "Assumir"}
           </button>
+          {!embutido && (
           <Link
             href={`/leads/${encodeURIComponent(telefone)}`}
             className="inline-flex h-8 items-center rounded-lg border border-line px-2.5 text-[12px] font-medium text-ink-muted transition hover:border-line-strong hover:text-ink"
@@ -1304,6 +1308,7 @@ export function InboxChat({
           >
             Lead 360
           </Link>
+          )}
         </div>
         {toggleErro && <p className="w-full text-[11.5px] text-amber">{toggleErro}</p>}
       </header>

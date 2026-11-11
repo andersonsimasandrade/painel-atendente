@@ -60,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               // entrasse só depois da hidratação, o dado do lead apareceria
               // nítido por uma fração de segundo — e numa gravação isso é um
               // quadro legível.
+              'try{if(localStorage.getItem("painel-sidebar")==="min")document.documentElement.setAttribute("data-sb","min");}catch(e){}' +
               'try{var d=localStorage.getItem("painel-demo");if(d==="ident"||d==="tudo")document.documentElement.setAttribute("data-demo",d);}catch(e){}',
           }}
         />

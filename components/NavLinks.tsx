@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConexaoDot } from "./ConexaoDot";
 import { ThemeToggle } from "./ThemeToggle";
+import { itemAtivo, itensVisiveis } from "@/lib/nav";
 
 /**
  * Navegação entre as seções do painel (Dashboard · Leads · Conversas · Conexão).
@@ -11,44 +12,9 @@ import { ThemeToggle } from "./ThemeToggle";
  * destacando a seção ativa a partir do pathname atual. O item "Conexão" traz um
  * pontinho de status ao vivo do WhatsApp (vermelho = caiu).
  */
-const LINKS: {
-  href: string;
-  label: string;
-  match: (p: string) => boolean;
-  dot?: boolean;
-  admin?: boolean;
-}[] = [
-  // Ordem por FREQUÊNCIA DE USO, não por ordem de criação. Antes o inbox
-  // (Conversas) era o 9º item — depois de uma tabela de consulta e de duas telas
-  // de diretoria —, e é onde o consultor trabalha o dia inteiro. Agora as telas
-  // de trabalho vêm primeiro, depois as de análise, e por último conexão e
-  // ajustes. Pro consultor (sem os itens `admin`), Conversas é o 1º.
-  { href: "/", label: "Dashboard", match: (p) => p === "/", admin: true },
-  { href: "/conversas", label: "Conversas", match: (p) => p.startsWith("/conversas") },
-  { href: "/instagram", label: "Instagram", match: (p) => p.startsWith("/instagram"), admin: true },
-  { href: "/tarefas", label: "Tarefas", match: (p) => p.startsWith("/tarefas"), admin: true },
-  { href: "/prioridades", label: "Prioridades", match: (p) => p.startsWith("/prioridades") },
-  {
-    href: "/leads",
-    label: "Leads",
-    match: (p) => p === "/leads" || p.startsWith("/leads/"),
-  },
-  { href: "/tratamento", label: "Em tratamento", match: (p) => p.startsWith("/tratamento"), admin: true },
-  { href: "/funil", label: "Funil", match: (p) => p.startsWith("/funil") },
-  { href: "/agenda", label: "Agenda", match: (p) => p === "/agenda" || p.startsWith("/agenda/") },
-  { href: "/atendimento", label: "Atendimento", match: (p) => p.startsWith("/atendimento") },
-  { href: "/exercicios", label: "Exercícios", match: (p) => p.startsWith("/exercicios"), admin: true },
-  { href: "/youtube", label: "YouTube", match: (p) => p.startsWith("/youtube"), admin: true },
-  { href: "/indicacoes", label: "Indicações", match: (p) => p.startsWith("/indicacoes"), admin: true },
-  { href: "/trafego", label: "Tráfego", match: (p) => p.startsWith("/trafego"), admin: true },
-  { href: "/indicadores", label: "Indicadores", match: (p) => p.startsWith("/indicadores"), admin: true },
-  { href: "/conexao", label: "Conexão", match: (p) => p.startsWith("/conexao"), dot: true },
-  { href: "/config", label: "Ajustes", match: (p) => p.startsWith("/config"), admin: true },
-];
-
 export function NavLinks({ papel }: { papel?: string }) {
   const pathname = usePathname() || "/";
-  const links = papel === "vendedor" ? LINKS.filter((l) => !l.admin) : LINKS;
+  const links = itensVisiveis(papel);
   return (
     /* No celular vira UMA faixa que rola na horizontal, em vez de 12 pílulas
        quebrando em quatro linhas: o cabeçalho sticky passava de 270px num
@@ -60,7 +26,7 @@ export function NavLinks({ papel }: { papel?: string }) {
         className="scroll-slim flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto lg:flex-auto lg:flex-wrap lg:overflow-visible"
       >
         {links.map((l) => {
-          const active = l.match(pathname);
+          const active = itemAtivo(l, pathname);
           return (
             <Link
               key={l.href}

@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import Link from "next/link";
-import { getLead, getConversa, getNotas, getPainelConfig } from "@/lib/db";
+import { getLead, getNotas } from "@/lib/db";
 import { getEtapas } from "@/lib/funil";
 import {
   formatPhone,
@@ -30,7 +30,8 @@ import { EditarLocal } from "@/components/EditarLocal";
 import { EditarCampo } from "@/components/EditarCampo";
 import { NotasLead } from "@/components/NotasLead";
 import { ResumoIA } from "@/components/ResumoIA";
-import { Conversa } from "@/components/Conversa";
+import { FichaLayout } from "@/components/lead/FichaLayout";
+import { InboxChat } from "@/components/inbox/InboxChat";
 import { EmptyState } from "@/components/EmptyState";
 import { DbErrorState } from "@/components/DbErrorState";
 import { Sigilo } from "@/components/Sigilo";
@@ -109,12 +110,10 @@ export default async function LeadDetailPage({
   const sess = await getSessao();
   if (!(await podeVerLead(sess, telefone))) notFound();
 
-  const [result, conversa, notas, etapas, cfgPainel, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas] = await Promise.all([
+  const [result, notas, etapas, instagram, negocios, extra, sessoesInfo, prontuario, prescricoes, biblioteca, devolutivas] = await Promise.all([
     getLead(telefone),
-    getConversa(telefone),
     getNotas(telefone),
     getEtapas(),
-    getPainelConfig(),
     instagramDoLead(telefone).catch(() => null),
     listarNegocios(telefone).catch(() => []),
     getExtraLead(telefone),
@@ -174,8 +173,8 @@ export default async function LeadDetailPage({
             >
               + Nova sessão
             </Link>
-            <Link
-              href={`/conversas?tel=${encodeURIComponent(lead.telefone)}`}
+            <a
+              href="#conversa"
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-[#04140d] transition hover:bg-brand-bright"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -188,13 +187,20 @@ export default async function LeadDetailPage({
                 />
               </svg>
               Responder
-            </Link>
+            </a>
             <LiveStatus generatedAt={new Date().toISOString()} />
           </>
         }
       />
 
-      <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="mx-auto max-w-[1700px] px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
+        <FichaLayout
+          abas={[
+            {
+              id: "resumo",
+              label: "Resumo",
+              conteudo: (
+                <>
         {/* Perfil */}
         <Panel delay={80}>
           <div className="flex flex-col gap-4">
@@ -417,72 +423,6 @@ export default async function LeadDetailPage({
           </div>
         </Panel>
 
-        {/* Sessões do paciente e saldo do pacote */}
-        <Panel
-          title="Sessões e pacote"
-          subtitle="Histórico das sessões, presença e o que ainda falta agendar"
-          className="mt-4"
-          delay={90}
-        >
-          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} temPlanoAtivo={prescricoes.some((p) => p.ativa)} />
-        </Panel>
-
-        <div id="prontuario" className="scroll-mt-24">
-        {/* Prontuário: exames (com resumo do laudo) e evolução por sessão */}
-        <Panel
-          title="Prontuário e exames"
-          subtitle="Linha do tempo clínica: exames com resumo do laudo e a evolução de cada sessão (dados sensíveis — só você vê)"
-          className="mt-4"
-          delay={95}
-        >
-          <Prontuario telefone={lead.telefone} exames={prontuario.exames} evolucoes={prontuario.evolucoes} />
-        </Panel>
-        </div>
-
-        <div id="exercicios" className="scroll-mt-24">
-        {/* Exercícios para casa: plano com vídeos, link privado e retorno do paciente */}
-        <Panel
-          title="Exercícios para casa"
-          subtitle="Monte o plano com a sua biblioteca, envie o link pelo WhatsApp e acompanhe o retorno do paciente"
-          className="mt-4"
-          delay={97}
-        >
-          <Prescricoes
-            telefone={lead.telefone}
-            primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
-            prescricoes={prescricoes}
-            biblioteca={biblioteca}
-          />
-        </Panel>
-        </div>
-
-        {/* Devolutiva do caso: documento com papel timbrado em link privado */}
-        <Panel
-          title="Devolutiva do caso"
-          subtitle="Documento para o paciente: o que o exame descreve, o que você encontrou e o plano de cuidado (link privado, dá para salvar em PDF)"
-          className="mt-4"
-          delay={98}
-        >
-          <Devolutivas
-            telefone={lead.telefone}
-            primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
-            devolutivas={devolutivas}
-            exames={prontuario.exames}
-            evolucoes={prontuario.evolucoes}
-            prescricoes={prescricoes}
-          />
-        </Panel>
-
-        {/* Negociações: histórico de cada tentativa de venda/atendimento */}
-        <Panel
-          title="Negociações"
-          subtitle="Cada tentativa de atendimento fica registrada: em andamento, concretizada ou perdida"
-          className="mt-4"
-          delay={100}
-        >
-          <NegociosLead telefone={lead.telefone} negocios={negocios} voltouAFalar={voltou} />
-        </Panel>
-
         {/* Resumo & score IA */}
         <Panel
           title="Resumo & score do lead"
@@ -500,6 +440,18 @@ export default async function LeadDetailPage({
             }}
           />
         </Panel>
+
+
+        {/* Negociações: histórico de cada tentativa de venda/atendimento */}
+        <Panel
+          title="Negociações"
+          subtitle="Cada tentativa de atendimento fica registrada: em andamento, concretizada ou perdida"
+          className="mt-4"
+          delay={100}
+        >
+          <NegociosLead telefone={lead.telefone} negocios={negocios} voltouAFalar={voltou} />
+        </Panel>
+
 
         {/* Instagram (quando a pessoa também conversou por lá) */}
         {instagram && (
@@ -530,17 +482,8 @@ export default async function LeadDetailPage({
           </Panel>
         )}
 
-        {/* Anotações + Timeline + Conversa */}
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="flex flex-col gap-4 lg:col-span-5">
-            <Panel
-              title="Anotações do consultor"
-              subtitle="Notas internas do time — o lead não vê"
-              delay={140}
-            >
-              <NotasLead telefone={lead.telefone} initial={notas} sessoes={sessoesInfo.sessoes.map((x) => ({ id: x.id, data_hora: x.data_hora, status: x.status, local: x.local }))} />
-            </Panel>
 
+                  <div className="mt-4">
             <Panel
               title="Linha do tempo"
               subtitle="Avanços no funil registrados pelo robô"
@@ -548,21 +491,118 @@ export default async function LeadDetailPage({
             >
               <LeadTimeline eventos={eventos} />
             </Panel>
-          </div>
+                  </div>
+                </>
+              ),
+            },
+            {
+              id: "sessoes",
+              label: "Sessões e anotações",
+              selo: sessoesInfo.pacote.restantes > 0 ? `${sessoesInfo.pacote.restantes} sem data` : null,
+              conteudo: (
+                <>
+        {/* Sessões do paciente e saldo do pacote */}
+        <Panel
+          title="Sessões e pacote"
+          subtitle="Histórico das sessões, presença e o que ainda falta agendar"
+          className="mt-4"
+          delay={90}
+        >
+          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} temPlanoAtivo={prescricoes.some((p) => p.ativa)} />
+        </Panel>
 
-          <Panel
-            title="Conversa"
-            subtitle="Histórico completo no WhatsApp"
-            className="lg:col-span-7"
-            delay={180}
-          >
-            <Conversa
-              telefone={lead.telefone}
-              initialMessages={conversa}
-              atendenteNome={cfgPainel.atendente_nome}
-            />
-          </Panel>
+
+                  <div className="mt-4">
+            <Panel
+              title="Anotações do consultor"
+              subtitle="Notas internas do time — o lead não vê"
+              delay={140}
+            >
+              <NotasLead telefone={lead.telefone} initial={notas} sessoes={sessoesInfo.sessoes.map((x) => ({ id: x.id, data_hora: x.data_hora, status: x.status, local: x.local }))} />
+            </Panel>
+                  </div>
+                </>
+              ),
+            },
+            {
+              id: "prontuario",
+              label: "Prontuário",
+              ancoras: ["prontuario"],
+              conteudo: (
+                <>
+        <div id="prontuario" className="scroll-mt-24">
+        {/* Prontuário: exames (com resumo do laudo) e evolução por sessão */}
+        <Panel
+          title="Prontuário e exames"
+          subtitle="Linha do tempo clínica: exames com resumo do laudo e a evolução de cada sessão (dados sensíveis — só você vê)"
+          className="mt-4"
+          delay={95}
+        >
+          <Prontuario telefone={lead.telefone} exames={prontuario.exames} evolucoes={prontuario.evolucoes} />
+        </Panel>
         </div>
+
+
+        {/* Devolutiva do caso: documento com papel timbrado em link privado */}
+        <Panel
+          title="Devolutiva do caso"
+          subtitle="Documento para o paciente: o que o exame descreve, o que você encontrou e o plano de cuidado (link privado, dá para salvar em PDF)"
+          className="mt-4"
+          delay={98}
+        >
+          <Devolutivas
+            telefone={lead.telefone}
+            primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
+            devolutivas={devolutivas}
+            exames={prontuario.exames}
+            evolucoes={prontuario.evolucoes}
+            prescricoes={prescricoes}
+          />
+        </Panel>
+
+
+                </>
+              ),
+            },
+            {
+              id: "exercicios",
+              label: "Exercícios",
+              ancoras: ["exercicios"],
+              conteudo: (
+                <>
+        <div id="exercicios" className="scroll-mt-24">
+        {/* Exercícios para casa: plano com vídeos, link privado e retorno do paciente */}
+        <Panel
+          title="Exercícios para casa"
+          subtitle="Monte o plano com a sua biblioteca, envie o link pelo WhatsApp e acompanhe o retorno do paciente"
+          className="mt-4"
+          delay={97}
+        >
+          <Prescricoes
+            telefone={lead.telefone}
+            primeiroNome={(lead.nome ?? "").trim().split(/\s+/)[0] || null}
+            prescricoes={prescricoes}
+            biblioteca={biblioteca}
+          />
+        </Panel>
+        </div>
+
+
+                </>
+              ),
+            },
+          ]}
+          chat={
+            <InboxChat
+              telefone={lead.telefone}
+              nome={lead.nome}
+              funnelStage={lead.funnel_stage ?? ""}
+              etapas={etapas.map((e) => ({ key: e.key, label: e.label, color: e.color }))}
+              admin={sess?.papel === "admin"}
+              embutido
+            />
+          }
+        />
 
         <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-line pt-5 text-[11px] text-ink-faint sm:flex-row">
           <span>{empresaNome()} · Perfil 360 do lead — dados ao vivo do Supabase</span>

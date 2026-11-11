@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { NavLinks } from "./NavLinks";
+import { BarraLateral } from "./Sidebar";
 import { SairButton } from "./SairButton";
 import { getSessao } from "@/lib/session";
 
@@ -31,6 +32,8 @@ export async function SubNav({
   const backHref = back === null ? null : vendedor && back === "/" ? "/prioridades" : back;
   const backLbl = vendedor && back === "/" ? "Prioridades" : backLabel;
   return (
+    <>
+    <BarraLateral papel={sess?.papel} />
     <header className="sticky top-0 z-30 border-b border-line bg-base/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3.5">
@@ -74,7 +77,7 @@ export async function SubNav({
           </div>
         </div>
 
-        <div className="order-last w-full sm:order-none sm:w-auto">
+        <div className="order-last w-full sm:order-none sm:w-auto lg:hidden">
           <NavLinks papel={sess?.papel} />
         </div>
 
@@ -84,5 +87,6 @@ export async function SubNav({
         </div>
       </div>
     </header>
+    </>
   );
 }
