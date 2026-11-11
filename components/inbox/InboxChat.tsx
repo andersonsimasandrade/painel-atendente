@@ -20,7 +20,7 @@ import { MudarEstagio } from "../MudarEstagio";
 import { MarcarAvaliacaoRapido } from "../MarcarAvaliacaoRapido";
 import { EditarNome } from "../EditarNome";
 import { useAudioRecorder } from "./useAudioRecorder";
-import { pausarRefresh } from "@/lib/pausa-refresh";
+import { pausarRefresh, registrarAtividade } from "@/lib/pausa-refresh";
 import { Sigilo } from "../Sigilo";
 
 /**
@@ -420,13 +420,17 @@ export function InboxChat({
   useEffect(() => {
     if (!rascunhoPronto.current) return;
     try {
-      if (draft) window.localStorage.setItem(chaveRascunho, draft);
+      if (draft) {
+        window.localStorage.setItem(chaveRascunho, draft);
+        registrarAtividade();
+      }
       else window.localStorage.removeItem(chaveRascunho);
     } catch {
       /* sem armazenamento */
     }
   }, [draft, chaveRascunho]);
-  // Há texto na caixa: a atualização automática da página (a cada 60 s) fica pausada.
+  // Enquanto você escreve (e por alguns minutos depois), a atualização da página espera; parado por mais de 10 min, ela volta
+  // e o rascunho continua guardado no navegador.
   const temRascunho = draft.trim().length > 0;
   useEffect(() => {
     if (!temRascunho) return;

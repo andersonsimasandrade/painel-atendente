@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Nota } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
-import { pausarRefresh } from "@/lib/pausa-refresh";
+import { pausarRefresh, registrarAtividade } from "@/lib/pausa-refresh";
 import { CampoDitado } from "@/components/lead/CampoDitado";
 
 /**
@@ -66,7 +66,10 @@ export function NotasLead({
   useEffect(() => {
     if (!restaurou.current) return;
     try {
-      if (texto.trim()) window.localStorage.setItem(chaveRascunho, JSON.stringify({ texto, sessaoId }));
+      if (texto.trim()) {
+        window.localStorage.setItem(chaveRascunho, JSON.stringify({ texto, sessaoId }));
+        registrarAtividade();
+      }
       else window.localStorage.removeItem(chaveRascunho);
     } catch {
       /* sem armazenamento */

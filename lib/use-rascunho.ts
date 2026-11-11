@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { guardarRascunho, lerRascunho, pausarRefresh } from "./pausa-refresh";
+import { guardarRascunho, lerRascunho, pausarRefresh, registrarAtividade } from "./pausa-refresh";
 
 /**
  * Mantém um formulário longo vivo: enquanto estiver aberto, pausa a atualização automática da página (a cada 60 s)
@@ -30,6 +30,7 @@ export function useRascunho<T extends object>(chave: string, aberto: boolean, es
   useEffect(() => {
     if (!restaurado.current) return;
     guardarRascunho(chave, aberto ? estado : null);
+    if (aberto) registrarAtividade(); // quem está digitando não leva um recarregamento no meio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, instantaneo, chave]);
 }
