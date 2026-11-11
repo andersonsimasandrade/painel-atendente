@@ -109,7 +109,25 @@ export async function salvarCadastro(codigo: string, d: Partial<DadosCadastro>):
   await setNomeLead(c.telefone, nome); // o nome completo vale também na agenda e nos contatos do Google
   if (d.telefoneOk === false) await addNota(c.telefone, "Cadastro (paciente)", `O paciente informou outro telefone para contato: ${outro}. Confira antes de usar.`);
   await sb.from("cadastro_convites").update({ usado_em: agora }).eq("id", c.id);
+  // Se a confirmação da sessão estava esperando o cadastro, ela segue agora (com o local e as orientações).
+  try {
+    const { liberarConfirmacoes } = await import("./pos-agendamento");
+    await liberarConfirmacoes(c.telefone);
+  } catch (e) {
+    console.error("[cadastro] liberar confirmação:", e);
+  }
   return { ok: true };
+}
+
+/** Cria o convite do cadastro (vale 7 dias) e devolve o código do link. */
+export async function criarConvite(telefone: string): Promise<R<{ codigo: string; id: string; telefone: string }>> {
+  const ct = await getClient().from("ff_contatos").select("telefone").in("telefone", variantesTelefone(telefone)).limit(1);
+  const real = (ct.data?.[0] as { telefone: string } | undefined)?.telefone;
+  if (!real) return { ok: false, error: "Paciente não encontrado." };
+  const codigo = randomBytes(12).toString("base64url");
+  const ins = await getClient().from("cadastro_convites").insert({ telefone: real, codigo, expira_em: new Date(Date.now() + VALIDADE_CONVITE_MS).toISOString() }).select("id");
+  if (ins.error) return { ok: false, error: ins.error.message };
+  return { ok: true, codigo, id: String((ins.data?.[0] as { id: string }).id), telefone: real };
 }
 
 /** Cria o convite (vale 7 dias) e envia o link por WhatsApp. */

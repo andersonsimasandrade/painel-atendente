@@ -3,8 +3,8 @@ import { criarAgendamento, getCompromissos, getOcupados, getVendedorBySlug, list
 import { GAP_TROCA_MIN, NOME_LOCAL, conflitoDeslocamento, locaisDoDia, outroLocal, type LocalId } from "@/lib/deslocamento";
 import { destinatariosAlerta } from "@/lib/config";
 import { enviarTextoInstancia } from "@/lib/evolution";
-import { partesConfirmacao } from "@/lib/confirmacao";
-import { enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
+import { registrarNaConversa } from "@/lib/confirmacao-envio";
+import { iniciarFluxoPosAgendamento } from "@/lib/pos-agendamento";
 import { CONSULTORIOS } from "@/lib/site";
 import { formatarBR, gerarSlotsDias } from "@/lib/slots";
 import { variantesTelefone } from "@/lib/telefone";
@@ -116,27 +116,27 @@ export async function marcarPeloRobo(p: PedidoMarcacao): Promise<ResultadoMarcac
     console.error("[marcar] cadastro/funil:", e);
   }
 
-  // Confirmação completa pelo WhatsApp (primeira vez = com apresentação).
+  // Passo a passo + pedido de cadastro; a confirmação com local e orientações segue quando o cadastro chegar (ou em 30 min).
   const variantes = variantesTelefone(telefone);
   const [anteriores] = await Promise.all([
     sb.from("agendamentos").select("id", { count: "exact", head: true }).in("telefone_lead", variantes).neq("status", "cancelado").neq("id", criado.id),
   ]);
   // O paciente acabou de conversar com o robô, então "primeira vez" aqui = nenhuma consulta anterior (as mensagens da conversa não contam).
-  const partes = partesConfirmacao({ nome: p.nome, iso, local: p.local, primeiraVez: (anteriores.count ?? 0) === 0 });
-  const env = await enviarPartes(vend.instancia_whatsapp, telefone, partes);
-  if (!env.ok) console.error("[marcar] confirmação falhou:", env.erro);
+  const fluxo = await iniciarFluxoPosAgendamento({ agendamentoId: criado.id, telefone, nome: p.nome, iso, local: p.local, primeiraVez: (anteriores.count ?? 0) === 0, instancia: vend.instancia_whatsapp });
+  if (fluxo.erro) console.error("[marcar] mensagens pós-agendamento:", fluxo.erro);
 
   const quando = formatarBR(iso);
   const cons = CONSULTORIOS[p.local];
   // Conversa do painel: o texto REAL enviado (se nada saiu, só o resumo).
-  await registrarNaConversa(telefone, env.enviadas.length ? env.enviadas : [`📅 Consulta agendada: ${quando} (${cons.bairro}).`], "robo-agenda");
+  await registrarNaConversa(telefone, fluxo.enviadas.length ? fluxo.enviadas : [`📅 Consulta agendada: ${quando} (${cons.bairro}).`], "robo-agenda");
 
   // Aviso ao Anderson (ele continua responsável por tudo).
   const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();
   if (instancia) {
+    const situacao = fluxo.aguardandoCadastro ? "Pedi o cadastro ao paciente; a confirmação com o local segue quando ele preencher (ou em 30 min)." : "Já enviei a confirmação ao paciente.";
     for (const d of destinatariosAlerta()) {
-      if (d.whatsapp) await enviarTextoInstancia(instancia, d.whatsapp, `📅 O robô marcou uma consulta: ${p.nome ?? telefone} · ${quando} · ${cons.bairro}. Já enviei a confirmação ao paciente.${p.local === "centro" ? " ⚠ Lembre de reservar a sala no Centro." : ""}`).catch(() => undefined);
+      if (d.whatsapp) await enviarTextoInstancia(instancia, d.whatsapp, `📅 O robô marcou uma consulta: ${p.nome ?? telefone} · ${quando} · ${cons.bairro}. ${situacao}${p.local === "centro" ? " ⚠ Lembre de reservar a sala no Centro." : ""}`).catch(() => undefined);
     }
   }
-  return { ok: true, id: criado.id, quando, local: cons.bairro, confirmacaoEnviada: env.ok };
+  return { ok: true, id: criado.id, quando, local: cons.bairro, confirmacaoEnviada: fluxo.confirmado || fluxo.aguardandoCadastro };
 }

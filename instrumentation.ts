@@ -9,5 +9,7 @@ export async function register() {
     iniciarRelogioDeConversoes();
     const { iniciarRelogioCheckinExercicios } = await import("./lib/exercicios-checkin");
     iniciarRelogioCheckinExercicios();
+    const { iniciarRelogioConfirmacoes } = await import("./lib/pos-agendamento");
+    iniciarRelogioConfirmacoes();
   }
 }
