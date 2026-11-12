@@ -46,8 +46,11 @@ const hojeSP = () => new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(
 /** Cliente no Asaas (criado uma vez e guardado na ficha). Exige o CPF do cadastro. */
 async function garantirCliente(telefone: string): Promise<R<{ cliente: string }>> {
   const sb = getClient();
-  const r = await sb.from("ff_contatos").select("telefone, nome, email, cnpj_numero, cep, numero, complemento, asaas_customer_id").in("telefone", variantesTelefone(telefone)).limit(1);
-  const c = r.data?.[0] as { telefone: string; nome: string | null; email: string | null; cnpj_numero: string | null; cep: string | null; numero: string | null; complemento: string | null; asaas_customer_id: string | null } | undefined;
+  const r = await sb.from("ff_contatos").select("telefone, nome, email, cnpj_numero, cep, numero, complemento, asaas_customer_id").in("telefone", variantesTelefone(telefone)).limit(5);
+  type Cx = { telefone: string; nome: string | null; email: string | null; cnpj_numero: string | null; cep: string | null; numero: string | null; complemento: string | null; asaas_customer_id: string | null };
+  // Se o mesmo número existir em duas formas (com e sem o 9), vale o cadastro que tem o CPF.
+  const linhas = (r.data ?? []) as Cx[];
+  const c = linhas.find((x) => String(x.cnpj_numero ?? "").replace(/\D/g, "").length === 11) ?? linhas[0];
   if (!c) return { ok: false, error: "Paciente não encontrado." };
   if (c.asaas_customer_id) return { ok: true, cliente: c.asaas_customer_id };
   const cpf = String(c.cnpj_numero ?? "").replace(/\D/g, "");

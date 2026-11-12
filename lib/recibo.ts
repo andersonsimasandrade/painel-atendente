@@ -218,8 +218,9 @@ export async function enviarReciboManual(agendamentoId: string): Promise<R> {
 
 async function emitirEEnviar(ag: Ag, valor: number, asaasId: string | null, reciboId?: string): Promise<R> {
   const sb = getClient();
-  const ct = await sb.from("ff_contatos").select("telefone, nome, cnpj_numero").in("telefone", variantesTelefone(ag.telefone_lead)).limit(1);
-  const c = ct.data?.[0] as { telefone: string; nome: string | null; cnpj_numero: string | null } | undefined;
+  const ct = await sb.from("ff_contatos").select("telefone, nome, cnpj_numero").in("telefone", variantesTelefone(ag.telefone_lead)).limit(5);
+  const linhas = (ct.data ?? []) as { telefone: string; nome: string | null; cnpj_numero: string | null }[];
+  const c = linhas.find((x) => String(x.cnpj_numero ?? "").replace(/\D/g, "").length === 11) ?? linhas[0];
   const nome = (c?.nome ?? "").trim();
   if (!nome) return { ok: false, error: "Falta o nome do paciente no cadastro." };
   const cpfDigitos = String(c?.cnpj_numero ?? "").replace(/\D/g, "");
