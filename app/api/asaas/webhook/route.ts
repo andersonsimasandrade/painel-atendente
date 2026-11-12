@@ -5,6 +5,7 @@ import { destinatariosAlerta } from "@/lib/config";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { getClient } from "@/lib/db";
 import { variantesTelefone } from "@/lib/telefone";
+import { processarRecibo } from "@/lib/recibo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
   const corpo = (await req.json().catch(() => ({}))) as { event?: string; payment?: { id?: string; status?: string } };
   try {
     const r = await tratarEventoAsaas(corpo);
+    if (r?.pago && r.agendamentoId) await processarRecibo(r.agendamentoId).catch(() => undefined); // sessão já realizada e paga agora: o recibo segue
     if (r?.pago && r.telefone) {
       const c = await getClient().from("ff_contatos").select("nome").in("telefone", variantesTelefone(r.telefone)).limit(1);
       const nome = ((c.data?.[0] as { nome?: string | null } | undefined)?.nome ?? "").trim() || r.telefone;

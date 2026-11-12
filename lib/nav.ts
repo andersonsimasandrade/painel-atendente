@@ -35,6 +35,7 @@ export const ITENS_NAV: ItemNav[] = [
   { href: "/funil", label: "Funil", icone: "funnel", grupo: "atendimento" },
   { href: "/atendimento", label: "Atendimento", icone: "headset", grupo: "atendimento" },
   { href: "/exercicios", label: "Exercícios", icone: "dumbbell", grupo: "clinico", admin: true },
+  { href: "/recibos", label: "Recibos", icone: "check", grupo: "clinico", admin: true },
   { href: "/instagram", label: "Instagram", icone: "instagram", grupo: "canais", admin: true },
   { href: "/youtube", label: "YouTube", icone: "youtube", grupo: "canais", admin: true },
   { href: "/indicacoes", label: "Indicações", icone: "gift", grupo: "canais", admin: true },

@@ -58,6 +58,25 @@ export function SessoesPaciente({
   const [passos, setPassos] = useState(false); // mostra os "próximos passos" depois de registrar uma sessão realizada
   const agora = Date.now();
 
+  async function recibo(id: string, corpo: { acao: "caixinha"; enviar: boolean } | { acao: "enviar" }) {
+    if (corpo.acao === "enviar" && !window.confirm("Emitir e enviar agora o recibo desta sessão pelo WhatsApp?")) return;
+    setOcupado(id);
+    setErro(null);
+    try {
+      const r = await fetch(`/api/agenda/${encodeURIComponent(id)}/recibo`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !d.ok) {
+        setErro(d.error ?? "Não consegui agora.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setErro("Falha de rede.");
+    } finally {
+      setOcupado(null);
+    }
+  }
+
   async function cobrar(id: string) {
     if (!window.confirm("Enviar agora o link de pagamento da sessão (PIX ou cartão) pelo WhatsApp para o paciente?")) return;
     setOcupado(id);
@@ -193,7 +212,23 @@ export function SessoesPaciente({
                   {s.cobranca.status === "RECEIVED" ? "Pago ✓" : s.cobranca.status === "OVERDUE" ? "Cobrança vencida" : "Cobrança enviada"}
                 </span>
               )}
+              {s.recibo && (
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-ink-muted" title="Recibo da fisioterapia">
+                  {s.recibo.estado === "enviado" ? `Recibo nº ${String(s.recibo.numero).padStart(6, "0")} enviado` : s.recibo.estado === "dispensado" ? "Sem recibo" : "Recibo emitido, não enviado"}
+                </span>
+              )}
               <span className="ml-auto flex flex-wrap items-center gap-1.5">
+                {(s.status === "agendado" || s.status === "confirmado") && !passou && (
+                  <label className="flex cursor-pointer items-center gap-1.5 text-[11.5px] text-ink-muted" title="Se desmarcar, o recibo não é enviado depois da sessão">
+                    <input type="checkbox" checked={s.enviar_recibo} disabled={ocupado === s.id} onChange={(e) => void recibo(s.id, { acao: "caixinha", enviar: e.target.checked })} />
+                    Enviar recibo depois da sessão
+                  </label>
+                )}
+                {s.status === "compareceu" && s.recibo?.estado !== "enviado" && (
+                  <button type="button" disabled={ocupado === s.id} className={btn} onClick={() => void recibo(s.id, { acao: "enviar" })}>
+                    {s.recibo ? "Enviar recibo mesmo assim" : "Enviar recibo"}
+                  </button>
+                )}
                 {cobrancaAtiva && (s.status === "agendado" || s.status === "confirmado") && !passou && s.cobranca?.status !== "RECEIVED" && (
                   <button type="button" disabled={ocupado === s.id} className={btn} onClick={() => void cobrar(s.id)}>
                     {s.cobranca ? "Reenviar link de pagamento" : "Enviar cobrança"}

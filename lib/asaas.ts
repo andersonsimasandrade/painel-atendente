@@ -132,16 +132,16 @@ export async function cancelarCobranca(agendamentoId: string): Promise<void> {
 const PAGOS = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
 
 /** Aviso do Asaas (webhook): atualiza o status e devolve o que aconteceu, para avisar o Anderson. */
-export async function tratarEventoAsaas(corpo: { event?: string; payment?: { id?: string; status?: string } }): Promise<{ pago: boolean; telefone?: string; valor?: number } | null> {
+export async function tratarEventoAsaas(corpo: { event?: string; payment?: { id?: string; status?: string } }): Promise<{ pago: boolean; telefone?: string; valor?: number; agendamentoId?: string | null } | null> {
   const ev = String(corpo.event ?? "");
   const id = String(corpo.payment?.id ?? "");
   if (!ev.startsWith("PAYMENT_") || !id) return null;
   const sb = getClient();
-  const r = await sb.from("cobrancas").select("telefone, valor, status").eq("asaas_id", id).limit(1);
-  const c = r.data?.[0] as { telefone: string; valor: number; status: string } | undefined;
+  const r = await sb.from("cobrancas").select("telefone, valor, status, agendamento_id").eq("asaas_id", id).limit(1);
+  const c = r.data?.[0] as { telefone: string; valor: number; status: string; agendamento_id: string | null } | undefined;
   if (!c) return null;
   const pago = PAGOS.has(ev);
   const status = pago ? "RECEIVED" : ev === "PAYMENT_OVERDUE" ? "OVERDUE" : ev === "PAYMENT_DELETED" ? "CANCELADA" : (corpo.payment?.status ?? c.status);
   await sb.from("cobrancas").update({ status, ...(pago ? { pago_em: new Date().toISOString() } : {}) }).eq("asaas_id", id);
-  return { pago: pago && c.status !== "RECEIVED", telefone: c.telefone, valor: Number(c.valor) };
+  return { pago: pago && c.status !== "RECEIVED", telefone: c.telefone, valor: Number(c.valor), agendamentoId: c.agendamento_id };
 }

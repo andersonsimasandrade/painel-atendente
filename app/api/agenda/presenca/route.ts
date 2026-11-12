@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessao } from "@/lib/session";
 import { marcarPresenca, getVendedorBySlug } from "@/lib/agenda";
+import { processarRecibo } from "@/lib/recibo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,5 +40,11 @@ export async function POST(req: Request) {
     const status = res.error === "Agendamento não encontrado." ? 404 : 400;
     return NextResponse.json(res, { status });
   }
-  return NextResponse.json({ ok: true });
+  // Presença confirmada: o recibo segue (se a caixinha estiver marcada e o pagamento já tiver sido recebido).
+  let recibo: string | undefined;
+  if (presenca === "compareceu") {
+    const r = await processarRecibo(id).catch(() => ({ feito: false, motivo: "erro" }));
+    recibo = r.feito ? (r.motivo === "dispensado" ? "dispensado" : "enviado") : r.motivo;
+  }
+  return NextResponse.json({ ok: true, recibo });
 }
