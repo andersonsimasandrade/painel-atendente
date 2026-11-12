@@ -5,7 +5,7 @@ import { addNota, getClient, setNomeLead } from "./db";
 import { variantesTelefone } from "./telefone";
 import { canalDaConversa } from "./consultores";
 import { enviarTextoInstancia } from "./evolution";
-import { registrarNaConversa } from "./confirmacao-envio";
+import { enviarPartes, registrarNaConversa } from "./confirmacao-envio";
 import { nascimentoIso } from "./devolutiva-acesso";
 import { SITE_URL } from "./site";
 
@@ -144,6 +144,15 @@ export async function salvarCadastro(codigo: string, d: Partial<DadosCadastro>):
   if (faltam.length >= 4 && d.telefoneOk === false) await addNota(c.telefone, "Cadastro (paciente)", `O paciente informou outro telefone para contato: ${outro}. Confira antes de usar.`);
   await sb.from("cadastro_convites").update({ usado_em: agora }).eq("id", c.id);
   await addNota(c.telefone, "Cadastro (paciente)", "✅ O paciente preencheu o cadastro pelo link. Confira os dados na ficha e clique em “Está tudo certo”.").catch(() => undefined);
+  // Recibo pelo WhatsApp: o paciente vê os dados que mandou (duplo cheque) e sabe que chegaram. Vem ANTES da confirmação da sessão.
+  try {
+    const texto = await mensagemRecebimento(c.telefone, nome, patch);
+    const canal = await canalDaConversa(c.telefone);
+    const env = await enviarPartes(canal.instancia, c.telefone, [texto]);
+    if (env.enviadas.length) await registrarNaConversa(c.telefone, env.enviadas, "sistema");
+  } catch (e) {
+    console.error("[cadastro] recibo ao paciente:", e);
+  }
   // Se a confirmação da sessão estava esperando o cadastro, ela segue agora (com o local e as orientações).
   try {
     const { liberarConfirmacoes } = await import("./pos-agendamento");
@@ -222,4 +231,31 @@ export async function definirNascimento(telefone: string, txt: string): Promise<
   const r = await getClient().from("ff_contatos").update({ data_nascimento: iso }).in("telefone", variantesTelefone(telefone)).select("telefone");
   if (r.error) return { ok: false, error: r.error.message };
   return r.data?.length ? { ok: true } : { ok: false, error: "Paciente não encontrado." };
+}
+
+
+const dataBR = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+
+/** Mensagem de recebimento: repete o que o paciente informou (CPF só com os 2 últimos dígitos) e pede o "OK" ou a correção. */
+async function mensagemRecebimento(telefone: string, nomeInformado: string | null, patch: Record<string, unknown>): Promise<string> {
+  const r = await getClient().from("ff_contatos").select("nome").in("telefone", variantesTelefone(telefone)).limit(1);
+  const nomeAtual = nomeInformado ?? ((r.data?.[0] as { nome?: string | null } | undefined)?.nome ?? "");
+  const primeiro = nomeAtual.trim().split(/\s+/)[0];
+  const linhas: string[] = [];
+  if (nomeInformado) linhas.push(`👤 ${nomeInformado}`);
+  if (patch.email) linhas.push(`✉️ ${String(patch.email)}`);
+  if (patch.data_nascimento) linhas.push(`🎂 ${dataBR(String(patch.data_nascimento))}`);
+  if (patch.cnpj_numero) linhas.push(`🪪 CPF final ${String(patch.cnpj_numero).slice(-2)}`);
+  if (patch.logradouro) {
+    const compl = patch.complemento ? `, ${String(patch.complemento)}` : "";
+    const bairro = patch.bairro ? ` — ${String(patch.bairro)}` : "";
+    linhas.push(`📍 ${String(patch.logradouro)}, ${String(patch.numero)}${compl}${bairro}, ${String(patch.cidade)}/${String(patch.uf)}`);
+  }
+  return [
+    `Recebi os seus dados${primeiro ? `, ${primeiro}` : ""}! ✅ Confira se está tudo certo:`,
+    "",
+    ...linhas,
+    "",
+    "Responda *OK* se estiver certo. Se precisar corrigir algo, é só me dizer por aqui.",
+  ].join("\n");
 }
