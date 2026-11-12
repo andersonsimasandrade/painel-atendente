@@ -52,6 +52,7 @@ import { listarDevolutivas, nascimentoDoPaciente } from "@/lib/devolutivas";
 import { EditarEndereco } from "@/components/lead/EditarEndereco";
 import { CadastroPaciente } from "@/components/lead/CadastroPaciente";
 import { statusCadastro } from "@/lib/cadastro";
+import { asaasConfigurado } from "@/lib/asaas";
 import { OrigemCanalLead } from "@/components/lead/OrigemCanalLead";
 
 export const dynamic = "force-dynamic";
@@ -515,7 +516,7 @@ export default async function LeadDetailPage({
           className="mt-4"
           delay={90}
         >
-          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} temPlanoAtivo={prescricoes.some((p) => p.ativa)} />
+          <SessoesPaciente telefone={lead.telefone} nome={lead.nome} sessoes={sessoesInfo.sessoes} pacote={sessoesInfo.pacote} temPlanoAtivo={prescricoes.some((p) => p.ativa)} cobrancaAtiva={asaasConfigurado()} />
         </Panel>
 
 

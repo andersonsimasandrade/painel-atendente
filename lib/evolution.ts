@@ -292,3 +292,29 @@ export async function evolutionConnect(qual?: string): Promise<EvolutionConnect>
     return { ok: false, error: e instanceof Error ? e.message : "Falha ao contatar a Evolution." };
   }
 }
+
+/**
+ * O número como o WhatsApp o conhece (com ou sem o 9 extra do celular). Serve para cadastrar o lead com a MESMA forma em que a
+ * resposta dele vai chegar; senão a conversa vira um segundo lead. Sem resposta da Evolution, devolve null (usa-se o digitado).
+ */
+export async function numeroNoWhatsApp(numero: string, instancia?: string): Promise<string | null> {
+  const { base, apikey, instance } = evoEnv();
+  const inst = instancia || instance;
+  if (!base || !apikey || !inst) return null;
+  try {
+    const res = await fetch(`${base.replace(/\/+$/, "")}/chat/whatsappNumbers/${encodeURIComponent(inst)}`, {
+      method: "POST",
+      headers: { apikey, "Content-Type": "application/json" },
+      body: JSON.stringify({ numbers: [numero] }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as { exists?: boolean; jid?: string }[];
+    const r = Array.isArray(j) ? j[0] : null;
+    const digitos = String(r?.jid ?? "").split("@")[0].replace(/\D/g, "");
+    return r?.exists && digitos.length >= 10 ? digitos : null;
+  } catch {
+    return null;
+  }
+}

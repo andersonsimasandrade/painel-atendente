@@ -46,14 +46,14 @@ async function alertarAnderson(texto: string): Promise<void> {
 }
 
 /** Link de pagamento da sessão (Asaas), enviado junto com a confirmação. Só se a cobrança automática estiver ligada. */
-async function enviarCobranca(o: { agendamentoId: string; telefone: string; iso: string; instancia: string; nome: string | null }): Promise<string | null> {
-  if (!cobrancaAutomatica()) return null;
+async function enviarCobranca(o: { agendamentoId: string; telefone: string; iso: string; instancia: string; nome: string | null }, manual = false): Promise<string | null> {
+  if (!manual && !cobrancaAutomatica()) return null;
   const c = await cobrarSessao({ agendamentoId: o.agendamentoId, telefone: o.telefone, iso: o.iso });
   if (!c.ok) {
     await alertarAnderson(`⚠ Não consegui gerar a cobrança da sessão de ${o.nome ?? o.telefone}: ${c.error}`);
     return null;
   }
-  if (c.cobranca.jaExistia) return null;
+  if (c.cobranca.jaExistia && !manual) return null;
   const [, mm, dd] = c.cobranca.vencimento.split("-");
   const valor = c.cobranca.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const texto = `Para deixar tudo alinhado, segue o link de pagamento da sessão (${valor}), por PIX ou cartão, com vencimento no dia da sessão (${dd}/${mm}):\n${c.cobranca.link}`;
@@ -191,4 +191,19 @@ export function iniciarRelogioConfirmacoes() {
       rodando = false;
     }
   }, 60 * 1000);
+}
+
+/** Botão do painel: gera (ou reenvia) o link de pagamento da sessão e manda pelo WhatsApp. */
+export async function cobrarSessaoManual(agendamentoId: string): Promise<{ ok: true; link: string } | { ok: false; error: string }> {
+  const r = await getClient().from("agendamentos").select("id, telefone_lead, data_hora, nome_lead, status").eq("id", agendamentoId).limit(1);
+  const a = r.data?.[0] as { id: string; telefone_lead: string; data_hora: string; nome_lead: string | null; status: string } | undefined;
+  if (!a) return { ok: false, error: "Sessão não encontrada." };
+  if (a.status === "cancelado") return { ok: false, error: "A sessão está cancelada." };
+  const canal = await canalDaConversa(a.telefone_lead);
+  const c = await cobrarSessao({ agendamentoId: a.id, telefone: a.telefone_lead, iso: a.data_hora });
+  if (!c.ok) return c;
+  const texto = await enviarCobranca({ agendamentoId: a.id, telefone: a.telefone_lead, iso: a.data_hora, instancia: canal.instancia, nome: a.nome_lead }, true);
+  if (!texto) return { ok: false, error: "A cobrança foi gerada, mas não consegui enviar pelo WhatsApp. Link: " + c.cobranca.link };
+  await registrarNaConversa(a.telefone_lead, [texto], "painel");
+  return { ok: true, link: c.cobranca.link };
 }

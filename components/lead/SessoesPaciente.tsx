@@ -43,18 +43,39 @@ export function SessoesPaciente({
   sessoes,
   pacote,
   temPlanoAtivo = false,
+  cobrancaAtiva = false,
 }: {
   telefone: string;
   nome: string | null;
   sessoes: SessaoPaciente[];
   pacote: ResumoPacote;
   temPlanoAtivo?: boolean;
+  cobrancaAtiva?: boolean; // Asaas configurado: mostra o botão de cobrança
 }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [passos, setPassos] = useState(false); // mostra os "próximos passos" depois de registrar uma sessão realizada
   const agora = Date.now();
+
+  async function cobrar(id: string) {
+    if (!window.confirm("Enviar agora o link de pagamento da sessão (PIX ou cartão) pelo WhatsApp para o paciente?")) return;
+    setOcupado(id);
+    setErro(null);
+    try {
+      const r = await fetch(`/api/agenda/${encodeURIComponent(id)}/cobranca`, { method: "POST" });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !d.ok) {
+        setErro(d.error ?? "Não consegui gerar a cobrança.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setErro("Falha de rede.");
+    } finally {
+      setOcupado(null);
+    }
+  }
 
   async function presenca(id: string, valor: "compareceu" | "faltou" | "agendado") {
     setOcupado(id);
@@ -163,7 +184,21 @@ export function SessoesPaciente({
                   remarcada {s.remarcacoes}×
                 </span>
               )}
+              {s.cobranca && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  style={{ color: s.cobranca.status === "RECEIVED" ? "#2DD4A0" : s.cobranca.status === "OVERDUE" ? "#E05C5C" : "#E0B050", background: "#ffffff10" }}
+                  title={`Cobrança de ${s.cobranca.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}, vence em ${s.cobranca.vencimento.split("-").reverse().join("/")}`}
+                >
+                  {s.cobranca.status === "RECEIVED" ? "Pago ✓" : s.cobranca.status === "OVERDUE" ? "Cobrança vencida" : "Cobrança enviada"}
+                </span>
+              )}
               <span className="ml-auto flex flex-wrap items-center gap-1.5">
+                {cobrancaAtiva && (s.status === "agendado" || s.status === "confirmado") && !passou && s.cobranca?.status !== "RECEIVED" && (
+                  <button type="button" disabled={ocupado === s.id} className={btn} onClick={() => void cobrar(s.id)}>
+                    {s.cobranca ? "Reenviar link de pagamento" : "Enviar cobrança"}
+                  </button>
+                )}
                 {aConfirmar && <span className="text-[11.5px] text-amber">Já passou: o paciente compareceu?</span>}
                 {(aConfirmar || s.status === "faltou") && (
                   <button type="button" disabled={ocupado === s.id} className={btn} onClick={() => void presenca(s.id, "compareceu")}>

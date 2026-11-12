@@ -143,6 +143,7 @@ export async function salvarCadastro(codigo: string, d: Partial<DadosCadastro>):
   if (nome) await setNomeLead(c.telefone, nome); // o nome completo vale também na agenda e nos contatos do Google
   if (faltam.length >= 4 && d.telefoneOk === false) await addNota(c.telefone, "Cadastro (paciente)", `O paciente informou outro telefone para contato: ${outro}. Confira antes de usar.`);
   await sb.from("cadastro_convites").update({ usado_em: agora }).eq("id", c.id);
+  await addNota(c.telefone, "Cadastro (paciente)", "✅ O paciente preencheu o cadastro pelo link. Confira os dados na ficha e clique em “Está tudo certo”.").catch(() => undefined);
   // Se a confirmação da sessão estava esperando o cadastro, ela segue agora (com o local e as orientações).
   try {
     const { liberarConfirmacoes } = await import("./pos-agendamento");

@@ -3,7 +3,7 @@ import { getSessao } from "@/lib/session";
 import { getClient } from "@/lib/db";
 import { criarAgendamento, getCompromissos, getVendedorBySlug, listarVendedores, resolverLead } from "@/lib/agenda";
 import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
-import { enviarTextoInstancia } from "@/lib/evolution";
+import { enviarTextoInstancia, numeroNoWhatsApp } from "@/lib/evolution";
 import { formatarBR } from "@/lib/slots";
 import { apenasDigitos } from "@/lib/format";
 import { registrarNaConversa } from "@/lib/confirmacao-envio";
@@ -29,7 +29,9 @@ export async function POST(req: Request) {
   }
   const digitado = apenasDigitos(String(b.telefone ?? ""));
   // Usa o número na forma que o cadastro (e o robô) conhece: com ou sem o 9, é a mesma pessoa.
-  const telefone = (digitado.length >= 10 && digitado.length <= 15 ? await resolverLead(digitado) : null) ?? digitado;
+  const existente = digitado.length >= 10 && digitado.length <= 15 ? await resolverLead(digitado) : null;
+  // Lead novo: usa o número exatamente como o WhatsApp o conhece, para a resposta dele cair no mesmo cadastro (sem lead duplicado).
+  const telefone = existente ?? (digitado.length >= 10 && digitado.length <= 15 ? await numeroNoWhatsApp(digitado) : null) ?? digitado;
   const nome = String(b.nome ?? "").trim().slice(0, 120) || null;
   const data = String(b.data ?? "");
   const hora = String(b.hora ?? "");
