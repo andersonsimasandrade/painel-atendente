@@ -33,7 +33,10 @@ async function chamar<T>(metodo: "GET" | "POST" | "PUT" | "DELETE", caminho: str
       signal: AbortSignal.timeout(20000),
     });
     const j = (await r.json().catch(() => ({}))) as { errors?: { description?: string }[] } & Record<string, unknown>;
-    if (!r.ok) return { ok: false, error: j.errors?.[0]?.description ?? `Asaas respondeu ${r.status}.` };
+    if (!r.ok) {
+      const dica = r.status === 401 ? ` (ambiente: ${base().includes("sandbox") ? "testes/sandbox" : "produção"}; a chave tem ${chave.length} caracteres e começa com "${chave.startsWith("$aact_") ? chave.slice(0, 10) : "?"}")` : "";
+      return { ok: false, error: `${j.errors?.[0]?.description ?? `Asaas respondeu ${r.status}.`}${dica}` };
+    }
     return { ok: true, dados: j as T };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Falha ao falar com o Asaas." };
