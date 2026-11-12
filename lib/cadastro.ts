@@ -259,3 +259,83 @@ async function mensagemRecebimento(telefone: string, nomeInformado: string | nul
     "Responda *OK* se estiver certo. Se precisar corrigir algo, é só me dizer por aqui.",
   ].join("\n");
 }
+
+const CAMPOS_CORRIGIVEIS: Record<string, string> = {
+  nome: "nome",
+  email: "email",
+  "e-mail": "email",
+  nascimento: "data_nascimento",
+  cpf: "cnpj_numero",
+  cep: "cep",
+  rua: "logradouro",
+  logradouro: "logradouro",
+  numero: "numero",
+  número: "numero",
+  complemento: "complemento",
+  bairro: "bairro",
+  cidade: "cidade",
+  uf: "uf",
+};
+
+/** Correção de um dado do cadastro pedida pelo próprio paciente na conversa do WhatsApp (via tag do robô). */
+export async function corrigirCadastro(telefone: string, campoCru: string, valorCru: string): Promise<R<{ campo: string }>> {
+  const chave = CAMPOS_CORRIGIVEIS[campoCru.trim().toLowerCase()];
+  if (!chave) return { ok: false, error: "Campo desconhecido." };
+  const valor = t(valorCru, 140);
+  const sb = getClient();
+  const alvo = await sb.from("ff_contatos").select("telefone").in("telefone", variantesTelefone(telefone)).limit(1);
+  const real = (alvo.data?.[0] as { telefone: string } | undefined)?.telefone;
+  if (!real) return { ok: false, error: "Paciente não encontrado." };
+
+  const upd: Record<string, unknown> = { cadastro_conferido_em: null };
+  let rotulo = campoCru;
+  let mostrar = valor;
+  if (chave === "nome") {
+    if (valor.split(" ").filter((p) => p.length > 1).length < 2) return { ok: false, error: "Nome completo inválido." };
+    const r = await setNomeLead(real, valor);
+    if (!r.ok) return { ok: false, error: r.error ?? "Não consegui salvar o nome." };
+    upd.asaas_customer_id = null; // o cliente da cobrança é refeito com o nome certo
+    rotulo = "nome";
+  } else if (chave === "email") {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor.toLowerCase())) return { ok: false, error: "E-mail inválido." };
+    upd.email = valor.toLowerCase();
+    upd.asaas_customer_id = null;
+    rotulo = "e-mail";
+  } else if (chave === "data_nascimento") {
+    const iso = nascimentoIso(valor);
+    if (!iso) return { ok: false, error: "Data de nascimento inválida." };
+    upd.data_nascimento = iso;
+    mostrar = dataBR(iso);
+    rotulo = "data de nascimento";
+  } else if (chave === "cnpj_numero") {
+    const d = valor.replace(/\D/g, "");
+    if (!cpfValido(d)) return { ok: false, error: "CPF inválido." };
+    upd.cnpj_numero = d;
+    upd.cnpj = true;
+    upd.asaas_customer_id = null;
+    mostrar = `final ${d.slice(-2)}`; // o CPF inteiro não vai para a anotação
+    rotulo = "CPF";
+  } else if (chave === "cep") {
+    const d = valor.replace(/\D/g, "");
+    if (d.length !== 8) return { ok: false, error: "CEP inválido." };
+    upd.cep = d;
+    rotulo = "CEP";
+  } else if (chave === "uf") {
+    const u = valor.toUpperCase();
+    if (!/^[A-Z]{2}$/.test(u)) return { ok: false, error: "UF inválida." };
+    upd.uf = u;
+    mostrar = u;
+    rotulo = "UF";
+  } else {
+    if (!valor) return { ok: false, error: "Valor vazio." };
+    upd[chave] = valor;
+  }
+  if (chave !== "nome") {
+    const r = await sb.from("ff_contatos").update(upd).eq("telefone", real).select("telefone");
+    if (r.error || !r.data?.length) return { ok: false, error: "Não consegui salvar a correção." };
+  } else if (upd.asaas_customer_id === null) {
+    await sb.from("ff_contatos").update({ asaas_customer_id: null, cadastro_conferido_em: null }).eq("telefone", real);
+  }
+  await addNota(real, "Cadastro (paciente)", `✏️ O paciente corrigiu pelo WhatsApp: ${rotulo} → ${mostrar}. Confira na ficha.`).catch(() => undefined);
+  return { ok: true, campo: rotulo };
+}
