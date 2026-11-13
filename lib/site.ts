@@ -32,8 +32,8 @@ export const YOUTUBE_URL = "https://www.youtube.com/@andersonandradefisio";
  *  pessoal do Anderson (ASSISTENTE_ATIVO = false, WHATSAPP_PADRAO = 5548984223242).
  *  Em 14/10/2026 o número do robô foi recuperado: voltou ao robô. Para repetir o
  *  plano B, inverta os dois valores. */
-export const ASSISTENTE_ATIVO = true;
-export const WHATSAPP_PADRAO = "554899730494";
+export const ASSISTENTE_ATIVO = false; // 13/11/2026: número do robô bloqueado de novo -> plano B (atendimento pessoal, sem robô)
+export const WHATSAPP_PADRAO = "5548984223242"; // robô: 554899730494
 
 /** Número do WhatsApp do site. Só dígitos, com DDI. SITE_WHATSAPP (env) sobrepõe. */
 export function whatsappNumero(): string {

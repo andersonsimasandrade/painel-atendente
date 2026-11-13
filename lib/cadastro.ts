@@ -42,6 +42,17 @@ export interface DadosCadastro {
   aceite: boolean;
 }
 
+/** "cintia luiza provenzi" → "Cintia Luiza Provenzi" (de/da/do/dos/das/e ficam em minúsculas). */
+export function nomeProprio(txt: string): string {
+  const peq = new Set(["de", "da", "do", "dos", "das", "e"]);
+  return txt
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((p, i) => (i > 0 && peq.has(p.toLowerCase()) ? p.toLowerCase() : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()))
+    .join(" ");
+}
+
 const t = (v: unknown, max: number) => String(v ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 
 async function conviteAberto(codigo: string): Promise<{ id: string; telefone: string } | null> {
@@ -97,7 +108,7 @@ export async function salvarCadastro(codigo: string, d: Partial<DadosCadastro>):
   let nome: string | null = null;
 
   if (pede("nome")) {
-    nome = t(d.nome, 80);
+    nome = nomeProprio(t(d.nome, 80));
     if (nome.split(" ").filter((p) => p.length > 1).length < 2) return { ok: false, error: "Escreva o nome completo (nome e sobrenome)." };
   }
   if (pede("email")) {

@@ -23,6 +23,17 @@ interface Dados {
   remarcada?: boolean; // consulta trocada de dia/horário: texto de "nova data"
 }
 
+/**
+ * Prazo para remarcar, conforme o tempo que falta até a sessão: 48 h ou mais = "48 horas"; entre 24 h e 48 h = "24 horas";
+ * menos de 24 h (mesmo dia) = não faz sentido falar em prazo, então a frase some.
+ */
+export function prazoRemarcacao(iso: string, agora = Date.now()): string | null {
+  const horas = (new Date(iso).getTime() - agora) / 3600000;
+  if (horas >= 48) return "48 horas";
+  if (horas >= 24) return "24 horas";
+  return null;
+}
+
 /** As mensagens de confirmação, na ordem de envio. */
 export function partesConfirmacao(o: Dados): string[] {
   const dur = o.duracaoMin && o.duracaoMin > 0 ? o.duracaoMin : 60;
@@ -34,6 +45,7 @@ export function partesConfirmacao(o: Dados): string[] {
   const inicio = hora(o.iso);
   const faixa = `das ${inicio} às ${hora(o.iso, dur)}`;
 
+  const prazo = prazoRemarcacao(o.iso);
   const bloco =
     `📅 *${o.remarcada ? "Nova data: " : ""}${dia}*\n\n` + // data
     `🕑 *${faixa}*`; // horário, em outro parágrafo
@@ -43,12 +55,12 @@ export function partesConfirmacao(o: Dados): string[] {
     primeira =
       `${ola} Pronto, a sua consulta foi remarcada! 😊\n\n` +
       `${bloco}\n\n` +
-      `✅ Responda *CONFIRMO* para garantir o novo horário. No dia da consulta, eu te mando um lembrete. Se precisar mudar de novo, é só me avisar com 48 horas de antecedência.`;
+      `✅ Responda *CONFIRMO* para garantir o novo horário. No dia da consulta, eu te mando um lembrete.${prazo ? ` Se precisar mudar de novo, é só me avisar com ${prazo} de antecedência.` : ""}`;
   } else if (!o.primeiraVez) {
     primeira =
       `${ola} Sua consulta está agendada! 😊\n\n` +
       `${bloco}\n\n` +
-      `✅ Responda *CONFIRMO* para garantir o seu horário. Se precisar remarcar, é só me avisar com 48 horas de antecedência.`;
+      `✅ Responda *CONFIRMO* para garantir o seu horário.${prazo ? ` Se precisar remarcar, é só me avisar com ${prazo} de antecedência.` : ""}`;
   } else {
     primeira =
       `${ola} Aqui é o Anderson Andrade, fisioterapeuta (${CREFITO}), em Florianópolis. 😊\n\n` +
@@ -56,7 +68,7 @@ export function partesConfirmacao(o: Dados): string[] {
       `${bloco}\n\n` +
       `A sessão dura ${dur} minutos, é individual e reúne a avaliação do seu quadro e as técnicas manuais na mesma hora. ` +
       `Se tiver exames, leve, e use roupa confortável e folgada.\n\n` +
-      `✅ Responda *CONFIRMO* para garantir o seu horário (para remarcar, é só avisar com 48 horas de antecedência).\n\n` +
+      `✅ Responda *CONFIRMO* para garantir o seu horário${prazo ? ` (para remarcar, é só avisar com ${prazo} de antecedência)` : ""}.\n\n` +
       `Para eu já te receber com atenção: o que mais tem te incomodado e há quanto tempo?`;
   }
 
