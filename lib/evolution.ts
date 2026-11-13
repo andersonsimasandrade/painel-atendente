@@ -9,6 +9,9 @@
 //
 // Falta de env NÃO derruba a página: devolvemos { ok:false, error } claro.
 
+/** Tempo de "digitando…" proporcional ao tamanho do texto (máx. 4,5 s): mensagem que sai instantânea e em rajada parece robô. */
+export const atrasoDigitando = (texto: string) => Math.min(4500, 900 + texto.length * 22);
+
 export interface EvolutionSendResult {
   ok: boolean;
   status?: number;
@@ -54,7 +57,7 @@ export async function enviarTextoWhatsApp(
     const res = await fetch(url, {
       method: "POST",
       headers: { apikey, "Content-Type": "application/json" },
-      body: JSON.stringify({ number: telefone, text: texto }),
+      body: JSON.stringify({ number: telefone, text: texto, delay: atrasoDigitando(texto) }),
       cache: "no-store",
     });
 
@@ -99,9 +102,9 @@ export async function enviarTextoInstancia(
       {
         method: "POST",
         headers: { apikey, "Content-Type": "application/json" },
-        body: JSON.stringify({ number: telefone, text: texto }),
+        body: JSON.stringify({ number: telefone, text: texto, delay: atrasoDigitando(texto) }),
         cache: "no-store",
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(25000),
       },
     );
     if (res.status === 200 || res.status === 201) return { ok: true, status: res.status };

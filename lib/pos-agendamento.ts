@@ -6,7 +6,7 @@
 import { getClient } from "./db";
 import { variantesTelefone } from "./telefone";
 import { canalDaConversa } from "./consultores";
-import { enviarPartes, registrarNaConversa } from "./confirmacao-envio";
+import { enviarPartes, pausaHumana, registrarNaConversa } from "./confirmacao-envio";
 import { partesConfirmacao } from "./confirmacao";
 import { camposFaltando, criarConvite, textoPedidoDados, type CampoCad } from "./cadastro";
 import { SITE_URL } from "./site";
@@ -95,6 +95,7 @@ async function fluxoBase(o: Pedido): Promise<ResultadoFluxo> {
     return { confirmado: env.ok, aguardandoCadastro: false, enviadas: env.enviadas, erro: env1.erro };
   }
   if (urgente) {
+    await pausaHumana();
     const env2 = await enviarPartes(canal.instancia, o.telefone, confirmacao());
     return { confirmado: env2.ok, aguardandoCadastro: false, enviadas: [...env1.enviadas, ...env2.enviadas], erro: env2.erro };
   }

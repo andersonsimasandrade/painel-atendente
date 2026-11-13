@@ -5,7 +5,7 @@ import { addNota, getClient, setNomeLead } from "./db";
 import { variantesTelefone } from "./telefone";
 import { canalDaConversa } from "./consultores";
 import { enviarTextoInstancia } from "./evolution";
-import { enviarPartes, registrarNaConversa } from "./confirmacao-envio";
+import { enviarPartes, pausaHumana, registrarNaConversa } from "./confirmacao-envio";
 import { nascimentoIso } from "./devolutiva-acesso";
 import { SITE_URL } from "./site";
 
@@ -167,6 +167,7 @@ export async function salvarCadastro(codigo: string, d: Partial<DadosCadastro>):
   // Se a confirmação da sessão estava esperando o cadastro, ela segue agora (com o local e as orientações).
   try {
     const { liberarConfirmacoes } = await import("./pos-agendamento");
+    await pausaHumana();
     await liberarConfirmacoes(c.telefone);
   } catch (e) {
     console.error("[cadastro] liberar confirmação:", e);

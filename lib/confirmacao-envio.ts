@@ -2,7 +2,11 @@
 import { getClient } from "./db";
 import { enviarTextoInstancia } from "./evolution";
 
-const ESPERA_MS = 1500; // entre uma mensagem e a seguinte, para chegarem na ordem certa
+// Entre uma mensagem e a seguinte: 3 a 6 s (rajada de mensagens com link, sem pausa, é um dos sinais que o WhatsApp usa para punir números).
+const espera = () => 3000 + Math.floor(Math.random() * 3000);
+
+/** Pausa entre etapas diferentes (ex.: pedido de dados → confirmação), 6 a 10 s. */
+export const pausaHumana = (): Promise<void> => new Promise((res) => setTimeout(res, 6000 + Math.floor(Math.random() * 4000)));
 
 /** Envia as partes em ordem. Devolve as que realmente saíram (para registrar na conversa). */
 export async function enviarPartes(instancia: string, telefone: string, partes: string[]): Promise<{ ok: boolean; enviadas: string[]; erro?: string }> {
@@ -11,7 +15,7 @@ export async function enviarPartes(instancia: string, telefone: string, partes: 
     const r = await enviarTextoInstancia(instancia, telefone, partes[i]);
     if (!r.ok) return { ok: false, enviadas, erro: r.error };
     enviadas.push(partes[i]);
-    if (i < partes.length - 1) await new Promise((res) => setTimeout(res, ESPERA_MS));
+    if (i < partes.length - 1) await new Promise((res) => setTimeout(res, espera()));
   }
   return { ok: true, enviadas };
 }
