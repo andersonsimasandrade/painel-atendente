@@ -175,6 +175,34 @@ export async function enviarConfirmacoesVencidas(): Promise<number> {
   return n;
 }
 
+/**
+ * O paciente respondeu "CONFIRMO" no WhatsApp: a sessão passa de "agendado" para "confirmado" na agenda.
+ * Confere as respostas dele (n8n_chat_histories) depois que a sessão foi marcada. "Não confirmo" não vale.
+ */
+export async function confirmarPelasMensagens(): Promise<number> {
+  const sb = getClient();
+  const r = await sb
+    .from("agendamentos")
+    .select("id, telefone_lead, criado_em")
+    .eq("status", "agendado")
+    .gt("data_hora", new Date().toISOString())
+    .gt("criado_em", new Date(Date.now() - 7 * 86400000).toISOString())
+    .limit(50);
+  let n = 0;
+  for (const a of (r.data ?? []) as { id: string; telefone_lead: string; criado_em: string }[]) {
+    const h = await sb.from("n8n_chat_histories").select("message").in("session_id", variantesTelefone(a.telefone_lead)).gt("created_at", a.criado_em).order("id", { ascending: false }).limit(25);
+    const disse = ((h.data ?? []) as { message: { type?: string; content?: unknown } | null }[]).some((x) => {
+      if (x.message?.type !== "human") return false;
+      const t = String(x.message.content ?? "").trim();
+      return /\bconfirm(o|ado|ada)\b/i.test(t) && !/\bn[ãa]o\s+confirm/i.test(t);
+    });
+    if (!disse) continue;
+    const u = await sb.from("agendamentos").update({ status: "confirmado" }).eq("id", a.id).eq("status", "agendado").select("id");
+    if (u.data?.length) n++;
+  }
+  return n;
+}
+
 const g = globalThis as unknown as { __confirmacoesRelogio?: boolean };
 export function iniciarRelogioConfirmacoes() {
   if (g.__confirmacoesRelogio) return;
@@ -186,6 +214,8 @@ export function iniciarRelogioConfirmacoes() {
     try {
       const n = await enviarConfirmacoesVencidas();
       if (n) console.log("[confirmacoes] enviadas após espera do cadastro:", n);
+      const c = await confirmarPelasMensagens();
+      if (c) console.log("[confirmacoes] sessões confirmadas pelo paciente no WhatsApp:", c);
     } catch (e) {
       console.error("[confirmacoes-relogio]", e instanceof Error ? e.message : e);
     } finally {
