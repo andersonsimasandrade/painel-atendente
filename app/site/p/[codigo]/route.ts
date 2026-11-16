@@ -20,6 +20,8 @@ export async function GET(req: Request, { params }: { params: { codigo: string }
   if (!parceiro || !parceiro.ativo) return NextResponse.redirect(`${SITE_URL}/`, 302);
   if (await rateLimited(`site-p:${clientIp(req)}`, 30, 600)) return NextResponse.redirect(`${SITE_URL}/`, 302);
 
+  // Códigos "totem-…" (QR Code impresso nos consultórios) não são indicação de terceiro: a origem é o próprio totem.
+  const ehTotem = parceiro.codigo.startsWith("totem-");
   const sb = getClient();
   let codigo = "";
   for (let t = 0; t < 5 && !codigo; t++) {
@@ -30,13 +32,16 @@ export async function GET(req: Request, { params }: { params: { codigo: string }
       dias: [],
       periodos: [],
       canal: "outro",
-      utm_source: "indicacao",
-      utm_medium: "parceiro",
+      utm_source: ehTotem ? "totem" : "indicacao",
+      utm_medium: ehTotem ? "qr" : "parceiro",
       utm_campaign: parceiro.codigo,
     });
     if (!error) codigo = c;
     else if (error.code !== "23505") break;
   }
-  const texto = `Olá! Fui indicado(a) por ${parceiro.nome} e quero saber mais sobre fisioterapia.${codigo ? ` (código ${codigo})` : ""}`;
+  const sufixo = codigo ? ` (código ${codigo})` : "";
+  const texto = ehTotem
+    ? `Olá! Vi o QR Code no consultório (${parceiro.nome.replace(/^Totem\s*/i, "")}) e quero saber mais sobre fisioterapia.${sufixo}`
+    : `Olá! Fui indicado(a) por ${parceiro.nome} e quero saber mais sobre fisioterapia.${sufixo}`;
   return NextResponse.redirect(`https://wa.me/${whatsappNumero()}?text=${encodeURIComponent(texto)}`, 302);
 }
