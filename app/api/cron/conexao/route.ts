@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { evolutionState, enviarTextoInstancia } from "@/lib/evolution";
 import { enviarEmail } from "@/lib/email";
-import { rateLimited } from "@/lib/ratelimit";
+import { avisouRecentemente, marcarAviso } from "@/lib/ratelimit";
 import { listarConsultores } from "@/lib/consultores";
 import { destinatariosAlerta, instanciaAlertas } from "@/lib/config";
 import { appBaseUrl } from "@/lib/http";
@@ -76,11 +76,12 @@ async function handler(req: Request) {
       continue;
     }
 
-    if (await rateLimited(`alerta-conexao:${c.instancia_whatsapp}`, 1, 1800)) {
+    if (await avisouRecentemente(`aviso-conexao:${c.instancia_whatsapp}`, 1700)) {
       relatorio.push({ consultor: c.nome, instancia: c.instancia_whatsapp, estado, alertou: false });
       continue;
     }
 
+    await marcarAviso(`aviso-conexao:${c.instancia_whatsapp}`);
     const texto = corpoTexto(c.nome, estado);
     const html = corpoHtml(c.nome, estado);
 

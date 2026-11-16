@@ -34,3 +34,28 @@ export async function rateLimited(
     return onError;
   }
 }
+
+/**
+ * "Já avisei há pouco?" para alertas que devem REPETIR a cada janela (ex.: WhatsApp caído, a cada 30 min).
+ * Diferente de rateLimited: só o aviso realmente enviado entra no registro (marcarAviso). Com rateLimited, cada
+ * verificação do vigia (a cada 10 min) renovava a janela e o alerta saía UMA vez e nunca mais.
+ * Em erro do banco devolve false (melhor avisar de novo do que ficar mudo).
+ */
+export async function avisouRecentemente(bucket: string, janelaSec: number): Promise<boolean> {
+  try {
+    const desde = new Date(Date.now() - janelaSec * 1000).toISOString();
+    const r = await getClient().from("rate_events").select("id", { count: "exact", head: true }).eq("bucket", bucket).gte("criado_em", desde);
+    if (r.error) return false;
+    return (r.count ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+export async function marcarAviso(bucket: string): Promise<void> {
+  try {
+    await getClient().from("rate_events").insert({ bucket });
+  } catch {
+    /* sem registro, o próximo ciclo avisa de novo: aceitável */
+  }
+}
