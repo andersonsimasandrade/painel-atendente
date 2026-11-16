@@ -4,6 +4,8 @@ import { Panel } from "@/components/Panel";
 import { EmptyState } from "@/components/EmptyState";
 import { getSessao } from "@/lib/session";
 import { instanciasPermitidas } from "@/lib/escopo";
+import { AlertaConexao } from "@/components/AlertaConexao";
+import { destinatariosAlerta } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,6 +15,11 @@ export default async function ConexaoPage() {
   // Admin vê os números de todos os consultores; consultor vê só o dele.
   const instancias = await instanciasPermitidas(sess);
   const varias = instancias.length > 1;
+  const emails = destinatariosAlerta().map((d) => d.email).filter((e): e is string => !!e);
+  const faltam: string[] = [];
+  if (!(process.env.RESEND_API_KEY ?? "").trim()) faltam.push("RESEND_API_KEY");
+  if (!(process.env.EMAIL_REMETENTE ?? "").trim()) faltam.push("EMAIL_REMETENTE");
+  if (!emails.length) faltam.push("ALERTAS_EMAIL");
 
   return (
     <div className="relative z-[1] min-h-screen">
@@ -34,6 +41,7 @@ export default async function ConexaoPage() {
           </Panel>
         ) : (
           <div className="flex flex-col gap-6">
+            {sess?.papel === "admin" && <AlertaConexao configurado={!faltam.length} faltam={faltam} destinos={emails.map((e) => e.replace(/^(.).*(@.*)$/, "$1***$2"))} />}
             {instancias.map((v) => (
               <section key={v.instancia}>
                 {varias && (

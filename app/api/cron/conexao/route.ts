@@ -5,6 +5,7 @@ import { rateLimited } from "@/lib/ratelimit";
 import { listarConsultores } from "@/lib/consultores";
 import { destinatariosAlerta, instanciaAlertas } from "@/lib/config";
 import { appBaseUrl } from "@/lib/http";
+import { corpoHtml } from "@/lib/alerta-conexao";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 // Antes isto olhava só a instância do .env — o WhatsApp de qualquer consultor
 // novo podia cair por dias sem alerta nenhum.
 //
-// O teto de 1 alerta por hora é POR INSTÂNCIA: duas quedas simultâneas geram
+// O teto de 1 alerta a cada 30 minutos é POR INSTÂNCIA: duas quedas simultâneas geram
 // dois avisos, e uma queda longa não vira spam. Chamado por um workflow n8n a
 // cada ~10 min.
 //
@@ -37,19 +38,6 @@ function corpoTexto(quem: string, estado: string): string {
     `Pra religar: abra ${paginaConexao()} e leia o QR code com o WhatsApp desse número.\n\n` +
     `_Aviso automático do painel. No máximo 1 por hora, por número._`
   );
-}
-
-function corpoHtml(quem: string, estado: string): string {
-  return `
-  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0f1b14">
-    <h2 style="margin:0 0 8px;font-size:18px;color:#b91c1c">🔴 WhatsApp do ${quem} fora do ar</h2>
-    <p style="margin:0 0 16px;font-size:14px;color:#374151">
-      A conexão está <b>${estado}</b>. Esse número não está recebendo nem respondendo mensagens —
-      e os anúncios continuam rodando.
-    </p>
-    <a href="${paginaConexao()}" style="display:inline-block;background:#12a150;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:10px">Religar (ler o QR)</a>
-    <p style="margin:18px 0 0;font-size:11px;color:#9ca3af">Aviso automático do painel · no máximo 1 por hora, por número.</p>
-  </div>`;
 }
 
 async function handler(req: Request) {
@@ -88,7 +76,7 @@ async function handler(req: Request) {
       continue;
     }
 
-    if (await rateLimited(`alerta-conexao:${c.instancia_whatsapp}`, 1, 3600)) {
+    if (await rateLimited(`alerta-conexao:${c.instancia_whatsapp}`, 1, 1800)) {
       relatorio.push({ consultor: c.nome, instancia: c.instancia_whatsapp, estado, alertou: false });
       continue;
     }
@@ -122,7 +110,7 @@ async function handler(req: Request) {
       }
       if (p.email) {
         await sleep(800);
-        const em = await enviarEmail(p.email, `🔴 WhatsApp do ${c.nome} fora do ar`, html);
+        const em = await enviarEmail(p.email, `🔴 URGENTE: WhatsApp da Fisioterapia desconectado (${estado}). Reconecte agora`, html, true);
         if (!em.ok) console.error("[cron/conexao] email", p.email, em.error);
       }
       if (i < destinos.length - 1) await sleep(1200);

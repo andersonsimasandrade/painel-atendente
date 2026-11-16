@@ -12,6 +12,7 @@ export async function enviarEmail(
   to: string,
   subject: string,
   html: string,
+  urgente = false,
 ): Promise<{ ok: boolean; error?: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY não configurada." };
@@ -28,7 +29,7 @@ export async function enviarEmail(
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [to], subject, html }),
+      body: JSON.stringify({ from, to: [to], subject, html, ...(urgente ? { headers: { "X-Priority": "1", Importance: "high", Priority: "urgent" } } : {}) }),
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {
