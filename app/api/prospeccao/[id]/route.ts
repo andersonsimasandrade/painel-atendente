@@ -6,7 +6,7 @@ import { soDigitos } from "@/lib/telefone";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STATUS = ["fila", "aguardando", "respondeu", "parceiro", "recusou", "encerrado", "sem_telefone", "so_presencial"];
+const STATUS = ["fila", "aguardando", "respondeu", "parceiro", "recusou", "encerrado", "sem_telefone", "so_presencial", "silenciado"];
 
 // POST /api/prospeccao/<id> { status?, telefone?, observacao?, parceiro_codigo? } — ajustes manuais (só admin).
 export async function POST(req: Request, { params }: { params: { id: string } }) {

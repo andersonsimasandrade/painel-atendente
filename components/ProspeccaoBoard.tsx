@@ -16,6 +16,7 @@ const ROTULO: Record<string, string> = {
   sem_telefone: "Sem WhatsApp cadastrado",
   sem_whatsapp: "Número sem WhatsApp",
   so_presencial: "Só presencial",
+  silenciado: "Silenciado (robô não atende)",
 };
 
 const COR: Record<string, string> = {
@@ -124,7 +125,7 @@ export function ProspeccaoBoard({ itens, ativa, dentroDaJanela, intervaloMin, li
 
   const cont = (s: string) => itens.filter((i) => i.status === s).length;
   const visiveis = itens.filter((i) => filtro === "todos" || i.status === filtro);
-  const ordem = ["respondeu", "aguardando", "fila", "parceiro", "encerrado", "recusou", "sem_telefone", "sem_whatsapp", "so_presencial"];
+  const ordem = ["respondeu", "aguardando", "fila", "parceiro", "encerrado", "recusou", "sem_telefone", "sem_whatsapp", "so_presencial", "silenciado"];
   visiveis.sort((a, b) => ordem.indexOf(a.status) - ordem.indexOf(b.status) || a.prioridade - b.prioridade || a.id - b.id);
 
   return (

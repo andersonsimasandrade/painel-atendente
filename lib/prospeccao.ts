@@ -32,7 +32,8 @@ export type StatusProspecto =
   | "encerrado"
   | "sem_telefone"
   | "sem_whatsapp"
-  | "so_presencial";
+  | "so_presencial"
+  | "silenciado"; // número que o robô NUNCA deve atender (ex.: outra empresa do Anderson)
 
 export interface Prospecto {
   id: number;
@@ -356,8 +357,8 @@ export async function rodarProspeccao(): Promise<string | null> {
   if (!instancia) return null;
   const sb = getClient();
   const respondidos = await detectarRespostas(instancia);
-  // Quem já respondeu (ou virou parceiro) continua com o robô calado até a conversa ser encerrada.
-  const abertos = await sb.from("prospeccao").select("*").in("status", ["respondeu", "parceiro"]);
+  // Quem já respondeu, virou parceiro ou foi silenciado continua com o robô calado (a pausa do robô dura 24 h, então é renovada).
+  const abertos = await sb.from("prospeccao").select("*").in("status", ["respondeu", "parceiro", "silenciado"]);
   for (const x of (abertos.data ?? []) as Prospecto[]) await manterRoboCalado(x);
 
   if (!(await campanhaAtiva())) return respondidos ? `respostas:${respondidos}` : null;
