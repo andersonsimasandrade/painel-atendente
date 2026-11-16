@@ -39,6 +39,7 @@ export const ITENS_NAV: ItemNav[] = [
   { href: "/instagram", label: "Instagram", icone: "instagram", grupo: "canais", admin: true },
   { href: "/youtube", label: "YouTube", icone: "youtube", grupo: "canais", admin: true },
   { href: "/indicacoes", label: "Indicações", icone: "gift", grupo: "canais", admin: true },
+  { href: "/prospeccao", label: "Parcerias", icone: "gift", grupo: "canais", admin: true },
   { href: "/trafego", label: "Tráfego", icone: "trend", grupo: "canais", admin: true },
   { href: "/indicadores", label: "Indicadores", icone: "chart", grupo: "canais", admin: true },
   { href: "/conexao", label: "Conexão", icone: "wifi", grupo: "sistema", dot: true },

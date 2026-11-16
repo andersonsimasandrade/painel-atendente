@@ -11,5 +11,7 @@ export async function register() {
     iniciarRelogioCheckinExercicios();
     const { iniciarRelogioConfirmacoes } = await import("./lib/pos-agendamento");
     iniciarRelogioConfirmacoes();
+    const { iniciarRelogioProspeccao } = await import("./lib/prospeccao");
+    iniciarRelogioProspeccao();
   }
 }
