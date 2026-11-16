@@ -9,7 +9,7 @@
 import { getClient } from "./db";
 import { destinatariosAlerta } from "./config";
 import { enviarTextoInstancia } from "./evolution";
-import { registrarNaConversa } from "./confirmacao-envio";
+import { enviarPartes, registrarNaConversa } from "./confirmacao-envio";
 import { chamarPausaWebhook } from "./painel-pausa";
 import { variantesTelefone } from "./telefone";
 import { CREFITO } from "./site";
@@ -71,28 +71,99 @@ function abertura(p: Prospecto): string {
   return `${g ? g + " " : ""}${LOCAL[p.regiao]}`;
 }
 
-/** Texto do passo (1 = apresentação, 2 = D4, 3 = D10, 4 = D21) para este prospecto. */
-export function textoDoPasso(p: Prospecto, passo: number): string {
+/** Mensagens do passo (1 = apresentação, 2 = D4, 3 = D10, 4 = D21). Curtas e com parágrafos, para ler fácil no celular. */
+export function textosDoPasso(p: Prospecto, passo: number): string[] {
   const lugar = p.lugar;
   const m = p.modelo;
+  const sair = "Se preferir que eu não escreva mais, é só avisar. 🙂";
   if (passo === 1) {
+    const oi = `Olá, tudo bem? 😊
+
+${ASSINATURA}.
+
+${abertura(p)}`;
     if (m === "B")
-      return `Olá, tudo bem? ${ASSINATURA}. ${abertura(p)} Queria me apresentar ao ${lugar}: de vez em quando um aluno chega com dor ou com alguma limitação que foge do que o Pilates pode tratar, e fica sem saber a quem recorrer. Se isso acontecer aí, posso conversar com o aluno e orientar, sem custo nenhum para vocês. Posso te mandar uma apresentação curta? Se preferir que eu não escreva mais, é só avisar. 🙂`;
+      return [
+        oi,
+        `Queria me apresentar à equipe de ${lugar}.
+
+De vez em quando um aluno chega com dor ou alguma limitação que foge do que o Pilates pode tratar, e fica sem saber a quem recorrer.
+
+Se isso acontecer aí, posso conversar com o aluno e orientar, sem custo nenhum para vocês.`,
+        `Posso te mandar uma apresentação curta?
+
+${sair}`,
+      ];
     if (m === "D")
-      return `Olá, tudo bem? ${ASSINATURA}. ${abertura(p)} Acho que atendemos o mesmo perfil de pessoa, só que em frentes diferentes, e queria me apresentar. Se fizer sentido, podemos criar uma troca de indicações entre nós, sempre pelo que for melhor para o paciente. Posso te mandar uma apresentação curta? Se preferir que eu não escreva mais, é só avisar. 🙂`;
-    return `Olá, tudo bem? ${ASSINATURA}. ${abertura(p)} Trabalho com terapia manual e reabilitação de dor e lesões de quem treina. Muita gente para de treinar por dor no ombro, no joelho ou na coluna e não sabe a quem procurar. Se algum aluno do ${lugar} estiver assim, posso avaliar e orientar. Posso passar aí para me apresentar? Se preferir que eu não escreva mais, é só avisar. 🙂`;
+      return [
+        oi,
+        `Acho que atendemos o mesmo perfil de pessoa, só que em frentes diferentes.
+
+Se fizer sentido, podemos criar uma troca de indicações entre nós, sempre pelo que for melhor para o paciente.`,
+        `Posso te mandar uma apresentação curta?
+
+${sair}`,
+      ];
+    return [
+      oi,
+      `Trabalho com terapia manual e reabilitação de dor e lesões de quem treina.
+
+Muita gente para de treinar por dor no ombro, no joelho ou na coluna e não sabe a quem procurar. Se algum aluno de ${lugar} estiver assim, posso avaliar e orientar.`,
+      `Posso passar aí para me apresentar?
+
+${sair}`,
+    ];
   }
   if (passo === 2) {
-    if (m === "D") return `Oi! Só confirmando se você viu a minha mensagem. Se for mais fácil, a gente toma um café perto do seu consultório. 🙂`;
-    if (m === "B") return `Oi! Só passando para confirmar se a minha mensagem chegou. Não precisa responder agora. Se preferir, passo aí no ${lugar} rapidinho para deixar um cartão. Qual o melhor dia? 🙂`;
-    return `Oi! Passando para saber se você viu a minha mensagem. Posso deixar um cartão com o instrutor responsável, sem tomar o seu tempo. Qual o melhor dia e horário? 🙂`;
+    if (m === "D") return [`Oi! Só confirmando se você viu a minha mensagem.
+
+Se for mais fácil, a gente toma um café perto do seu consultório. 🙂`];
+    if (m === "B") return [`Oi! Só passando para confirmar se a minha mensagem chegou.
+
+Não precisa responder agora. Se preferir, passo aí rapidinho para deixar um cartão. Qual o melhor dia? 🙂`];
+    return [`Oi! Passando para saber se você viu a minha mensagem.
+
+Posso deixar um cartão com o instrutor responsável, sem tomar o seu tempo. Qual o melhor dia e horário? 🙂`];
   }
   if (passo === 3) {
-    if (m === "D") return `Olá! Se algum paciente seu tiver dor que atrapalha o movimento ou o treino, pode me chamar. Com a autorização do paciente, posso devolver uma orientação por escrito para você acompanhar o caso. E fico feliz em indicar você quando alguém precisar do seu trabalho.`;
-    if (m === "B") return `Olá! Se for útil para o ${lugar}, posso montar um material curto com sinais de que um aluno deve procurar avaliação antes de continuar nas aulas. Também faço uma conversa de 20 minutos sobre postura e dor nas costas para os alunos, sem custo. Se fizer sentido, combinamos.`;
-    return `Olá! Se tiver interesse, faço uma conversa curta (15 a 20 minutos) para os alunos do ${lugar} sobre prevenção de lesões no treino, sem custo. Combino o dia com você.`;
+    if (m === "D")
+      return [
+        `Olá! Se algum paciente seu tiver dor que atrapalha o movimento ou o treino, pode me chamar.`,
+        `Com a autorização do paciente, posso devolver uma orientação por escrito para você acompanhar o caso.
+
+E fico feliz em indicar você quando alguém precisar do seu trabalho.`,
+      ];
+    if (m === "B")
+      return [
+        `Olá! Se for útil para ${lugar}, posso montar um material curto com sinais de que um aluno deve procurar avaliação antes de continuar nas aulas.`,
+        `Também faço uma conversa de 20 minutos sobre postura e dor nas costas para os alunos, sem custo.
+
+Se fizer sentido, combinamos.`,
+      ];
+    return [
+      `Olá! Se tiver interesse, faço uma conversa curta (15 a 20 minutos) para os alunos de ${lugar} sobre prevenção de lesões no treino, sem custo.`,
+      `Combino o dia com você.`,
+    ];
   }
-  return `Olá! Este é o meu último contato, para não incomodar. Fica o meu número: se alguém do ${lugar} precisar de fisioterapia, é só indicar o WhatsApp deste consultório. Obrigado! 🙏`;
+  return [`Olá! Este é o meu último contato, para não incomodar.
+
+Fica o meu número: se alguém de ${lugar} precisar de fisioterapia, é só indicar o WhatsApp deste consultório.
+
+Obrigado! 🙏`];
+}
+
+/** Para mostrar na tela: as mensagens do passo separadas por uma linha. */
+export function textoDoPasso(p: Prospecto, passo: number): string {
+  return textosDoPasso(p, passo).join(`
+
+— próxima mensagem —
+
+`);
+}
+
+/** Resposta automática de WhatsApp Business (menu, boas-vindas, horário): não conta como resposta de uma pessoa. */
+export function pareceRespostaAutomatica(t: string): boolean {
+  return /(digite\s+\d|digite\s+a\s+op|escolha\s+uma\s+op|agradece\s+(o\s+)?seu\s+contato|seja\s+(muito\s+)?bem[\s-]?vind|mensagem\s+autom[áa]tica|resposta\s+autom[áa]tica|no\s+momento\s+(n[ãa]o|estamos)|nosso\s+hor[áa]rio\s+de\s+atendimento|em\s+que\s+(posso|podemos)\s+(lhe\s+)?ajudar|retornaremos|retornamos\s+assim)/i.test(t);
 }
 
 /** Respostas que significam "não quero": o prospecto nunca mais recebe mensagem. */
@@ -239,10 +310,13 @@ async function detectarRespostas(instancia: string): Promise<number> {
     const desde = new Date(p.ultimo_envio_em);
     let rs = await respostasDoBanco(p.telefone, desde);
     if (!rs.length) rs = await respostasNaEvolution(p.telefone, instancia, desde);
-    if (!rs.length) {
+    // Menu/boas-vindas automáticos do WhatsApp Business do estabelecimento não são resposta de uma pessoa.
+    const humanas = rs.filter((x) => !pareceRespostaAutomatica(x));
+    if (!humanas.length) {
       await manterRoboCalado(p);
       continue;
     }
+    rs = humanas;
     const texto = rs.join(" / ").slice(0, 400);
     const recusou = rs.some(pareceRecusa);
     await sb
@@ -308,7 +382,7 @@ export async function rodarProspeccao(): Promise<string | null> {
     return `sem-whatsapp:${p.id}`;
   }
   const destino = chk.jid ?? p.telefone;
-  const texto = textoDoPasso(p, passo);
+  const partes = textosDoPasso(p, passo);
 
   // Cala o robô ANTES de escrever (a resposta pode chegar em segundos).
   const pa = await chamarPausaWebhook(destino, "pause");
@@ -317,11 +391,11 @@ export async function rodarProspeccao(): Promise<string | null> {
     await sb.from("prospeccao").update({ observacao: `Não consegui calar o robô: ${pa.error ?? "erro"}. Tentando de novo.` }).eq("id", p.id);
     return "pausa-falhou";
   }
-  const env = await enviarTextoInstancia(instancia, destino, texto);
+  const env = await enviarPartes(instancia, destino, partes);
   if (!env.ok) {
     await adiar(15);
-    await sb.from("prospeccao").update({ observacao: `Envio falhou: ${(env.error ?? "erro").slice(0, 150)}` }).eq("id", p.id);
-    return "envio-falhou";
+    await sb.from("prospeccao").update({ observacao: `Envio falhou: ${(env.erro ?? "erro").slice(0, 150)}` }).eq("id", p.id);
+    if (!env.enviadas.length) return "envio-falhou";
   }
   const proximo = DIAS_ATE_PROXIMA[passo];
   await sb
@@ -335,7 +409,7 @@ export async function rodarProspeccao(): Promise<string | null> {
       observacao: null,
     })
     .eq("id", p.id);
-  await registrarNaConversa(destino, [texto], "prospeccao");
+  await registrarNaConversa(destino, env.enviadas, "prospeccao");
   await adiar(INTERVALO_MIN + Math.floor(Math.random() * 7));
   return `enviado:${p.lugar}:passo${passo}`;
 }
