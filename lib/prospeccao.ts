@@ -8,7 +8,9 @@
 // Server-only. Falha em qualquer etapa NÃO derruba o painel.
 import { getClient } from "./db";
 import { destinatariosAlerta } from "./config";
-import { enviarTextoInstancia } from "./evolution";
+import { enviarMidiaWhatsApp, enviarTextoInstancia } from "./evolution";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { enviarPartes, registrarNaConversa } from "./confirmacao-envio";
 import { chamarPausaWebhook } from "./painel-pausa";
 import { variantesTelefone } from "./telefone";
@@ -91,7 +93,9 @@ ${abertura(p)}`;
 De vez em quando um aluno chega com dor ou alguma limitação que foge do que o Pilates pode tratar, e fica sem saber a quem recorrer.
 
 Se isso acontecer aí, posso conversar com o aluno e orientar, sem custo nenhum para vocês.`,
-        `Posso te mandar uma apresentação curta?
+        `Posso te mandar uma apresentação em PDF?
+
+Se fizer sentido, gostaria também de marcar uma ligação rápida de 10 minutos para conhecer o serviço de vocês.
 
 ${sair}`,
       ];
@@ -101,7 +105,9 @@ ${sair}`,
         `Acho que atendemos o mesmo perfil de pessoa, só que em frentes diferentes.
 
 Se fizer sentido, podemos criar uma troca de indicações entre nós, sempre pelo que for melhor para o paciente.`,
-        `Posso te mandar uma apresentação curta?
+        `Posso te mandar uma apresentação em PDF?
+
+Se topar, gostaria também de marcar uma ligação rápida de 10 minutos para conhecer o seu serviço e ver como podemos indicar um ao outro.
 
 ${sair}`,
       ];
@@ -110,7 +116,9 @@ ${sair}`,
       `Trabalho com terapia manual e reabilitação de dor e lesões de quem treina.
 
 Muita gente para de treinar por dor no ombro, no joelho ou na coluna e não sabe a quem procurar. Se algum aluno de ${lugar} estiver assim, posso avaliar e orientar.`,
-      `Posso passar aí para me apresentar?
+      `Posso te mandar uma apresentação em PDF?
+
+Se fizer sentido, gostaria também de marcar uma ligação rápida de 10 minutos para conhecer o serviço de vocês.
 
 ${sair}`,
     ];
@@ -164,7 +172,7 @@ export function textoDoPasso(p: Prospecto, passo: number): string {
 
 /** Resposta automática de WhatsApp Business (menu, boas-vindas, horário): não conta como resposta de uma pessoa. */
 export function pareceRespostaAutomatica(t: string): boolean {
-  return /(digite\s+\d|digite\s+a\s+op|escolha\s+uma\s+op|agradece\s+(o\s+)?seu\s+contato|seja\s+(muito\s+)?bem[\s-]?vind|mensagem\s+autom[áa]tica|resposta\s+autom[áa]tica|no\s+momento\s+(n[ãa]o|estamos)|nosso\s+hor[áa]rio\s+de\s+atendimento|em\s+que\s+(posso|podemos)\s+(lhe\s+)?ajudar|retornaremos|retornamos\s+assim)/i.test(t);
+  return /(digite\s+\d|digite\s+a\s+op|escolha\s+uma\s+op|agradece\s+(o\s+)?seu\s+contato|seja\s+(muito\s+)?bem[\s-]?vind|mensagem\s+autom[áa]tica|resposta\s+autom[áa]tica|no\s+momento\s+(n[ãa]o|estamos)|nosso\s+hor[áa]rio\s+de\s+atendimento|em\s+que\s+(posso|podemos)\s+(lhe\s+)?ajudar|retornaremos|retornamos\s+assim|assistente\s+virtual|oi,\s*none|conseguiu\s+ver\s+minha\s+[úu]ltima\s+mensagem)/i.test(t);
 }
 
 /** Respostas que significam "não quero": o prospecto nunca mais recebe mensagem. */
@@ -289,6 +297,83 @@ async function avisarDono(texto: string): Promise<void> {
   }
 }
 
+
+// ---------- respostas a quem escreveu (fila) ----------
+
+/** Separador entre mensagens de uma resposta (uma linha com três sinais de igual). */
+export const SEPARADOR = "\n===\n";
+
+export const TEXTO_APRESENTACAO = [
+  "Obrigado pelo retorno! 😊",
+  "Segue a minha apresentação em PDF, com os serviços, como funciona a consulta e meus links (site, Instagram e YouTube).",
+  "[PDF]",
+  `Gostaria de marcar uma ligação ou um café rápido (10 a 15 minutos) para conhecer melhor o seu serviço e ver como posso indicar o seu trabalho também.
+
+Qual o melhor dia e horário para você?`,
+].join(SEPARADOR);
+
+/** Coloca uma resposta na fila. Separe as mensagens por uma linha "===" e use [PDF] onde a apresentação deve ir como arquivo. */
+export async function enfileirarResposta(prospeccaoId: number, texto: string): Promise<boolean> {
+  const r = await getClient().from("prospeccao_respostas").insert({ prospeccao_id: prospeccaoId, texto: texto.slice(0, 3000) });
+  return !r.error;
+}
+
+function dentroDaJanelaDeResposta(d: Date = new Date()): boolean {
+  const { h } = horaSP(d);
+  return h >= 8 && h < 20;
+}
+
+async function processarRespostas(instancia: string): Promise<string | null> {
+  if (!dentroDaJanelaDeResposta()) return null;
+  const sb = getClient();
+  const q = await sb.from("prospeccao_respostas").select("id, prospeccao_id, texto").eq("status", "pendente").order("id").limit(1);
+  const item = (q.data?.[0] ?? null) as { id: number; prospeccao_id: number; texto: string } | null;
+  if (!item) return null;
+  const pr = await sb.from("prospeccao").select("*").eq("id", item.prospeccao_id).limit(1);
+  const p = (pr.data?.[0] ?? null) as Prospecto | null;
+  const falha = async (erro: string, definitivo = false) => {
+    await sb.from("prospeccao_respostas").update({ status: definitivo ? "erro" : "pendente", erro: erro.slice(0, 200) }).eq("id", item.id);
+    return `resposta-falhou:${item.id}`;
+  };
+  if (!p?.telefone) return falha("Prospecto sem telefone.", true);
+  if (["recusou", "silenciado"].includes(p.status)) return falha("Prospecto não deve receber mensagem.", true);
+  // marca como em andamento antes de enviar (não repete se algo travar no meio)
+  const u = await sb.from("prospeccao_respostas").update({ status: "enviando" }).eq("id", item.id).eq("status", "pendente").select("id");
+  if (!u.data?.length) return null;
+  const chk = await existeNoWhatsApp(p.telefone, instancia);
+  const destino = chk.jid ?? p.telefone;
+  await chamarPausaWebhook(destino, "pause");
+  const enviadas: string[] = [];
+  let pdfOk = true;
+  const partes = item.texto.split(SEPARADOR).map((x) => x.trim()).filter(Boolean);
+  for (let i = 0; i < partes.length; i++) {
+    if (partes[i] === "[PDF]") {
+      try {
+        const buf = await readFile(join(process.cwd(), "public", "apresentacao-parceiros.pdf"));
+        const r = await enviarMidiaWhatsApp(destino, { mediatype: "document", mimetype: "application/pdf", media: buf.toString("base64"), fileName: "Apresentacao-Anderson-Andrade-Fisioterapia.pdf" }, instancia);
+        if (!r.ok) pdfOk = false;
+        else enviadas.push("📎 Apresentação em PDF enviada");
+      } catch {
+        pdfOk = false;
+      }
+      if (!pdfOk) break;
+    } else {
+      const r = await enviarTextoInstancia(instancia, destino, partes[i]);
+      if (!r.ok) {
+        await sb.from("prospeccao_respostas").update({ status: "erro", erro: (r.error ?? "erro").slice(0, 200) }).eq("id", item.id);
+        if (enviadas.length) await registrarNaConversa(destino, enviadas, "prospeccao");
+        return `resposta-erro:${item.id}`;
+      }
+      enviadas.push(partes[i]);
+    }
+    if (i < partes.length - 1) await new Promise((res) => setTimeout(res, 3000 + Math.floor(Math.random() * 3000)));
+  }
+  await sb.from("prospeccao_respostas").update({ status: pdfOk ? "enviada" : "erro", erro: pdfOk ? null : "Falha ao enviar o PDF.", enviada_em: new Date().toISOString() }).eq("id", item.id);
+  await registrarNaConversa(destino, enviadas, "prospeccao");
+  await sb.from("prospeccao").update({ telefone: destino, observacao: `Resposta enviada em ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.` }).eq("id", p.id);
+  return `resposta-enviada:${p.lugar}`;
+}
+
 // ---------- ciclo ----------
 
 const g = globalThis as unknown as { __prospeccaoRelogio?: boolean; __prospPausa?: Map<number, number> };
@@ -357,6 +442,8 @@ export async function rodarProspeccao(): Promise<string | null> {
   if (!instancia) return null;
   const sb = getClient();
   const respondidos = await detectarRespostas(instancia);
+  const respEnviada = await processarRespostas(instancia).catch(() => null);
+  if (respEnviada) return respEnviada; // uma coisa por ciclo
   // Quem já respondeu, virou parceiro ou foi silenciado continua com o robô calado (a pausa do robô dura 24 h, então é renovada).
   const abertos = await sb.from("prospeccao").select("*").in("status", ["respondeu", "parceiro", "silenciado"]);
   for (const x of (abertos.data ?? []) as Prospecto[]) await manterRoboCalado(x);

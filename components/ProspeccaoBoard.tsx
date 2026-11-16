@@ -84,6 +84,9 @@ function Linha({ p }: { p: Item }) {
         )}
         {(p.status === "respondeu" || p.status === "aguardando") && (
           <>
+            <button type="button" disabled={ocupado} onClick={() => window.confirm("Enviar a apresentação em PDF e o convite para uma ligação? Sai em até 1 minuto (entre 8h e 20h).") && void salvar({ acao: "apresentacao" })} className="rounded-lg bg-brand px-2.5 py-1 text-[12px] font-semibold text-white">
+              Enviar apresentação + convite
+            </button>
             <button type="button" disabled={ocupado} onClick={() => void salvar({ status: "parceiro" })} className="rounded-lg border border-line px-2.5 py-1 text-[12px] font-semibold text-brand hover:border-brand">
               Marcar como parceiro
             </button>
