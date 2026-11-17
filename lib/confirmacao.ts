@@ -21,6 +21,7 @@ interface Dados {
   primeiraVez: boolean;
   duracaoMin?: number;
   remarcada?: boolean; // consulta trocada de dia/horário: texto de "nova data"
+  semSaudacao?: boolean; // a conversa já está em andamento (ou a mensagem anterior já cumprimentou): não repetir "Olá, fulano!"
 }
 
 /**
@@ -39,7 +40,7 @@ export function partesConfirmacao(o: Dados): string[] {
   const dur = o.duracaoMin && o.duracaoMin > 0 ? o.duracaoMin : 60;
   const cons = CONSULTORIOS[o.local];
   const primeiro = o.nome ? o.nome.trim().split(/\s+/)[0] : "";
-  const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+  const ola = o.semSaudacao ? "" : primeiro ? `Olá, ${primeiro}! ` : "Olá! ";
   const completo = formatarBR(o.iso); // "quinta, 19/11, às 14:00"
   const dia = completo.split(", às")[0];
   const inicio = hora(o.iso);
@@ -53,17 +54,17 @@ export function partesConfirmacao(o: Dados): string[] {
   let primeira: string;
   if (o.remarcada) {
     primeira =
-      `${ola} Pronto, a sua consulta foi remarcada! 😊\n\n` +
+      `${ola}Pronto, a sua consulta foi remarcada! 😊\n\n` +
       `${bloco}\n\n` +
       `✅ Responda *CONFIRMO* para garantir o novo horário. No dia da consulta, eu te mando um lembrete.${prazo ? ` Se precisar mudar de novo, é só me avisar com ${prazo} de antecedência.` : ""}`;
   } else if (!o.primeiraVez) {
     primeira =
-      `${ola} Sua consulta está agendada! 😊\n\n` +
+      `${ola}Sua consulta está agendada! 😊\n\n` +
       `${bloco}\n\n` +
       `✅ Responda *CONFIRMO* para garantir o seu horário.${prazo ? ` Se precisar remarcar, é só me avisar com ${prazo} de antecedência.` : ""}`;
   } else {
     primeira =
-      `${ola} Aqui é o Anderson Andrade, fisioterapeuta (${CREFITO}), em Florianópolis. 😊\n\n` +
+      `${ola}Aqui é o Anderson Andrade, fisioterapeuta (${CREFITO}), em Florianópolis. 😊\n\n` +
       `Reservei a sua consulta:\n\n` +
       `${bloco}\n\n` +
       `A sessão dura ${dur} minutos, é individual e reúne a avaliação do seu quadro e as técnicas manuais na mesma hora. ` +

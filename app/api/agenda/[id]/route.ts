@@ -9,6 +9,14 @@ import { formatarBR } from "@/lib/slots";
 import { CONSULTORIOS } from "@/lib/site";
 import { cancelarAgendamento, getCompromissos, getVendedorBySlug, marcarAvisoNoHistorico, nomeAtualDe, remarcarAgendamento } from "@/lib/agenda";
 import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
+import { variantesTelefone } from "@/lib/telefone";
+
+/** Há conversa em andamento com o paciente (mensagem nas últimas 12 h)? Então os avisos do sistema não cumprimentam de novo ("Olá, fulano!"). */
+async function conversaEmAndamento(telefone: string): Promise<boolean> {
+  const r = await getClient().from("n8n_chat_histories").select("created_at").in("session_id", variantesTelefone(telefone)).order("id", { ascending: false }).limit(1);
+  const t = (r.data?.[0] as { created_at?: string } | undefined)?.created_at;
+  return !!t && Date.now() - new Date(t).getTime() < 12 * 3600 * 1000;
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,9 +61,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         if (instancia) {
           const nomeCerto = await nomeAtualDe(era.telefone_lead, era.nome_lead);
           const primeiro = nomeCerto ? nomeCerto.trim().split(/\s+/)[0] : "";
-          const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+          const ola = (await conversaEmAndamento(era.telefone_lead)) ? "" : primeiro ? `Olá, ${primeiro}! ` : "Olá! ";
           const onde = era.local === "capoeiras" || era.local === "centro" ? ` (${CONSULTORIOS[era.local].bairro})` : "";
-          const msg = `${ola} Passando para avisar que a sua consulta de *${formatarBR(era.data_hora)}*${onde} foi desmarcada. 😊\nQuando quiser marcar um novo horário, é só me avisar por aqui.`;
+          const msg = `${ola}Passando para avisar que a sua consulta de *${formatarBR(era.data_hora)}*${onde} foi desmarcada. 😊\nQuando quiser marcar um novo horário, é só me avisar por aqui.`;
           const e = await enviarTextoInstancia(instancia, era.telefone_lead, msg);
           avisos.cancelamento = e.ok;
           if (e.ok) {
@@ -125,13 +133,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       if (instancia) {
         const nomeCerto = await nomeAtualDe(velho.telefone_lead, velho.nome_lead);
         const primeiro = nomeCerto ? nomeCerto.trim().split(/\s+/)[0] : "";
-        const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+        const ola = (await conversaEmAndamento(velho.telefone_lead)) ? "" : primeiro ? `Olá, ${primeiro}! ` : "Olá! ";
         const velhoLocal = velho.local === "capoeiras" || velho.local === "centro" ? ` (${CONSULTORIOS[velho.local].bairro})` : "";
-        const msgCancela = `${ola} Passando para avisar que a sua consulta de *${formatarBR(velho.data_hora)}*${velhoLocal} foi cancelada, porque o horário foi alterado. Já te envio a confirmação do novo horário. 😊`;
+        const msgCancela = `${ola}Passando para avisar que a sua consulta de *${formatarBR(velho.data_hora)}*${velhoLocal} foi cancelada, porque o horário foi alterado. Já te envio a confirmação do novo horário. 😊`;
         const e1 = await enviarTextoInstancia(instancia, velho.telefone_lead, msgCancela);
         avisos.cancelamento = e1.ok;
         if (e1.ok) await new Promise((res) => setTimeout(res, 1500)); // mantém a ordem das mensagens
-        const nova = await enviarPartes(instancia, velho.telefone_lead, partesConfirmacao({ nome: nomeCerto, iso: iso.toISOString(), local, primeiraVez: false, remarcada: true }));
+        const nova = await enviarPartes(instancia, velho.telefone_lead, partesConfirmacao({ nome: nomeCerto, iso: iso.toISOString(), local, primeiraVez: false, remarcada: true, semSaudacao: true }));
         avisos.confirmacao = nova.ok;
         // conversa do painel e memória do robô: o texto real de cada mensagem enviada
         await registrarNaConversa(velho.telefone_lead, [...(e1.ok ? [msgCancela] : []), ...nova.enviadas]);
