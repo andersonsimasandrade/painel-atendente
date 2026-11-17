@@ -1,6 +1,7 @@
 // Envio das mensagens de confirmação (duas mensagens em sequência) e registro na conversa do painel. Server-only.
 import { getClient } from "./db";
 import { enviarTextoInstancia } from "./evolution";
+import { variantesTelefone } from "./telefone";
 
 // Entre uma mensagem e a seguinte: 3 a 6 s (rajada de mensagens com link, sem pausa, é um dos sinais que o WhatsApp usa para punir números).
 const espera = () => 3000 + Math.floor(Math.random() * 3000);
@@ -28,4 +29,11 @@ export async function registrarNaConversa(telefone: string, textos: string[], vi
       .insert({ session_id: telefone, message: { type: "ai", content: t, tool_calls: [], additional_kwargs: { via }, response_metadata: {}, invalid_tool_calls: [] } })
       .then(undefined, () => undefined);
   }
+}
+
+/** Há conversa em andamento com o paciente (mensagem nas últimas 12 h)? Se sim, os avisos do sistema não cumprimentam nem se apresentam de novo. */
+export async function conversaEmAndamento(telefone: string): Promise<boolean> {
+  const r = await getClient().from("n8n_chat_histories").select("created_at").in("session_id", variantesTelefone(telefone)).order("id", { ascending: false }).limit(1);
+  const t = (r.data?.[0] as { created_at?: string } | undefined)?.created_at;
+  return !!t && Date.now() - new Date(t).getTime() < 12 * 3600 * 1000;
 }

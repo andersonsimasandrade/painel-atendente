@@ -5,9 +5,9 @@ import { addNota, getClient, setNomeLead } from "./db";
 import { variantesTelefone } from "./telefone";
 import { canalDaConversa } from "./consultores";
 import { enviarTextoInstancia } from "./evolution";
-import { enviarPartes, pausaHumana, registrarNaConversa } from "./confirmacao-envio";
+import { conversaEmAndamento, enviarPartes, pausaHumana, registrarNaConversa } from "./confirmacao-envio";
 import { nascimentoIso } from "./devolutiva-acesso";
-import { SITE_URL } from "./site";
+import { CREFITO, SITE_URL } from "./site";
 
 type R<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -199,7 +199,10 @@ export async function enviarConviteCadastro(telefone: string): Promise<R> {
   const nome = primeiro ? primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase() : null;
   const falta = await camposFaltando(c.telefone);
   if (!falta.length) return { ok: false, error: "O cadastro deste paciente já está completo." };
-  const texto = `Olá${nome ? `, ${nome}` : ""}! Para finalizar o seu cadastro, preciso ${textoPedidoDados(falta)}. Leva 2 minutos:\n${SITE_URL}/cadastro/${codigo}`;
+  const link = `${SITE_URL}/cadastro/${codigo}`;
+  const texto = (await conversaEmAndamento(c.telefone))
+    ? `Olá${nome ? `, ${nome}` : ""}! Para finalizar o seu cadastro, preciso ${textoPedidoDados(falta)}. Leva 2 minutos:\n${link}`
+    : `Olá${nome ? `, ${nome}` : ""}! Tudo bem? 😊\n\nAqui é do consultório do fisioterapeuta Anderson Andrade (${CREFITO}).\n\nPara deixar tudo certo e finalizar o seu cadastro, preciso ${textoPedidoDados(falta)}. Leva 2 minutos:\n${link}`;
   const canal = await canalDaConversa(c.telefone);
   const e = await enviarTextoInstancia(canal.instancia, c.telefone, texto);
   if (!e.ok) return { ok: false, error: e.error ?? "Não consegui enviar pelo WhatsApp." };

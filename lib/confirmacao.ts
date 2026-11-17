@@ -64,7 +64,7 @@ export function partesConfirmacao(o: Dados): string[] {
       `✅ Responda *CONFIRMO* para garantir o seu horário.${prazo ? ` Se precisar remarcar, é só me avisar com ${prazo} de antecedência.` : ""}`;
   } else {
     primeira =
-      `${ola}Aqui é o Anderson Andrade, fisioterapeuta (${CREFITO}), em Florianópolis. 😊\n\n` +
+      (o.semSaudacao ? "" : `${ola}Aqui é o Anderson Andrade, fisioterapeuta (${CREFITO}), em Florianópolis. 😊\n\n`) +
       `Reservei a sua consulta:\n\n` +
       `${bloco}\n\n` +
       `A sessão dura ${dur} minutos, é individual e reúne a avaliação do seu quadro e as técnicas manuais na mesma hora. ` +

@@ -6,10 +6,11 @@
 import { getClient } from "./db";
 import { variantesTelefone } from "./telefone";
 import { canalDaConversa } from "./consultores";
-import { enviarPartes, pausaHumana, registrarNaConversa } from "./confirmacao-envio";
+import { conversaEmAndamento, enviarPartes, pausaHumana, registrarNaConversa } from "./confirmacao-envio";
 import { partesConfirmacao } from "./confirmacao";
 import { camposFaltando, criarConvite, textoPedidoDados, type CampoCad } from "./cadastro";
-import { SITE_URL } from "./site";
+import { CONSULTORIOS, CREFITO, SITE_URL } from "./site";
+import { formatarBR } from "./slots";
 import { cobrancaAutomatica, cobrarSessao } from "./asaas";
 import { destinatariosAlerta } from "./config";
 import { enviarTextoInstancia } from "./evolution";
@@ -20,6 +21,22 @@ const SEM_ESPERA_MS = 24 * 3600 * 1000;
 export function mensagemPedidoDados(o: { nome: string | null; falta: CampoCad[]; link: string }): string {
   const primeiro = (o.nome ?? "").trim().split(/\s+/)[0];
   return `Perfeito${primeiro ? `, ${primeiro}` : ""}! Para confirmar o seu agendamento e finalizar o cadastro, preciso ${textoPedidoDados(o.falta)}. Leva 2 minutos:\n${o.link}`;
+}
+
+/**
+ * Primeiro contato do sistema com alguém que NÃO tem conversa em andamento (ex.: consulta marcada pelo painel): em vez de pedir os
+ * dados "do nada", se apresenta, diz que é para confirmar a consulta (dia, hora e endereço) e só então pede o que falta.
+ * Três mensagens curtas, para ler fácil no celular.
+ */
+export function partesApresentacaoEPedido(o: { nome: string | null; falta: CampoCad[]; link: string; iso: string; local: "capoeiras" | "centro" }): string[] {
+  const primeiro = (o.nome ?? "").trim().split(/\s+/)[0];
+  const cons = CONSULTORIOS[o.local];
+  const endereco = cons.linhaEndereco.includes(cons.complemento) ? cons.linhaEndereco : `${cons.linhaEndereco} (${cons.complemento})`;
+  return [
+    `Olá${primeiro ? `, ${primeiro}` : ""}! Tudo bem? 😊\n\nAqui é do consultório do fisioterapeuta Anderson Andrade (${CREFITO}).\n\nEstou passando para confirmar a sua consulta com ele:`,
+    `📅 *${formatarBR(o.iso)}*\n\n📍 *${cons.nome}*\n${endereco}`,
+    `Para deixar tudo certo e finalizar o seu cadastro, preciso ${textoPedidoDados(o.falta)}. Leva 2 minutos:\n${o.link}`,
+  ];
 }
 
 interface Pedido {
@@ -73,7 +90,10 @@ export async function iniciarFluxoPosAgendamento(o: Pedido): Promise<ResultadoFl
 
 async function fluxoBase(o: Pedido): Promise<ResultadoFluxo> {
   const canal = { instancia: o.instancia || (await canalDaConversa(o.telefone)).instancia };
-  const confirmacao = () => partesConfirmacao({ nome: o.nome, iso: o.iso, local: o.local, primeiraVez: o.primeiraVez });
+  // Sem conversa em andamento o primeiro contato é a apresentação (abaixo); com conversa, ou logo depois da apresentação,
+  // a confirmação não cumprimenta nem se apresenta de novo.
+  const semConversa = !(await conversaEmAndamento(o.telefone));
+  const confirmacao = () => partesConfirmacao({ nome: o.nome, iso: o.iso, local: o.local, primeiraVez: o.primeiraVez, semSaudacao: true });
 
   const falta = await camposFaltando(o.telefone);
   if (!falta.length) {
@@ -87,9 +107,12 @@ async function fluxoBase(o: Pedido): Promise<ResultadoFluxo> {
     const env = await enviarPartes(canal.instancia, o.telefone, confirmacao());
     return { confirmado: env.ok, aguardandoCadastro: false, enviadas: env.enviadas, erro: env.erro };
   }
-  const passo = mensagemPedidoDados({ nome: o.nome, falta, link: `${SITE_URL}/cadastro/${convite.codigo}` });
+  const link = `${SITE_URL}/cadastro/${convite.codigo}`;
+  const primeiroContato = semConversa
+    ? partesApresentacaoEPedido({ nome: o.nome, falta, link, iso: o.iso, local: o.local })
+    : [mensagemPedidoDados({ nome: o.nome, falta, link })];
   const urgente = new Date(o.iso).getTime() - Date.now() < SEM_ESPERA_MS;
-  const env1 = await enviarPartes(canal.instancia, o.telefone, [passo]);
+  const env1 = await enviarPartes(canal.instancia, o.telefone, primeiroContato);
   if (!env1.ok) {
     const env = await enviarPartes(canal.instancia, o.telefone, confirmacao());
     return { confirmado: env.ok, aguardandoCadastro: false, enviadas: env.enviadas, erro: env1.erro };
@@ -128,7 +151,7 @@ async function enviarConfirmacaoPendente(a: Pendente): Promise<boolean> {
   ]);
   const nome = ((c.data?.[0] as { nome?: string | null } | undefined)?.nome ?? a.nome_lead) || null;
   const canal = await canalDaConversa(a.telefone_lead);
-  const env = await enviarPartes(canal.instancia, a.telefone_lead, partesConfirmacao({ nome, iso: a.data_hora, local, primeiraVez: (anteriores.count ?? 0) === 0 }));
+  const env = await enviarPartes(canal.instancia, a.telefone_lead, partesConfirmacao({ nome, iso: a.data_hora, local, primeiraVez: (anteriores.count ?? 0) === 0, semSaudacao: await conversaEmAndamento(a.telefone_lead) }));
   if (env.enviadas.length) await registrarNaConversa(a.telefone_lead, env.enviadas, "robo-agenda");
   if (env.ok) {
     const cobranca = await enviarCobranca({ agendamentoId: a.id, telefone: a.telefone_lead, iso: a.data_hora, instancia: canal.instancia, nome }).catch(() => null);

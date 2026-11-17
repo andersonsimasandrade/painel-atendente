@@ -3,20 +3,12 @@ import { getSessao } from "@/lib/session";
 import { getClient } from "@/lib/db";
 import { enviarTextoInstancia } from "@/lib/evolution";
 import { partesConfirmacao } from "@/lib/confirmacao";
-import { enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
+import { conversaEmAndamento, enviarPartes, registrarNaConversa } from "@/lib/confirmacao-envio";
 import { cancelarCobranca, moverVencimento } from "@/lib/asaas";
 import { formatarBR } from "@/lib/slots";
 import { CONSULTORIOS } from "@/lib/site";
 import { cancelarAgendamento, getCompromissos, getVendedorBySlug, marcarAvisoNoHistorico, nomeAtualDe, remarcarAgendamento } from "@/lib/agenda";
 import { avisoDeslocamento, conflitoDeslocamento } from "@/lib/deslocamento";
-import { variantesTelefone } from "@/lib/telefone";
-
-/** Há conversa em andamento com o paciente (mensagem nas últimas 12 h)? Então os avisos do sistema não cumprimentam de novo ("Olá, fulano!"). */
-async function conversaEmAndamento(telefone: string): Promise<boolean> {
-  const r = await getClient().from("n8n_chat_histories").select("created_at").in("session_id", variantesTelefone(telefone)).order("id", { ascending: false }).limit(1);
-  const t = (r.data?.[0] as { created_at?: string } | undefined)?.created_at;
-  return !!t && Date.now() - new Date(t).getTime() < 12 * 3600 * 1000;
-}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
