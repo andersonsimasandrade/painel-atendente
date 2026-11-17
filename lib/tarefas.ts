@@ -132,6 +132,7 @@ export async function criarTarefa(t: NovaTarefa): Promise<number | null> {
     mensagem: texto ?? mensagemPadrao(t.tipo, t.nome, t.motivo),
     devida_em: t.devida_em.toISOString(),
     status: t.status ?? "sugerida",
+    aprovada_em: t.status === "aprovada" ? new Date().toISOString() : null,
   };
   const q = t.chave
     ? sb.from("tarefas").upsert(linha, { onConflict: "chave", ignoreDuplicates: true }).select("id")
@@ -422,6 +423,9 @@ export async function gerarSugestoes(): Promise<{ posSessao: number; negociacao:
       motivo: (r.motivo ?? "").slice(0, 160) || null,
       devida_em: spParaUTC(r.data, "09:30"),
       personalizar: true,
+      // Foi o próprio paciente quem combinou a data ("mês que vem", "semana que vem"): o retorno já nasce aprovado e sai sozinho no dia,
+      // depois de uma nova conferência da conversa (se ele já respondeu ou agendou, a tarefa volta para revisão em vez de ser enviada).
+      status: "aprovada",
     });
     if (id) out.retornos++;
   }
