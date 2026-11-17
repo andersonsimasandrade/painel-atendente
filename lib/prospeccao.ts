@@ -421,6 +421,34 @@ async function detectarRespostas(instancia: string): Promise<number> {
   return n;
 }
 
+/** Deixa cada estabelecimento cadastrado como contato "parceiro" no painel (com o número na forma que o WhatsApp entrega), para o Anderson saber quem é quando escrever. */
+async function sincronizarContatos(instancia: string): Promise<number> {
+  const sb = getClient();
+  const r = await sb.from("prospeccao").select("*").not("telefone", "is", null).not("status", "in", "(sem_whatsapp,silenciado)").order("id");
+  let n = 0;
+  for (const p of (r.data ?? []) as Prospecto[]) {
+    if (n >= 4) break; // poucos por ciclo: cada um consulta a Evolution
+    if (!p.telefone) continue;
+    const ja = await sb.from("ff_contatos").select("telefone").in("telefone", variantesTelefone(p.telefone)).limit(1);
+    if (ja.data?.length) continue;
+    const chk = await existeNoWhatsApp(p.telefone, instancia);
+    if (!chk.existe || !chk.jid) continue;
+    const jaJid = await sb.from("ff_contatos").select("telefone").in("telefone", variantesTelefone(chk.jid)).limit(1);
+    if (jaJid.data?.length) continue;
+    const regiao = p.regiao === "centro" ? "Centro/Beira-Mar" : "Capoeiras";
+    const ins = await sb.from("ff_contatos").insert({
+      telefone: chk.jid,
+      nome: p.lugar,
+      perfil: "parceiro",
+      lead_ativo: false,
+      funnel_stage: "novo",
+      observacoes: `PARCERIA (campanha de prospecção, nov/2026): ${p.lugar} · ${p.categoria ?? ""} · ${regiao}. Não é paciente: é estabelecimento/profissional para parceria.`,
+    });
+    if (!ins.error) n++;
+  }
+  return n;
+}
+
 async function enviosHoje(): Promise<number> {
   const { ymd } = horaSP(new Date());
   const r = await getClient().from("prospeccao").select("id", { count: "exact", head: true }).gte("ultimo_envio_em", `${ymd}T03:00:00Z`);
@@ -442,6 +470,7 @@ export async function rodarProspeccao(): Promise<string | null> {
   if (!instancia) return null;
   const sb = getClient();
   const respondidos = await detectarRespostas(instancia);
+  await sincronizarContatos(instancia).catch(() => 0);
   const respEnviada = await processarRespostas(instancia).catch(() => null);
   if (respEnviada) return respEnviada; // uma coisa por ciclo
   // Quem já respondeu, virou parceiro ou foi silenciado continua com o robô calado (a pausa do robô dura 24 h, então é renovada).
