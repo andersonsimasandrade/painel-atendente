@@ -4,6 +4,7 @@ import { getClient } from "@/lib/db";
 import { resolverLead } from "@/lib/agenda";
 import { apenasDigitos } from "@/lib/format";
 import { parceiroPorCodigo } from "@/lib/indicacoes";
+import { numeroNoWhatsApp } from "@/lib/evolution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,8 +47,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, telefone: existente, jaExistia: true });
   }
 
+  // Lead novo: grava o número exatamente como o WhatsApp o conhece (no DDD 48 costuma ser sem o 9). Se ficar diferente, a resposta
+  // da pessoa cai em OUTRO cadastro e o robô perde a conversa (aconteceu com o Djeison em 17/11).
+  const telefone = (await numeroNoWhatsApp(digitado)) ?? digitado;
   const ins = await sb.from("ff_contatos").insert({
-    telefone: digitado,
+    telefone,
     nome,
     observacoes: obs,
     origem_canal: origem,
@@ -57,5 +61,5 @@ export async function POST(req: Request) {
     ultima_instancia: (process.env.EVOLUTION_INSTANCE ?? "").trim() || null,
   });
   if (ins.error) return NextResponse.json({ ok: false, error: "Não consegui cadastrar." }, { status: 500 });
-  return NextResponse.json({ ok: true, telefone: digitado, jaExistia: false });
+  return NextResponse.json({ ok: true, telefone, jaExistia: false });
 }
