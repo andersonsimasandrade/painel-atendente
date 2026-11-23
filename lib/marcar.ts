@@ -128,7 +128,7 @@ export async function marcarPeloRobo(p: PedidoMarcacao): Promise<ResultadoMarcac
   const quando = formatarBR(iso);
   const cons = CONSULTORIOS[p.local];
   // Conversa do painel: o texto REAL enviado (se nada saiu, só o resumo).
-  await registrarNaConversa(telefone, fluxo.enviadas.length ? fluxo.enviadas : [`📅 Consulta agendada: ${quando} (${cons.bairro}).`], "robo-agenda");
+  await registrarNaConversa(telefone, fluxo.enviadas.length ? fluxo.enviadas : [`🗒 Registro interno (NÃO foi enviado ao paciente): consulta marcada para ${quando} (${cons.bairro}).`], "robo-agenda");
 
   // Aviso ao Anderson (ele continua responsável por tudo).
   const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();

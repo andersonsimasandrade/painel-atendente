@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     if (fluxo.erro) console.error("[agenda/novo] mensagens pós-agendamento:", fluxo.erro);
   }
 
-  await registrarNaConversa(telefone, enviadas.length ? enviadas : [`📅 Consulta agendada: ${quando} (${cons.bairro}).`]);
+  await registrarNaConversa(telefone, enviadas.length ? enviadas : [`🗒 Registro interno (NÃO foi enviado ao paciente): consulta marcada para ${quando} (${cons.bairro}).`]);
 
   return NextResponse.json({ ok: true, id: criado.id, quando, local: cons.bairro, confirmado, aviso: aviso || undefined });
 }
