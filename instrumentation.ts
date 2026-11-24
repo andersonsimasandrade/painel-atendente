@@ -13,5 +13,7 @@ export async function register() {
     iniciarRelogioConfirmacoes();
     const { iniciarRelogioProspeccao } = await import("./lib/prospeccao");
     iniciarRelogioProspeccao();
+    const { iniciarRelogioPush } = await import("./lib/push");
+    iniciarRelogioPush();
   }
 }
