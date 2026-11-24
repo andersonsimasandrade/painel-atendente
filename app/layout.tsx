@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   description:
     "Painel de atendimento e captação de leads por WhatsApp.",
   robots: { index: false, follow: false },
+  // Celular: ícone na tela inicial e abertura em tela cheia (iPhone usa estas duas linhas; o Android lê o manifest).
+  icons: { apple: "/img/icone-app-180.png" },
+  appleWebApp: { capable: true, title: "Painel", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
