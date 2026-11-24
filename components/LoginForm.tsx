@@ -20,6 +20,60 @@ export function LoginForm({ from, erro }: { from: string; erro?: string }) {
   const [senhaErro, setSenhaErro] = useState<string | null>(null);
   const [loadingSenha, setLoadingSenha] = useState(false);
 
+  // E-mail + senha própria (primário para quem já criou a sua)
+  const [modo, setModo] = useState<"link" | "senha">("link");
+  const [senhaPropria, setSenhaPropria] = useState("");
+  const [verSenha, setVerSenha] = useState(false);
+  const [entrando, setEntrando] = useState(false);
+  const [erroPropria, setErroPropria] = useState<string | null>(null);
+  const [resetEnviado, setResetEnviado] = useState(false);
+  const [enviandoReset, setEnviandoReset] = useState(false);
+
+  async function entrarEmailSenha(e: React.FormEvent) {
+    e.preventDefault();
+    setEntrando(true);
+    setErroPropria(null);
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password: senhaPropria, from }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; redirect?: string };
+      if (!res.ok || !data.ok) {
+        setErroPropria(data.error ?? "Não foi possível entrar.");
+        setEntrando(false);
+        return;
+      }
+      router.replace(data.redirect || "/");
+      router.refresh();
+    } catch {
+      setErroPropria("Falha de rede. Tente novamente.");
+      setEntrando(false);
+    }
+  }
+
+  async function esqueciSenha() {
+    if (!email.includes("@")) {
+      setErroPropria("Digite o seu e-mail acima e toque de novo.");
+      return;
+    }
+    setEnviandoReset(true);
+    setErroPropria(null);
+    try {
+      await fetch("/api/auth/esqueci", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setResetEnviado(true);
+    } catch {
+      setErroPropria("Falha de rede. Tente novamente.");
+    } finally {
+      setEnviandoReset(false);
+    }
+  }
+
   async function pedirLink(e: React.FormEvent) {
     e.preventDefault();
     setLoadingLink(true);
@@ -61,6 +115,83 @@ export function LoginForm({ from, erro }: { from: string; erro?: string }) {
       setSenhaErro("Falha de rede. Tente novamente.");
       setLoadingSenha(false);
     }
+  }
+
+  if (resetEnviado) {
+    return (
+      <div className="mt-7 flex flex-col items-center gap-3 text-center">
+        <p className="text-[13.5px] text-ink">
+          Se <span className="font-medium">{email}</span> tiver acesso, enviamos um e-mail para você escolher a sua senha.
+        </p>
+        <p className="text-[12px] text-ink-muted">Confira a caixa de entrada (e o spam). O link vale por 30 minutos.</p>
+        <button type="button" onClick={() => setResetEnviado(false)} className="mt-1 text-[12.5px] font-medium text-brand hover:underline">
+          Voltar
+        </button>
+      </div>
+    );
+  }
+
+  if (modo === "senha") {
+    return (
+      <div className="mt-7">
+        <form onSubmit={entrarEmailSenha} className="flex flex-col gap-3">
+          <label className="text-left">
+            <span className="mb-1.5 block text-[12px] font-medium text-ink-muted">E-mail</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+              required
+              autoComplete="username"
+              placeholder="voce@suaempresa.com.br"
+              className="w-full rounded-xl border border-line bg-base/70 px-4 py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/60 focus:shadow-[0_0_0_3px_rgba(53,176,110,0.12)]"
+            />
+          </label>
+          <label className="text-left">
+            <span className="mb-1.5 block text-[12px] font-medium text-ink-muted">Senha</span>
+            <input
+              type={verSenha ? "text" : "password"}
+              value={senhaPropria}
+              onChange={(e) => setSenhaPropria(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="w-full rounded-xl border border-line bg-base/70 px-4 py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-faint focus:border-brand/60 focus:shadow-[0_0_0_3px_rgba(53,176,110,0.12)]"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-[12.5px] text-ink-muted">
+            <input type="checkbox" checked={verSenha} onChange={(e) => setVerSenha(e.target.checked)} />
+            Mostrar a senha
+          </label>
+          {erroPropria && <p className="text-left text-[12.5px] text-amber">{erroPropria}</p>}
+          <button
+            type="submit"
+            disabled={entrando || !email || !senhaPropria}
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-[14px] font-semibold text-[#04140d] transition hover:bg-brand-bright disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {entrando ? "Entrando…" : "Entrar"}
+          </button>
+        </form>
+        <button
+          type="button"
+          onClick={esqueciSenha}
+          disabled={enviandoReset}
+          className="mx-auto mt-4 block text-[12.5px] font-medium text-brand hover:underline disabled:opacity-60"
+        >
+          {enviandoReset ? "Enviando…" : "Esqueci a senha / criar minha senha"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setModo("link");
+            setErroPropria(null);
+          }}
+          className="mx-auto mt-3 block text-[12px] text-ink-faint transition hover:text-ink-muted"
+        >
+          Prefiro entrar com link por e-mail
+        </button>
+      </div>
+    );
   }
 
   if (enviado) {
@@ -158,6 +289,14 @@ export function LoginForm({ from, erro }: { from: string; erro?: string }) {
         </button>
       </form>
 
+      <button
+        type="button"
+        onClick={() => setModo("senha")}
+        className="mx-auto mt-4 block text-[12.5px] font-medium text-brand hover:underline"
+      >
+        Entrar com e-mail e senha
+      </button>
+
       {/* Fallback: acesso por senha (admin / emergência) */}
       <div className="mt-5 border-t border-line pt-4">
         {!mostrarSenha ? (
@@ -166,7 +305,7 @@ export function LoginForm({ from, erro }: { from: string; erro?: string }) {
             onClick={() => setMostrarSenha(true)}
             className="mx-auto block text-[12px] text-ink-faint transition hover:text-ink-muted"
           >
-            Acesso por senha (admin)
+            Senha geral do servidor (emergência)
           </button>
         ) : (
           <form onSubmit={entrarSenha} className="flex flex-col gap-3">

@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Consultores } from "@/components/Consultores";
 import { Gatilhos } from "@/components/Gatilhos";
 import { SecaoHorarioBot } from "@/components/HorarioBot";
+import { SecaoMinhaSenha } from "@/components/MinhaSenha";
 
 /**
  * Página "Ajustes" do painel. Três seções empilhadas:
@@ -35,6 +36,7 @@ export function Ajustes() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       {sessaoExpirou && <BannerSessao />}
+      <SecaoMinhaSenha onSessaoExpirou={marcarSessao} />
       <SecaoAtendente onSessaoExpirou={marcarSessao} />
       <SecaoHorarioBot onSessaoExpirou={marcarSessao} />
       <Consultores onSessaoExpirou={marcarSessao} />
