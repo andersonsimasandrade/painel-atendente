@@ -130,7 +130,7 @@ export function SecaoAvisosCelular({ onSessaoExpirou }: { onSessaoExpirou: () =>
   const BOTAO = "inline-flex h-10 items-center rounded-lg px-4 text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
-    <Panel title="Avisos no celular" subtitle="Notificação quando chega mensagem e 30 min antes de cada sessão" delay={0}>
+    <Panel title="Avisos no celular" subtitle="Notificação quando chega mensagem e 1 hora antes de cada sessão" delay={0}>
       <p className="text-[13px] leading-relaxed text-ink-muted">
         O aviso mostra só o nome (ex.: “💬 Humberto · Nova mensagem”), sem o texto, para ninguém ler a conversa na tela bloqueada. Ao tocar, abre a conversa. Ative em cada aparelho que quiser receber.
       </p>

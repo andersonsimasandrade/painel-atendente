@@ -1,4 +1,4 @@
-// AVISOS NO CELULAR (notificação do app): quando chega mensagem de paciente/lead/parceiro, e 30 min antes de cada sessão.
+// AVISOS NO CELULAR (notificação do app): quando chega mensagem de paciente/lead/parceiro, e 1 hora antes de cada sessão.
 // Usa Web Push com chaves VAPID geradas aqui mesmo e guardadas no banco (push_config), então não precisa configurar nada à mão.
 // A notificação mostra só o NOME e "nova mensagem" (sem o texto), porque a tela de bloqueio do celular é visível a terceiros e a
 // conversa é dado de saúde. Server-only.
@@ -169,15 +169,15 @@ async function varrerMensagens(): Promise<void> {
   }
 }
 
-/** Avisa 30 minutos antes de cada sessão (uma vez por sessão). */
+/** Avisa 1 hora antes de cada sessão (uma vez por sessão). A janela de 20 min cobre as voltas do relógio; sessão marcada em cima da hora (menos de 50 min) não recebe este aviso. */
 async function varrerSessoes(): Promise<void> {
   const agora = Date.now();
   const r = await getClient()
     .from("agendamentos")
     .select("id, telefone_lead, nome_lead, data_hora, local, status")
     .in("status", ["agendado", "confirmado"])
-    .gte("data_hora", new Date(agora + 20 * 60000).toISOString())
-    .lte("data_hora", new Date(agora + 40 * 60000).toISOString());
+    .gte("data_hora", new Date(agora + 50 * 60000).toISOString())
+    .lte("data_hora", new Date(agora + 70 * 60000).toISOString());
   for (const a of (r.data ?? []) as { id: string; telefone_lead: string; nome_lead: string | null; data_hora: string; local: string | null }[]) {
     const bucket = `pushsessao:${a.id}`;
     if (await avisouRecentemente(bucket, 3 * 3600)) continue;
