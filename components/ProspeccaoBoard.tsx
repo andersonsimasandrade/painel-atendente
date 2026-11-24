@@ -62,7 +62,7 @@ function Linha({ p }: { p: Item }) {
         </p>
         <span className={`text-[12px] font-semibold ${COR[p.status] ?? "text-ink-muted"}`}>
           {ROTULO[p.status] ?? p.status}
-          {p.passo > 0 ? ` · ${p.passo}/4` : ""}
+          {p.passo > 0 ? ` · ${p.passo}/8` : ""}
         </span>
       </div>
       <p className="mt-0.5 text-ink-muted">

@@ -33,9 +33,9 @@ export function mensagemPadrao(tipo: TipoTarefa, nome: string | null | undefined
     case "negociacao":
       return `${oi} Tudo bem? Passando para saber se ficou alguma dúvida sobre a sessão. Cada sessão tem 60 minutos com o próprio Anderson e reúne a avaliação e as técnicas na mesma hora. Se quiser, vejo um horário para você 🙂`;
     case "pos_sessao":
-      return `${oi} Passando para saber como você está depois da sessão de ontem. Se ficou alguma dúvida, é só falar por aqui 🙂`;
+      return `${oi} Tudo bem? 😊\n\nFiquei pensando em como você ficou depois da sessão. Como você está se sentindo hoje?\n\nSe quiser, me conta com calma como estão as coisas por aí.`;
     case "reavaliacao":
-      return `${oi} Tudo bem? O Anderson gostaria de acompanhar a sua evolução. Se quiser, posso ver um horário para uma nova sessão, em que ele reavalia o seu quadro e conversa sobre a continuidade.`;
+      return `${oi} Tudo bem? 😊\n\nComo você tem se sentido desde a sua sessão com o Anderson?\n\nSe quiser, me conta o que melhorou e o que ainda incomoda, para ele acompanhar a sua evolução.`;
     case "avaliacao_google":
       return `${oi} Foi um prazer cuidar de você. Se quiser contar como foi a sua experiência, uma avaliação no Google ajuda outras pessoas a nos encontrarem: ${linkAvaliacao()}\nSem compromisso, e obrigado pela confiança! 🙏`;
     case "indicacao":
@@ -96,6 +96,7 @@ export async function mensagemPersonalizada(
     "Você escreve UMA mensagem de WhatsApp, em português do Brasil, para uma clínica de fisioterapia (Anderson Andrade) retomar o contato com uma pessoa que conversou e não fechou. " +
       "Regras: tom acolhedor, humano e respeitoso; no máximo 3 frases curtas (até 350 caracteres); use o primeiro nome só se for conhecido; retome o ponto em que a conversa parou; termine com UMA pergunta fácil de responder. " +
       "Se a pessoa disse que o valor está alto: reconheça sem repetir o valor, pergunte com gentileza qual valor ela tinha em mente ou o que pesa, e lembre em uma frase o que a sessão inclui (60 min individuais com o próprio Anderson, avaliação e técnicas manuais na mesma sessão). " +
+      "Se o tipo for pós-sessão ou reavaliação (a pessoa já se tratou): NÃO ofereça horário nem nova sessão; faça uma pergunta aberta e acolhedora sobre como ela está se sentindo e o que mudou desde a sessão, com curiosidade genuína. " +
       "PROIBIDO: prometer resultado ou melhora, falar em número de sessões, redução de remédio ou economia, oferecer desconto ou condição especial, dar orientação clínica, pressionar, dizer que é robô, citar avaliações de pacientes. " +
       'Responda só JSON: {"mensagem": "texto"}.',
     `Tipo de tarefa: ${TIPOS[tipo].label}. Motivo: ${motivo ?? "—"}. Nome conhecido: ${primeiroNome(nome) || "não"}.\n\nCONVERSA RECENTE:\n${conversa}`,

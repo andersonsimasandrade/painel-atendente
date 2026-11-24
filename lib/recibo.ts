@@ -56,6 +56,14 @@ const dataBR = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.sl
 const cpfFmt = (d: string) => (d.length === 11 ? `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}` : d);
 const numFmt = (n: number) => String(n).padStart(6, "0");
 
+/** Nome curto do espaço onde a sessão foi feita (vai na mensagem do WhatsApp). */
+const nomeDoLocal = (l: "capoeiras" | "centro") => (l === "centro" ? "Espaço Beira Mar" : CONSULTORIOS[l].nome);
+/** Local por extenso, com o endereço, para ficar registrado no recibo. */
+const ondeDoRecibo = (l: "capoeiras" | "centro") =>
+  l === "centro"
+    ? "no Espaço Beira Mar, Sala 06 (R. Altamiro Guimarães, 190, Centro, Florianópolis/SC)"
+    : "no Consultório Capoeiras, dentro da Estética Arlete (Rua Joaquim Carneiro, 207, Capoeiras, Florianópolis/SC)";
+
 // ── PDF ──────────────────────────────────────────────────────────────────────
 export interface DadosRecibo {
   numero: number;
@@ -128,7 +136,7 @@ export async function gerarPdfRecibo(d: DadosRecibo, assinaturaB64: string | nul
   page.drawText(limpa(f, `Valor: ${brl(d.valor)}`), { x: M, y, size: 15, font: fb, color: VERDE });
   y -= 36;
 
-  const local = d.local ? `, no ${CONSULTORIOS[d.local].nome}` : "";
+  const local = d.local ? `, ${ondeDoRecibo(d.local)}` : "";
   const texto =
     `Recebi de ${d.nome}${d.cpf ? `, CPF ${cpfFmt(d.cpf)}` : ""}, a importância de ${brl(d.valor)} (${valorPorExtenso(d.valor)}), ` +
     `referente a 1 (uma) sessão de fisioterapia realizada em ${dataBR(d.dataSessao)}${local}.`;
@@ -244,7 +252,10 @@ async function emitirEEnviar(ag: Ag, valor: number, asaasId: string | null, reci
   const bytes = await gerarPdfRecibo({ numero, nome, cpf, valor, dataSessao: diaSP(ag.data_hora), local, emitidoEm: new Date().toISOString() }, await assinaturaProfissional());
   const primeiro = nome.split(/\s+/)[0];
   const arquivo = `Recibo ${numFmt(numero)} - ${primeiro}.pdf`;
-  const caption = `Olá, ${primeiro}! Segue o recibo da sua sessão de fisioterapia do dia ${dataBR(diaSP(ag.data_hora))}. Obrigado! 🙂`;
+  const caption =
+    `Olá, ${primeiro}! 😊\n\n` +
+    `Segue o seu recibo da sessão de fisioterapia do dia ${dataBR(diaSP(ag.data_hora))}${local ? `, realizada no ${nomeDoLocal(local)}` : ""}.\n\n` +
+    `Obrigado pela confiança! 🙏`;
   const canal = await canalDaConversa(ag.telefone_lead);
   const e = await enviarMidiaWhatsApp(ag.telefone_lead, { mediatype: "document", mimetype: "application/pdf", media: Buffer.from(bytes).toString("base64"), fileName: arquivo, caption }, canal.instancia);
   if (!e.ok) return { ok: false, error: `O recibo nº ${numFmt(numero)} foi emitido, mas não consegui enviar pelo WhatsApp: ${e.error ?? ""}` };

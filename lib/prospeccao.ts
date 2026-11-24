@@ -22,8 +22,10 @@ const JANELA_INI_H = 9;
 const JANELA_FIM_H = 18;
 const SP = 3 * 3600 * 1000;
 
-// Dias entre uma mensagem e a próxima: D0 → D4 → D10 → D21.
-const DIAS_ATE_PROXIMA: Record<number, number> = { 1: 4, 2: 6, 3: 11 };
+// Dias entre uma mensagem e a próxima: D0 → D4 → D10 → D21 e, depois, um recado a cada 30 dias.
+// Só para quando o estabelecimento responde (ou recusa). Segurança: no máximo 8 mensagens ao todo (cerca de 5 meses).
+const DIAS_ATE_PROXIMA: Record<number, number> = { 1: 4, 2: 6, 3: 11, 4: 30, 5: 30, 6: 30, 7: 30 };
+const ULTIMO_PASSO = 8;
 
 export type StatusProspecto =
   | "fila"
@@ -154,7 +156,23 @@ Se fizer sentido, combinamos.`,
       `Combino o dia com você.`,
     ];
   }
-  return [`Olá! Este é o meu último contato, para não incomodar.
+  if (passo === 4)
+    return [`Olá! Passando só para deixar o meu contato.
+
+Se alguém de ${lugar} precisar de fisioterapia, ou se quiser conversar sobre uma parceria, é só me chamar por aqui. 🙂`];
+  if (passo === 5)
+    return [`Oi! Tudo bem por aí? 😊
+
+Sigo à disposição para uma conversa rápida de 10 minutos, quando for um bom momento para você.`];
+  if (passo === 6)
+    return [`Olá! Espero que esteja tudo bem com ${lugar}.
+
+Se algum aluno ou cliente precisar de uma avaliação de fisioterapia, pode me indicar. Fico à disposição. 🙂`];
+  if (passo === 7)
+    return [`Oi! Passando para desejar uma ótima semana. 😊
+
+Se a parceria fizer sentido em algum momento, é só me chamar.`];
+  return [`Olá! Este é o meu último recado, para não incomodar.
 
 Fica o meu número: se alguém de ${lugar} precisar de fisioterapia, é só indicar o WhatsApp deste consultório.
 
@@ -177,7 +195,13 @@ export function pareceRespostaAutomatica(t: string): boolean {
 
 /** Respostas que significam "não quero": o prospecto nunca mais recebe mensagem. */
 export function pareceRecusa(t: string): boolean {
-  return /\b(n[aã]o\s+(tenho\s+interesse|quero|precisa|preciso|me\s+(escreva|mande|envie)|envie|mande|escreva|obrigad)|pare\b|parar\b|sair\b|remov|descadastr|me\s+tire|n[aã]o\s+tem\s+interesse|sem\s+interesse|spam|bloque)/i.test(t);
+  return /\b(n[aã]o\s+(tenho\s+interesse|temos\s+interesse|tem\s+interesse|quero|queremos|precisa|preciso|precisamos|me\s+(escreva|mande|envie)|envie|mande|escreva|obrigad)|pare\b|parar\b|sair\b|remov|descadastr|me\s+tire|sem\s+interesse|spam|bloque)/i.test(t);
+}
+
+/** Só confirmou que viu/recebeu ("chegou", "recebi", "ok"): não é resposta de interesse, a sequência continua. */
+export function pareceApenasConfirmacao(t: string): boolean {
+  const s = t.trim().toLowerCase().replace(/[.!,;:)(🙂👍🙏😊\s]+$/gu, "");
+  return s.length <= 40 && /^(oi,?\s*|ol[aá],?\s*)?(chegou|recebi|vi sim|vi|ok|blz|beleza|certo|obrigad[oa])(\s+(sim|amigo|amiga|anderson|obrigad[oa]))*$/.test(s);
 }
 
 // ---------- configuração e estado ----------
@@ -397,7 +421,7 @@ async function detectarRespostas(instancia: string): Promise<number> {
     let rs = await respostasDoBanco(p.telefone, desde);
     if (!rs.length) rs = await respostasNaEvolution(p.telefone, instancia, desde);
     // Menu/boas-vindas automáticos do WhatsApp Business do estabelecimento não são resposta de uma pessoa.
-    const humanas = rs.filter((x) => !pareceRespostaAutomatica(x));
+    const humanas = rs.filter((x) => !pareceRespostaAutomatica(x) && !pareceApenasConfirmacao(x));
     if (!humanas.length) {
       await manterRoboCalado(p);
       continue;
@@ -458,7 +482,7 @@ async function enviosHoje(): Promise<number> {
 async function escolherProximo(): Promise<Prospecto | null> {
   const sb = getClient();
   const agora = new Date().toISOString();
-  const due = await sb.from("prospeccao").select("*").eq("status", "aguardando").lte("proximo_em", agora).lt("passo", 4).order("proximo_em").limit(1);
+  const due = await sb.from("prospeccao").select("*").eq("status", "aguardando").lte("proximo_em", agora).lt("passo", ULTIMO_PASSO).order("proximo_em").limit(1);
   if (due.data?.length) return due.data[0] as Prospecto;
   const novo = await sb.from("prospeccao").select("*").eq("status", "fila").eq("passo", 0).not("telefone", "is", null).order("prioridade").order("id").limit(1);
   return (novo.data?.[0] ?? null) as Prospecto | null;
@@ -474,7 +498,7 @@ export async function rodarProspeccao(): Promise<string | null> {
   const respEnviada = await processarRespostas(instancia).catch(() => null);
   if (respEnviada) return respEnviada; // uma coisa por ciclo
   // Quem já respondeu, virou parceiro ou foi silenciado continua com o robô calado (a pausa do robô dura 24 h, então é renovada).
-  const abertos = await sb.from("prospeccao").select("*").in("status", ["respondeu", "parceiro", "silenciado"]);
+  const abertos = await sb.from("prospeccao").select("*").in("status", ["respondeu", "parceiro", "silenciado", "recusou"]);
   for (const x of (abertos.data ?? []) as Prospecto[]) await manterRoboCalado(x);
 
   if (!(await campanhaAtiva())) return respondidos ? `respostas:${respondidos}` : null;
