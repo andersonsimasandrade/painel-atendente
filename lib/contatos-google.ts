@@ -8,6 +8,11 @@ export interface ContatoGoogle {
   id: string; // chave estável do paciente: DDD + últimos 8 dígitos (igual com ou sem o 9)
   nome: string;
   telefone: string; // formato internacional, com o 9: +5548991897280
+  /**
+   * Todas as formas do número: com o 9 e sem o 9 (o WhatsApp registra alguns números do DDD 48 sem o 9 e, nesses casos, só mostra o
+   * nome se o contato tiver o número exatamente como o WhatsApp o conhece). O script grava os dois no mesmo contato.
+   */
+  telefones: string[];
 }
 
 const SEM_NOME = /^(desconhecido|sem nome|lead sem nome|paciente|cliente|contato)$/i;
@@ -28,6 +33,18 @@ function e164(tel: string): string | null {
   return `+${d}`;
 }
 
+/** Número com o 9 primeiro e, se existir, a forma sem o 9 (a que o WhatsApp usa em alguns cadastros antigos). */
+function todasAsFormas(tel: string): string[] {
+  const principal = e164(tel);
+  if (!principal) return [];
+  const saida = [principal];
+  for (const v of variantesTelefone(tel)) {
+    const d = v.replace(/\D/g, "");
+    if (d.startsWith("55") && d.length === 12 && !saida.includes(`+${d}`)) saida.push(`+${d}`);
+  }
+  return saida;
+}
+
 function chave(tel: string): string | null {
   const d = tel.replace(/\D/g, "");
   if (d.startsWith("55") && d.length >= 12) return `${d.slice(2, 4)}${d.slice(-8)}`;
@@ -45,7 +62,7 @@ export async function listarContatosParaGoogle(): Promise<ContatoGoogle[]> {
     // só pacientes com celular brasileiro: números de fora (códigos de verificação, serviços) não são pacientes
     if (!nome || !k || !tel || !tel.startsWith("+55") || ehNumeroInterno(c.telefone) || vistos.has(k)) continue;
     vistos.add(k);
-    saida.push({ id: k, nome, telefone: tel });
+    saida.push({ id: k, nome, telefone: tel, telefones: todasAsFormas(c.telefone) });
   }
   return saida.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
