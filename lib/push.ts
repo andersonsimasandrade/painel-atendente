@@ -73,6 +73,12 @@ export async function salvarAssinatura(email: string, sub: Assinatura, aparelho:
   return !r.error;
 }
 
+/** O servidor ainda conhece este aparelho? (usado para religar os avisos sozinho quando a assinatura caiu) */
+export async function assinaturaConhecida(endpoint: string): Promise<boolean> {
+  const r = await getClient().from("push_assinaturas").select("id", { count: "exact", head: true }).eq("endpoint", endpoint);
+  return (r.count ?? 0) > 0;
+}
+
 export async function removerAssinatura(endpoint: string): Promise<void> {
   await getClient().from("push_assinaturas").delete().eq("endpoint", endpoint);
 }

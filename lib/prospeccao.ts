@@ -190,7 +190,7 @@ export function textoDoPasso(p: Prospecto, passo: number): string {
 
 /** Resposta automática de WhatsApp Business (menu, boas-vindas, horário): não conta como resposta de uma pessoa. */
 export function pareceRespostaAutomatica(t: string): boolean {
-  return /(digite\s+\d|digite\s+a\s+op|escolha\s+uma\s+op|agradece\s+(o\s+)?seu\s+contato|seja\s+(muito\s+)?bem[\s-]?vind|mensagem\s+autom[áa]tica|resposta\s+autom[áa]tica|no\s+momento\s+(n[ãa]o|estamos)|nosso\s+hor[áa]rio\s+de\s+atendimento|em\s+que\s+(posso|podemos)\s+(lhe\s+)?ajudar|retornaremos|retornamos\s+assim|assistente\s+virtual|oi,\s*none|conseguiu\s+ver\s+minha\s+[úu]ltima\s+mensagem)/i.test(t);
+  return /(digite\s+\d|digite\s+a\s+op|escolha\s+uma\s+op|agradece\s+(o\s+)?seu\s+contato|seja\s+(muito\s+)?bem[\s-]?vind|mensagem\s+autom[áa]tica|resposta\s+autom[áa]tica|no\s+momento\s+(n[ãa]o|estamos)|nosso\s+hor[áa]rio\s+de\s+atendimento|em\s+que\s+(posso|podemos)\s+(lhe\s+)?ajudar|retornaremos|retornamos\s+assim|entraremos\s+em\s+contato|n[ãa]o\s+estamos\s+dispon[íi]veis|assistente\s+virtual|oi,\s*none|conseguiu\s+ver\s+minha\s+[úu]ltima\s+mensagem)/i.test(t);
 }
 
 /** Respostas que significam "não quero": o prospecto nunca mais recebe mensagem. */
@@ -321,6 +321,30 @@ async function avisarDono(texto: string): Promise<void> {
   }
 }
 
+
+/**
+ * Parceiro que JÁ respondeu e escreve de novo (ex.: propõe dia e hora para o café): o robô está calado nessa conversa, então
+ * sem este aviso a mensagem fica parada sem ninguém ver. Avisa o dono no WhatsApp a cada leva de mensagens novas.
+ */
+async function avisarNovasMensagens(): Promise<number> {
+  const sb = getClient();
+  const r = await sb.from("prospeccao").select("*").in("status", ["respondeu", "parceiro"]).not("telefone", "is", null).not("respondeu_em", "is", null);
+  let n = 0;
+  for (const p of (r.data ?? []) as Prospecto[]) {
+    if (!p.telefone || !p.respondeu_em) continue;
+    const rs = (await respostasDoBanco(p.telefone, new Date(p.respondeu_em))).filter((x) => !pareceRespostaAutomatica(x));
+    if (!rs.length) continue;
+    const texto = rs.join(" / ").slice(0, 400);
+    const recusou = rs.some(pareceRecusa);
+    await sb
+      .from("prospeccao")
+      .update({ respondeu_em: new Date().toISOString(), ultima_resposta: texto, ...(recusou ? { status: "recusou" } : {}) })
+      .eq("id", p.id);
+    await avisarDono(`🤝 Parceria: ${p.lugar} escreveu de novo${recusou ? " (disse que não quer)" : " e está esperando resposta"}.\n«${texto.slice(0, 300)}»\nAbra o painel → Conversas.`);
+    n++;
+  }
+  return n;
+}
 
 // ---------- respostas a quem escreveu (fila) ----------
 
@@ -493,6 +517,7 @@ export async function rodarProspeccao(): Promise<string | null> {
   const instancia = (process.env.EVOLUTION_INSTANCE ?? "").trim();
   if (!instancia) return null;
   const sb = getClient();
+  await avisarNovasMensagens().catch(() => 0); // antes do detectar: quem acabou de ser detectado não é avisado duas vezes
   const respondidos = await detectarRespostas(instancia);
   await sincronizarContatos(instancia).catch(() => 0);
   const respEnviada = await processarRespostas(instancia).catch(() => null);

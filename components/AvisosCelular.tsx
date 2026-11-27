@@ -2,17 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Panel } from "@/components/Panel";
+import { chaveParaBytes, lembrarPreferencia } from "@/lib/push-cliente";
 
 function sessaoExpirada(res: Response): boolean {
   return res.type === "opaqueredirect" || res.status === 0 || res.status === 401;
-}
-
-function chaveParaBytes(b64: string): Uint8Array {
-  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
-  const bin = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
 }
 
 type Estado = "carregando" | "sem_suporte" | "iphone_sem_app" | "bloqueado" | "desligado" | "ligado";
@@ -85,6 +78,7 @@ export function SecaoAvisosCelular({ onSessaoExpirou }: { onSessaoExpirou: () =>
         setMsg({ tipo: "erro", texto: ds.error ?? "Não consegui salvar este aparelho." });
         return;
       }
+      lembrarPreferencia("ligado");
       setEstado("ligado");
       setMsg({ tipo: "ok", texto: "Ligado neste aparelho. Toque em “Enviar um aviso de teste”." });
     } catch (e) {
@@ -104,6 +98,7 @@ export function SecaoAvisosCelular({ onSessaoExpirou }: { onSessaoExpirou: () =>
         await fetch("/api/push", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ acao: "cancelar", endpoint: sub.endpoint }) });
         await sub.unsubscribe();
       }
+      lembrarPreferencia("desligado");
       setEstado("desligado");
       setMsg({ tipo: "ok", texto: "Avisos desligados neste aparelho." });
     } catch {

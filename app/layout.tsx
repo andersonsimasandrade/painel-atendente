@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { ReligaAvisos } from "@/components/ReligaAvisos";
 
 // Fontes servidas pelo próprio projeto (variáveis, subconjunto latino): o build não depende do Google Fonts.
 const display = localFont({
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         {children}
+        <ReligaAvisos />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessao } from "@/lib/session";
-import { chavePublica, contarAparelhos, enviarAviso, removerAssinatura, salvarAssinatura, type Assinatura } from "@/lib/push";
+import { assinaturaConhecida, chavePublica, contarAparelhos,enviarAviso, removerAssinatura, salvarAssinatura, type Assinatura } from "@/lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,11 +17,13 @@ async function admin() {
   return { email: sess.email ?? "admin" };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const a = await admin();
   if (a.erro) return a.erro;
   try {
-    return NextResponse.json({ ok: true, chave: await chavePublica(), aparelhos: await contarAparelhos(a.email) });
+    const endpoint = new URL(req.url).searchParams.get("endpoint");
+    const conhecido = endpoint ? await assinaturaConhecida(endpoint) : false;
+    return NextResponse.json({ ok: true, chave: await chavePublica(), aparelhos: await contarAparelhos(a.email), conhecido });
   } catch (e) {
     console.error("[push] GET:", e);
     return NextResponse.json({ ok: false, error: "Não consegui preparar os avisos agora." }, { status: 500 });
